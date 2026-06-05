@@ -201,11 +201,16 @@ export default function SettingsScreen() {
           <>
             <SectionHeader title="About PetNexa AI" />
             <Card>
-              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                <Chip label={`${creditState.aiCredits}/3 AI credits`} active />
-                <Chip label={`${creditState.totalConsultationsUsed} consultations`} tone="navy" />
+              <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+                <IconBubble icon="paw" size={54} />
+                <View style={{ flex: 1, gap: 3 }}>
+                  <Text selectable style={{ color: palette.text, fontSize: 20, fontWeight: "900" }}>PetNexa AI</Text>
+                  <Text selectable style={{ color: palette.teal, fontSize: 13, fontWeight: "900" }}>Smart Pet Health, Connected Care.</Text>
+                </View>
               </View>
-              <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Smart Pet Health, Connected Care.</Text>
+              <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Purpose</Text>
+              <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>PetNexa AI helps pet parents organize pet profiles, health records, reminders, veterinarian contacts, and guided pet-care notes in one offline-first mobile app.</Text>
+              <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Privacy</Text>
               <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>All data stays local by default. Data is only sent online when AI consultation is used.</Text>
             </Card>
           </>
