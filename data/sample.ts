@@ -14,8 +14,8 @@ export const initialCreditState: AiCreditState = {
 export const sampleData: AppSnapshot = {
   owner: {
     id: "owner_1",
-    fullName: "John Pet Parent",
-    birthday: "1995-01-01",
+    fullName: "",
+    birthday: "",
   },
   pets: [
     {

@@ -5,17 +5,23 @@ import { PaperProvider } from "react-native-paper";
 import "react-native-reanimated";
 import { AppProvider, useAppData } from "@/context/AppContext";
 import { paperTheme } from "@/constants/theme";
+import { MIN_OWNER_AGE } from "@/constants/owner";
+import { OwnerOnboarding } from "@/components/owner-onboarding";
+import { getAgeYears, isValidIsoDate } from "@/utils/date";
 
 SplashScreen.preventAutoHideAsync();
 
 function RootStack() {
-  const { ready } = useAppData();
+  const { ready, owner } = useAppData();
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
   if (!ready) return null;
+
+  const ownerCanProceed = owner.fullName.trim() && isValidIsoDate(owner.birthday) && getAgeYears(owner.birthday) >= MIN_OWNER_AGE;
+  if (!ownerCanProceed) return <OwnerOnboarding />;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

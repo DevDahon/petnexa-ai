@@ -33,7 +33,7 @@ type AppContextValue = AppSnapshot & {
 const AppContext = createContext<AppContextValue | null>(null);
 
 const emptySnapshot: AppSnapshot = {
-  owner: { id: "owner_1", fullName: "", birthday: "2000-01-01" },
+  owner: { id: "owner_1", fullName: "", birthday: "" },
   pets: [],
   veterinarians: [],
   records: [],

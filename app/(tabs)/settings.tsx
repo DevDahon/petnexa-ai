@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { Card, Chip, Field, GhostButton, IconBubble, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
 import { appInfo } from "@/constants/app";
+import { MIN_OWNER_AGE } from "@/constants/owner";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Veterinarian } from "@/types/domain";
@@ -64,7 +65,7 @@ export default function SettingsScreen() {
     const birthday = ownerForm.birthday.trim();
     if (!fullName) return Alert.alert("Name required", "Enter the owner name PetNexa AI should use in greetings.");
     if (!isValidIsoDate(birthday)) return Alert.alert("Birthday required", "Enter a valid birthday using YYYY-MM-DD.");
-    if (getAgeYears(birthday) < 13) return Alert.alert("Age restriction", "PetNexa AI requires the owner to be at least 13 years old.");
+    if (getAgeYears(birthday) < MIN_OWNER_AGE) return Alert.alert("Age restriction", `PetNexa AI requires the owner to be at least ${MIN_OWNER_AGE} years old.`);
     await saveOwner({ id: ownerForm.id, fullName, birthday });
     setOwnerForm({ id: ownerForm.id, fullName, birthday });
     Alert.alert("Owner profile saved");
