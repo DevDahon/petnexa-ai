@@ -203,7 +203,6 @@ export default function SettingsScreen() {
             <Card>
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
                 <Chip label={`${creditState.aiCredits}/3 AI credits`} active />
-                <Chip label={`${creditState.weeklyAdWatchCount}/5 weekly ads`} />
                 <Chip label={`${creditState.totalConsultationsUsed} consultations`} tone="navy" />
               </View>
               <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Smart Pet Health, Connected Care.</Text>
