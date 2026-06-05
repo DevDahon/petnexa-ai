@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Alert, Linking, ScrollView, Switch, Text, View } from "react-native";
+import { Alert, Linking, Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { Card, Chip, Field, GhostButton, IconBubble, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
@@ -30,16 +30,18 @@ const sections: { id: Section; title: string; subtitle: string; icon: React.Comp
 
 function SettingsRow({ title, subtitle, icon, active, onPress }: { title: string; subtitle: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"]; active?: boolean; onPress: () => void }) {
   return (
-    <Card style={{ backgroundColor: active ? palette.softTeal : "#fff", borderColor: active ? palette.mint : "#E9EEF5" }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-        <IconBubble icon={icon} tone={active ? "teal" : "navy"} size={44} />
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text selectable style={{ color: palette.text, fontSize: 15, fontWeight: "900" }}>{title}</Text>
-          <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{subtitle}</Text>
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}>
+      <Card style={{ backgroundColor: active ? palette.softTeal : "#fff", borderColor: active ? palette.mint : "#E9EEF5" }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <IconBubble icon={icon} tone={active ? "teal" : "navy"} size={44} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text selectable style={{ color: palette.text, fontSize: 15, fontWeight: "900" }}>{title}</Text>
+            <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{subtitle}</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" color={active ? palette.teal : palette.muted} size={22} />
         </View>
-        <MaterialCommunityIcons name="chevron-right" color={active ? palette.teal : palette.muted} size={22} />
-      </View>
-    </Card>
+      </Card>
+    </Pressable>
   );
 }
 
