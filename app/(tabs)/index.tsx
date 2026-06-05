@@ -1,7 +1,6 @@
-import { Link } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ScrollView, Text, View } from "react-native";
-import { Card, EmptyState, IconBubble, PetAvatar, PrimaryButton, ReminderPill, Screen, SectionHeader, StatCard } from "@/components/ui";
+import { Card, EmptyState, IconBubble, PetAvatar, ReminderPill, Screen, SectionHeader, StatCard } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { calculateAge, formatFriendlyDate, getReminderStatus } from "@/utils/date";
@@ -14,7 +13,7 @@ function greeting() {
 }
 
 export default function HomeScreen() {
-  const { owner, pets, reminders, records, creditState } = useAppData();
+  const { owner, pets, reminders, records } = useAppData();
   const due = reminders.filter((item) => getReminderStatus(item) === "Due Today");
   const overdue = reminders.filter((item) => getReminderStatus(item) === "Overdue");
   const upcoming = reminders.filter((item) => getReminderStatus(item) === "Upcoming");
@@ -36,15 +35,12 @@ export default function HomeScreen() {
 
         <Card style={{ borderColor: palette.mint }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-            <IconBubble icon="robot-happy-outline" size={50} />
+            <IconBubble icon="heart-pulse" size={50} />
             <View style={{ flex: 1 }}>
-              <Text selectable style={{ color: palette.text, fontWeight: "900" }}>AI Credits</Text>
-              <Text selectable style={{ color: palette.navy, fontSize: 24, fontWeight: "900", fontVariant: ["tabular-nums"] }}>{creditState.aiCredits} / 3</Text>
-              <Text selectable style={{ color: palette.muted, fontSize: 12 }}>Available</Text>
+              <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Care Summary</Text>
+              <Text selectable style={{ color: palette.navy, fontSize: 24, fontWeight: "900", fontVariant: ["tabular-nums"] }}>{pets.length} pets</Text>
+              <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{records.length} health records saved</Text>
             </View>
-            <Link href="/ai-assistant" asChild>
-              <PrimaryButton label="Upgrade" icon="arrow-up" onPress={() => {}} />
-            </Link>
           </View>
         </Card>
 

@@ -4,7 +4,7 @@ import { Alert, ScrollView, Text, View } from "react-native";
 import { Card, Chip, EmptyState, Field, GhostButton, IconBubble, PetAvatar, PrimaryButton, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
-import { AI_PROXY_MODE_NOTICE, AI_SAFETY_NOTICE, buildConsultation, ConsultationInput } from "@/services/ai";
+import { AI_SAFETY_NOTICE, buildConsultation, ConsultationInput } from "@/services/ai";
 
 const presets = ["Vomiting", "Diarrhea", "Not Eating", "Weakness", "Coughing", "Poisoning"];
 
@@ -94,13 +94,6 @@ export default function AiAssistantScreen() {
           </View>
           <View style={{ alignSelf: "flex-start", backgroundColor: palette.danger, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 8 }}>
             <Text selectable style={{ color: "#fff", fontWeight: "900" }}>Emergency care first</Text>
-          </View>
-        </Card>
-
-        <Card>
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <MaterialCommunityIcons name="shield-key-outline" color={palette.navy} size={22} />
-            <Text selectable style={{ color: palette.muted, flex: 1, lineHeight: 20 }}>{AI_PROXY_MODE_NOTICE}</Text>
           </View>
         </Card>
 

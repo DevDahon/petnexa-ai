@@ -104,7 +104,7 @@ export default function SettingsScreen() {
             <View style={{ flex: 1, gap: 3 }}>
               <Text selectable style={{ color: palette.text, fontSize: 20, fontWeight: "900" }}>{owner.fullName || "Pet Parent"}</Text>
               <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{owner.phone || "Phone not set"}</Text>
-              <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>{veterinarians.length} vets • {creditState.aiCredits}/3 AI credits</Text>
+              <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>{veterinarians.length} veterinary contacts saved</Text>
             </View>
           </View>
         </Card>
