@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { Card, Chip, Field, GhostButton, IconBubble, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
+import { appInfo } from "@/constants/app";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Veterinarian } from "@/types/domain";
@@ -25,7 +26,7 @@ const sections: { id: Section; title: string; subtitle: string; icon: React.Comp
   { id: "profile", title: "Owner Profile", subtitle: "Name, phone, emergency contact", icon: "account-heart-outline" },
   { id: "vets", title: "Veterinarians", subtitle: "Clinics and emergency contacts", icon: "hospital-building" },
   { id: "backup", title: "Backup & Restore", subtitle: "Export or replace local data", icon: "database-sync-outline" },
-  { id: "about", title: "About PetNexa AI", subtitle: "Privacy, credits, app details", icon: "information-outline" },
+  { id: "about", title: "About PetNexa AI", subtitle: "Purpose, version, developer", icon: "information-outline" },
 ];
 
 function SettingsRow({ title, subtitle, icon, active, onPress }: { title: string; subtitle: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"]; active?: boolean; onPress: () => void }) {
@@ -204,9 +205,13 @@ export default function SettingsScreen() {
               <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
                 <IconBubble icon="paw" size={54} />
                 <View style={{ flex: 1, gap: 3 }}>
-                  <Text selectable style={{ color: palette.text, fontSize: 20, fontWeight: "900" }}>PetNexa AI</Text>
-                  <Text selectable style={{ color: palette.teal, fontSize: 13, fontWeight: "900" }}>Smart Pet Health, Connected Care.</Text>
+                  <Text selectable style={{ color: palette.text, fontSize: 20, fontWeight: "900" }}>{appInfo.name}</Text>
+                  <Text selectable style={{ color: palette.teal, fontSize: 13, fontWeight: "900" }}>{appInfo.tagline}</Text>
                 </View>
+              </View>
+              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                <Chip label={`Version ${appInfo.version}`} active />
+                <Chip label={`Developer: ${appInfo.developer}`} tone="navy" />
               </View>
               <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Purpose</Text>
               <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>PetNexa AI helps pet parents organize pet profiles, health records, reminders, veterinarian contacts, and guided pet-care notes in one offline-first mobile app.</Text>
