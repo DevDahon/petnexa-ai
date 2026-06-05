@@ -17,13 +17,7 @@ export type RiskLevel = "Mild" | "Moderate" | "Severe" | "Emergency";
 export type Owner = {
   id: string;
   fullName: string;
-  phone: string;
-  email: string;
-  address: string;
-  emergencyContact: string;
-  preferredVetId?: string;
-  notes: string;
-  profilePhotoUri?: string;
+  birthday: string;
 };
 
 export type Pet = {

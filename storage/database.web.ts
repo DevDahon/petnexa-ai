@@ -5,9 +5,18 @@ import { createId, todayIso } from "@/utils/date";
 
 const STORAGE_KEY = "petnexa_web_snapshot";
 
+function normalizeOwner(value: Partial<Owner> | null | undefined): Owner {
+  return {
+    id: value?.id ?? sampleData.owner.id,
+    fullName: value?.fullName ?? sampleData.owner.fullName,
+    birthday: value?.birthday ?? sampleData.owner.birthday,
+  };
+}
+
 function normalizeSnapshot(snapshot: AppSnapshot): AppSnapshot {
   return {
     ...snapshot,
+    owner: normalizeOwner(snapshot.owner),
     settings: {
       notificationsEnabled: snapshot.settings?.notificationsEnabled ?? sampleData.settings.notificationsEnabled,
       dailySummaryTime: snapshot.settings?.dailySummaryTime ?? sampleData.settings.dailySummaryTime,
@@ -40,7 +49,7 @@ export async function replaceSnapshot(snapshot: AppSnapshot) {
 
 export async function upsertOwner(owner: Owner) {
   const snapshot = await readSnapshot();
-  await writeSnapshot({ ...snapshot, owner });
+  await writeSnapshot({ ...snapshot, owner: normalizeOwner(owner) });
 }
 
 export async function upsertPet(pet: Omit<Pet, "id" | "createdAt"> & Partial<Pick<Pet, "id" | "createdAt">>) {

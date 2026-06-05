@@ -29,6 +29,14 @@ function normalizeSettings(value: Partial<Settings> | null | undefined): Setting
   };
 }
 
+function normalizeOwner(value: Partial<Owner> | null | undefined): Owner {
+  return {
+    id: value?.id ?? sampleData.owner.id,
+    fullName: value?.fullName ?? sampleData.owner.fullName,
+    birthday: value?.birthday ?? sampleData.owner.birthday,
+  };
+}
+
 export async function initDatabase() {
   const database = await db();
   await database.execAsync(`
@@ -56,7 +64,7 @@ export async function getSnapshot(): Promise<AppSnapshot> {
   const creditRow = await first<{ data: string }>("SELECT data FROM ai_credit_state WHERE id = ?", ["credits"]);
   const parsedSettings = settingsRow ? JSON.parse(settingsRow.data) as Partial<Settings> : null;
   return {
-    owner: ownerRow ? JSON.parse(ownerRow.data) : sampleData.owner,
+    owner: normalizeOwner(ownerRow ? JSON.parse(ownerRow.data) : sampleData.owner),
     pets: (await all<{ data: string }>("SELECT data FROM pets")).map((row) => JSON.parse(row.data)),
     veterinarians: (await all<{ data: string }>("SELECT data FROM veterinarians")).map((row) => JSON.parse(row.data)),
     records: (await all<{ data: string }>("SELECT data FROM health_records")).map((row) => JSON.parse(row.data)),
@@ -73,7 +81,8 @@ export async function replaceSnapshot(snapshot: AppSnapshot) {
     for (const table of ["owners", "pets", "veterinarians", "health_records", "reminders", "consultations", "settings", "ai_credit_state"]) {
       await database.runAsync(`DELETE FROM ${table}`);
     }
-    await database.runAsync("INSERT INTO owners (id, data) VALUES (?, ?)", [snapshot.owner.id, JSON.stringify(snapshot.owner)]);
+    const owner = normalizeOwner(snapshot.owner);
+    await database.runAsync("INSERT INTO owners (id, data) VALUES (?, ?)", [owner.id, JSON.stringify(owner)]);
     await database.runAsync("INSERT INTO settings (id, data) VALUES (?, ?)", ["settings", JSON.stringify(normalizeSettings(snapshot.settings))]);
     await database.runAsync("INSERT INTO ai_credit_state (id, data) VALUES (?, ?)", ["credits", JSON.stringify(snapshot.creditState)]);
     for (const pet of snapshot.pets) await database.runAsync("INSERT INTO pets (id, data) VALUES (?, ?)", [pet.id, JSON.stringify(pet)]);
@@ -85,7 +94,8 @@ export async function replaceSnapshot(snapshot: AppSnapshot) {
 }
 
 export async function upsertOwner(owner: Owner) {
-  await run("INSERT OR REPLACE INTO owners (id, data) VALUES (?, ?)", [owner.id, JSON.stringify(owner)]);
+  const value = normalizeOwner(owner);
+  await run("INSERT OR REPLACE INTO owners (id, data) VALUES (?, ?)", [value.id, JSON.stringify(value)]);
 }
 
 export async function upsertPet(pet: Omit<Pet, "id" | "createdAt"> & Partial<Pick<Pet, "id" | "createdAt">>) {

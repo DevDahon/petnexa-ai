@@ -15,12 +15,7 @@ export const sampleData: AppSnapshot = {
   owner: {
     id: "owner_1",
     fullName: "John Pet Parent",
-    phone: "+1 555 0199",
-    email: "john@example.com",
-    address: "123 Healthy Paws Ave",
-    emergencyContact: "+1 555 0100",
-    preferredVetId: "vet_1",
-    notes: "Prefers morning appointments.",
+    birthday: "1995-01-01",
   },
   pets: [
     {

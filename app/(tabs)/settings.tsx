@@ -1,11 +1,12 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { Card, Chip, Field, GhostButton, IconBubble, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
 import { appInfo } from "@/constants/app";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Veterinarian } from "@/types/domain";
+import { getAgeYears, isValidIsoDate } from "@/utils/date";
 
 const emptyVet = {
   clinicName: "",
@@ -23,7 +24,7 @@ const emptyVet = {
 type Section = "profile" | "vets" | "backup" | "about";
 
 const sections: { id: Section; title: string; subtitle: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"] }[] = [
-  { id: "profile", title: "Owner Profile", subtitle: "Name, phone, emergency contact", icon: "account-heart-outline" },
+  { id: "profile", title: "Owner Profile", subtitle: "Name and birthday", icon: "account-heart-outline" },
   { id: "vets", title: "Veterinarians", subtitle: "Clinics and emergency contacts", icon: "hospital-building" },
   { id: "backup", title: "Backup & Restore", subtitle: "Export or replace local data", icon: "database-sync-outline" },
   { id: "about", title: "About PetNexa AI", subtitle: "Purpose, version, developer", icon: "information-outline" },
@@ -47,15 +48,25 @@ function SettingsRow({ title, subtitle, icon, active, onPress }: { title: string
 }
 
 export default function SettingsScreen() {
-  const { owner, settings, veterinarians, creditState, saveOwner, saveVet, removeVet, updateSettings, exportData, restoreDataReplaceMode } = useAppData();
+  const { owner, settings, veterinarians, saveOwner, saveVet, removeVet, updateSettings, exportData, restoreDataReplaceMode } = useAppData();
   const [section, setSection] = useState<Section>("profile");
   const [ownerForm, setOwnerForm] = useState(owner);
   const [vetForm, setVetForm] = useState(emptyVet);
   const [editingVetId, setEditingVetId] = useState<string | null>(null);
   const [showVetForm, setShowVetForm] = useState(false);
 
+  useEffect(() => {
+    setOwnerForm(owner);
+  }, [owner]);
+
   const submitOwner = async () => {
-    await saveOwner(ownerForm);
+    const fullName = ownerForm.fullName.trim();
+    const birthday = ownerForm.birthday.trim();
+    if (!fullName) return Alert.alert("Name required", "Enter the owner name PetNexa AI should use in greetings.");
+    if (!isValidIsoDate(birthday)) return Alert.alert("Birthday required", "Enter a valid birthday using YYYY-MM-DD.");
+    if (getAgeYears(birthday) < 13) return Alert.alert("Age restriction", "PetNexa AI requires the owner to be at least 13 years old.");
+    await saveOwner({ id: ownerForm.id, fullName, birthday });
+    setOwnerForm({ id: ownerForm.id, fullName, birthday });
     Alert.alert("Owner profile saved");
   };
 
@@ -104,7 +115,9 @@ export default function SettingsScreen() {
             <IconBubble icon="account-heart-outline" size={54} />
             <View style={{ flex: 1, gap: 3 }}>
               <Text selectable style={{ color: palette.text, fontSize: 20, fontWeight: "900" }}>{owner.fullName || "Pet Parent"}</Text>
-              <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{owner.phone || "Phone not set"}</Text>
+              <Text selectable style={{ color: palette.muted, fontSize: 12 }}>
+                {isValidIsoDate(owner.birthday) ? `Owner age: ${getAgeYears(owner.birthday)}` : "Birthday not set"}
+              </Text>
               <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>{veterinarians.length} veterinary contacts saved</Text>
             </View>
           </View>
@@ -121,9 +134,7 @@ export default function SettingsScreen() {
             <SectionHeader title="Owner Profile" />
             <Card>
               <Field label="Full Name" value={ownerForm.fullName} onChangeText={(fullName) => setOwnerForm((current) => ({ ...current, fullName }))} />
-              <Field label="Phone" value={ownerForm.phone} keyboardType="phone-pad" onChangeText={(phone) => setOwnerForm((current) => ({ ...current, phone }))} />
-              <Field label="Email" value={ownerForm.email} keyboardType="email-address" onChangeText={(email) => setOwnerForm((current) => ({ ...current, email }))} />
-              <Field label="Emergency Contact" value={ownerForm.emergencyContact} keyboardType="phone-pad" onChangeText={(emergencyContact) => setOwnerForm((current) => ({ ...current, emergencyContact }))} />
+              <Field label="Birthday" value={ownerForm.birthday} placeholder="YYYY-MM-DD" onChangeText={(birthday) => setOwnerForm((current) => ({ ...current, birthday }))} />
               <PrimaryButton label="Save Profile" icon="content-save-outline" onPress={submitOwner} />
             </Card>
           </>

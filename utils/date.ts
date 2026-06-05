@@ -33,6 +33,25 @@ export function calculateAge(birthday: string) {
   return `${years} year${years === 1 ? "" : "s"} ${months} month${months === 1 ? "" : "s"} old`;
 }
 
+export function getAgeYears(birthday: string) {
+  const birth = new Date(`${birthday}T00:00:00`);
+  const now = new Date();
+  let years = now.getFullYear() - birth.getFullYear();
+  const monthDiff = now.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) years -= 1;
+  return years;
+}
+
+export function isValidIsoDate(date: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(year, month - 1, day);
+  return parsed.getFullYear() === year && parsed.getMonth() === month - 1 && parsed.getDate() === day;
+}
+
 export function getLifeStage(birthday: string, species: PetSpecies) {
   const birth = new Date(`${birthday}T00:00:00`).getTime();
   const ageYears = (Date.now() - birth) / (1000 * 60 * 60 * 24 * 365.25);
