@@ -1,9 +1,10 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { PropsWithChildren } from "react";
 import { Pressable, Text, View, ViewStyle } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated, { FadeInUp, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { Avatar, Badge, Button, Card as PaperCard, Chip as PaperChip, IconButton, Surface, TextInput } from "react-native-paper";
 import { gradients, palette, radii, shadow } from "@/constants/theme";
 import { Pet, Reminder } from "@/types/domain";
@@ -30,9 +31,28 @@ function toneSoft(tone: Tone = "teal") {
 }
 
 export function Screen({ children }: PropsWithChildren) {
+  const opacity = useSharedValue(1);
+  const translateY = useSharedValue(0);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      opacity.value = 0.88;
+      translateY.value = 8;
+      opacity.value = withTiming(1, { duration: 180 });
+      translateY.value = withTiming(0, { duration: 180 });
+    }, [opacity, translateY]),
+  );
+
+  const transitionStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
   return (
     <View style={{ flex: 1, backgroundColor: palette.background }}>
-      {children}
+      <Animated.View style={[{ flex: 1 }, transitionStyle]}>
+        {children}
+      </Animated.View>
     </View>
   );
 }
