@@ -20,7 +20,7 @@ export default function TabLayout() {
       screenOptions={({ route }) => {
         const icon = icons[route.name] ?? "home-outline";
         return {
-          headerShown: true,
+          headerShown: false,
           headerStyle: { backgroundColor: palette.background },
           headerShadowVisible: false,
           headerTitleStyle: { color: palette.text, fontWeight: "900" },
