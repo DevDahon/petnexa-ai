@@ -1,4 +1,4 @@
-import { Mail, MapPin, Phone, RotateCcw, Save, ShieldCheck, UploadCloud } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Alert, Linking, ScrollView, Switch, Text, View } from "react-native";
 import { Card, Chip, Field, GhostButton, PrimaryButton, Screen, SectionHeader } from "@/components/ui";
@@ -62,7 +62,7 @@ export default function SettingsScreen() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
         <Card style={{ backgroundColor: palette.softTeal }}>
           <View style={{ flexDirection: "row", gap: 10 }}>
-            <ShieldCheck color={palette.teal} />
+            <MaterialCommunityIcons name="shield-check-outline" color={palette.teal} size={24} />
             <View style={{ flex: 1, gap: 4 }}>
               <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900" }}>Privacy</Text>
               <Text selectable style={{ color: palette.muted }}>All data stays local by default. Data is only sent online when AI consultation or optional cloud sync is enabled.</Text>

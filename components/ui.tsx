@@ -1,10 +1,13 @@
 import { Image } from "expo-image";
-import { HeartPulse, PawPrint, Plus, ShieldPlus } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { PropsWithChildren } from "react";
-import { Pressable, Text, TextInput, View, ViewStyle } from "react-native";
-import { palette, radii, shadow } from "@/constants/theme";
+import { Pressable, Text, View, ViewStyle } from "react-native";
+import { Avatar, Button, Card as PaperCard, Chip as PaperChip, TextInput, Badge, Surface } from "react-native-paper";
+import { palette, radii } from "@/constants/theme";
 import { Pet, Reminder } from "@/types/domain";
 import { calculateAge, getLifeStage, getReminderStatus } from "@/utils/date";
+
+type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 
 export function Screen({ children }: PropsWithChildren) {
   return (
@@ -16,9 +19,19 @@ export function Screen({ children }: PropsWithChildren) {
 
 export function Card({ children, style }: PropsWithChildren<{ style?: ViewStyle }>) {
   return (
-    <View style={[{ backgroundColor: palette.card, borderRadius: radii.md, padding: 14, borderWidth: 1, borderColor: "#EEF2F6", gap: 10 }, shadow, style]}>
+    <PaperCard mode="elevated" style={[{ backgroundColor: palette.card, borderRadius: radii.md }, style]}>
+      <PaperCard.Content style={{ gap: 10 }}>
+        {children}
+      </PaperCard.Content>
+    </PaperCard>
+  );
+}
+
+export function Panel({ children, style }: PropsWithChildren<{ style?: ViewStyle }>) {
+  return (
+    <Surface elevation={1} style={[{ backgroundColor: palette.card, borderRadius: radii.md, padding: 14, gap: 10 }, style]}>
       {children}
-    </View>
+    </Surface>
   );
 }
 
@@ -31,47 +44,69 @@ export function SectionHeader({ title, action }: { title: string; action?: strin
   );
 }
 
-export function PrimaryButton({ label, onPress, icon = "plus", danger }: { label: string; onPress: () => void; icon?: "plus" | "heart" | "shield"; danger?: boolean }) {
-  const Icon = icon === "heart" ? HeartPulse : icon === "shield" ? ShieldPlus : Plus;
+export function PrimaryButton({ label, onPress, icon = "plus", danger, disabled }: { label: string; onPress: () => void; icon?: "plus" | "heart" | "shield"; danger?: boolean; disabled?: boolean }) {
+  const iconName: IconName = icon === "heart" ? "heart-pulse" : icon === "shield" ? "shield-plus-outline" : "plus";
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [{ backgroundColor: danger ? palette.danger : palette.teal, borderRadius: radii.pill, minHeight: 46, paddingHorizontal: 16, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, opacity: pressed ? 0.78 : 1 }]}>
-      <Icon color="#fff" size={18} />
-      <Text selectable style={{ color: "#fff", fontWeight: "800" }}>{label}</Text>
-    </Pressable>
+    <Button
+      mode="contained"
+      icon={iconName}
+      disabled={disabled}
+      buttonColor={danger ? palette.danger : palette.teal}
+      textColor="#fff"
+      onPress={onPress}
+      style={{ borderRadius: radii.pill }}
+      contentStyle={{ minHeight: 46 }}
+      labelStyle={{ fontWeight: "800" }}
+    >
+      {label}
+    </Button>
   );
 }
 
 export function GhostButton({ label, onPress, danger }: { label: string; onPress: () => void; danger?: boolean }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [{ borderColor: danger ? palette.danger : palette.border, borderWidth: 1, backgroundColor: "#fff", borderRadius: radii.pill, minHeight: 40, paddingHorizontal: 14, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.7 : 1 }]}>
-      <Text selectable style={{ color: danger ? palette.danger : palette.text, fontWeight: "800" }}>{label}</Text>
-    </Pressable>
+    <Button
+      mode="outlined"
+      textColor={danger ? palette.danger : palette.text}
+      onPress={onPress}
+      style={{ borderRadius: radii.pill, borderColor: danger ? palette.danger : palette.border }}
+      labelStyle={{ fontWeight: "800" }}
+    >
+      {label}
+    </Button>
   );
 }
 
 export function Field({ label, value, onChangeText, placeholder, multiline, keyboardType }: { label: string; value: string; onChangeText: (text: string) => void; placeholder?: string; multiline?: boolean; keyboardType?: "default" | "numeric" | "email-address" | "phone-pad" }) {
   return (
-    <View style={{ gap: 6 }}>
-      <Text selectable style={{ color: palette.text, fontWeight: "700", fontSize: 12 }}>{label}</Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor="#98A2B3"
-        multiline={multiline}
-        keyboardType={keyboardType}
-        style={{ minHeight: multiline ? 82 : 44, textAlignVertical: multiline ? "top" : "center", backgroundColor: "#fff", borderWidth: 1, borderColor: palette.border, borderRadius: radii.sm, paddingHorizontal: 12, paddingVertical: 10, color: palette.text }}
-      />
-    </View>
+    <TextInput
+      mode="outlined"
+      label={label}
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      multiline={multiline}
+      keyboardType={keyboardType}
+      style={{ backgroundColor: "#fff", minHeight: multiline ? 82 : undefined }}
+      outlineColor={palette.border}
+      activeOutlineColor={palette.teal}
+    />
   );
 }
 
 export function Chip({ label, active, onPress, tone = "teal" }: { label: string; active?: boolean; onPress?: () => void; tone?: "teal" | "danger" | "warning" | "navy" }) {
   const color = tone === "danger" ? palette.danger : tone === "warning" ? palette.warning : tone === "navy" ? palette.navy : palette.teal;
   return (
-    <Pressable onPress={onPress} disabled={!onPress} style={{ borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: active ? color : "#fff", borderWidth: 1, borderColor: active ? color : palette.border }}>
-      <Text selectable style={{ color: active ? "#fff" : color, fontSize: 12, fontWeight: "800" }}>{label}</Text>
-    </Pressable>
+    <PaperChip
+      selected={active}
+      onPress={onPress}
+      mode={active ? "flat" : "outlined"}
+      compact
+      textStyle={{ color: active ? "#fff" : color, fontWeight: "800", fontSize: 12 }}
+      style={{ backgroundColor: active ? color : "#fff", borderColor: color }}
+    >
+      {label}
+    </PaperChip>
   );
 }
 
@@ -79,10 +114,14 @@ export function PetAvatar({ pet, size = 62 }: { pet?: Pet; size?: number }) {
   if (pet?.photoUri) {
     return <Image source={{ uri: pet.photoUri }} style={{ width: size, height: size, borderRadius: radii.md, backgroundColor: palette.softTeal }} contentFit="cover" />;
   }
+  const icon = pet?.species === "Cat" ? "cat" : pet?.species === "Dog" ? "dog" : "paw";
   return (
-    <View style={{ width: size, height: size, borderRadius: radii.md, backgroundColor: pet?.species === "Cat" ? palette.softPeach : palette.softTeal, alignItems: "center", justifyContent: "center" }}>
-      <PawPrint color={pet?.species === "Cat" ? palette.warning : palette.teal} size={Math.round(size * 0.45)} />
-    </View>
+    <Avatar.Icon
+      size={size}
+      icon={icon}
+      color={pet?.species === "Cat" ? palette.warning : palette.teal}
+      style={{ backgroundColor: pet?.species === "Cat" ? palette.softPeach : palette.softTeal, borderRadius: radii.md }}
+    />
   );
 }
 
@@ -104,21 +143,22 @@ export function ReminderPill({ reminder }: { reminder: Reminder }) {
   const status = getReminderStatus(reminder);
   const color = status === "Overdue" ? palette.danger : status === "Due Today" ? palette.warning : status === "Completed" ? palette.success : palette.teal;
   return (
-    <View style={{ backgroundColor: `${color}18`, borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 5 }}>
-      <Text selectable style={{ color, fontSize: 11, fontWeight: "900" }}>{status}</Text>
+    <View style={{ alignItems: "flex-end", gap: 4 }}>
+      <Badge style={{ backgroundColor: color }}>{status}</Badge>
     </View>
   );
 }
 
 export function BrandMark({ compact }: { compact?: boolean }) {
+  const size = compact ? 64 : 108;
   return (
     <View style={{ alignItems: "center", gap: compact ? 2 : 8 }}>
-      <View style={{ width: compact ? 64 : 108, height: compact ? 64 : 108, borderRadius: 32, borderWidth: 4, borderColor: palette.teal, alignItems: "center", justifyContent: "center", backgroundColor: "#fff" }}>
-        <PawPrint color={palette.navy} size={compact ? 28 : 48} />
-        <View style={{ position: "absolute", right: compact ? 6 : 12, bottom: compact ? 6 : 12, backgroundColor: palette.teal, borderRadius: radii.pill, padding: compact ? 4 : 7 }}>
-          <ShieldPlus color="#fff" size={compact ? 16 : 24} />
+      <Pressable disabled style={{ width: size, height: size, borderRadius: size / 2, borderWidth: 4, borderColor: palette.teal, alignItems: "center", justifyContent: "center", backgroundColor: "#fff" }}>
+        <MaterialCommunityIcons name="paw" color={palette.navy} size={compact ? 30 : 50} />
+        <View style={{ position: "absolute", right: compact ? 5 : 12, bottom: compact ? 5 : 12, backgroundColor: palette.teal, borderRadius: radii.pill, padding: compact ? 4 : 7 }}>
+          <MaterialCommunityIcons name="shield-plus-outline" color="#fff" size={compact ? 16 : 24} />
         </View>
-      </View>
+      </Pressable>
       <Text selectable style={{ color: palette.text, fontSize: compact ? 18 : 31, fontWeight: "900" }}>PetNexa <Text style={{ color: palette.teal }}>AI</Text></Text>
       {!compact ? <Text selectable style={{ color: palette.muted, fontSize: 14 }}>Smart Pet Health, Connected Care.</Text> : null}
     </View>

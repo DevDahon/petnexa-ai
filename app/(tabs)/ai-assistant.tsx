@@ -1,4 +1,5 @@
-import { Bot, Coins, TriangleAlert } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { BarChart } from "react-native-gifted-charts";
 import { useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { Card, Chip, Field, GhostButton, PetAvatar, PrimaryButton, Screen, SectionHeader } from "@/components/ui";
@@ -54,7 +55,7 @@ export default function AiAssistantScreen() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
         <Card style={{ backgroundColor: palette.softTeal }}>
           <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
-            <Bot color={palette.navy} size={48} />
+            <MaterialCommunityIcons name="robot-happy-outline" color={palette.navy} size={48} />
             <View style={{ flex: 1, gap: 4 }}>
               <Text selectable style={{ color: palette.text, fontSize: 22, fontWeight: "900" }}>AI Pet Health Assistant</Text>
               <Text selectable style={{ color: palette.muted }}>{AI_SAFETY_NOTICE}</Text>
@@ -93,7 +94,7 @@ export default function AiAssistantScreen() {
 
         <Card style={{ backgroundColor: palette.softDanger }}>
           <View style={{ flexDirection: "row", gap: 10 }}>
-            <TriangleAlert color={palette.danger} />
+            <MaterialCommunityIcons name="alert-octagon-outline" color={palette.danger} size={24} />
             <View style={{ flex: 1 }}>
               <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Emergency detection is local and immediate</Text>
               <Text selectable style={{ color: palette.muted }}>If severe signs appear, contact {emergencyVet?.clinicName ?? "your veterinarian"} right away. Emergency consultations are saved without charging a credit.</Text>
@@ -107,7 +108,7 @@ export default function AiAssistantScreen() {
           return (
             <Card key={consultation.id}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Coins color={consultation.riskLevel === "Emergency" ? palette.danger : palette.teal} />
+                <MaterialCommunityIcons name="history" color={consultation.riskLevel === "Emergency" ? palette.danger : palette.teal} size={24} />
                 <View style={{ flex: 1 }}>
                   <Text selectable style={{ color: palette.text, fontWeight: "900" }}>{consultation.preset} • {consultation.riskLevel}</Text>
                   <Text selectable style={{ color: palette.muted }}>{historyPet?.name ?? "Pet"} • {consultation.createdAt}</Text>
@@ -117,6 +118,21 @@ export default function AiAssistantScreen() {
             </Card>
           );
         })}
+        <Card>
+          <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Consultation Usage</Text>
+          <BarChart
+            data={[
+              { value: consultations.length, label: "Used", frontColor: palette.teal },
+              { value: creditState.aiCredits, label: "Credits", frontColor: palette.navy },
+            ]}
+            height={120}
+            barWidth={32}
+            spacing={28}
+            hideRules
+            yAxisThickness={0}
+            xAxisColor={palette.border}
+          />
+        </Card>
       </ScrollView>
     </Screen>
   );

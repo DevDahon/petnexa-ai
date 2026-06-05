@@ -1,8 +1,10 @@
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import { PaperProvider } from "react-native-paper";
 import "react-native-reanimated";
 import { AppProvider, useAppData } from "@/context/AppContext";
+import { paperTheme } from "@/constants/theme";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,8 +27,10 @@ function RootStack() {
 
 export default function RootLayout() {
   return (
-    <AppProvider>
-      <RootStack />
-    </AppProvider>
+    <PaperProvider theme={paperTheme}>
+      <AppProvider>
+        <RootStack />
+      </AppProvider>
+    </PaperProvider>
   );
 }

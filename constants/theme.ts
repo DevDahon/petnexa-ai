@@ -1,3 +1,5 @@
+import { MD3LightTheme, configureFonts } from "react-native-paper";
+
 export const palette = {
   teal: "#22C1A8",
   navy: "#1E3A8A",
@@ -26,4 +28,27 @@ export const radii = {
 
 export const shadow = {
   boxShadow: "0 8px 24px rgba(30, 58, 138, 0.10)",
+};
+
+export const paperTheme = {
+  ...MD3LightTheme,
+  roundness: 4,
+  fonts: configureFonts({
+    config: {
+      fontFamily: "System",
+    },
+  }),
+  colors: {
+    ...MD3LightTheme.colors,
+    primary: palette.teal,
+    secondary: palette.navy,
+    tertiary: palette.yellow,
+    background: palette.background,
+    surface: palette.card,
+    surfaceVariant: "#EAF3F1",
+    error: palette.danger,
+    outline: palette.border,
+    onSurface: palette.text,
+    onSurfaceVariant: palette.muted,
+  },
 };

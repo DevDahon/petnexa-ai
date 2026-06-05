@@ -1,5 +1,4 @@
 import * as ImagePicker from "expo-image-picker";
-import { Edit3, Trash2 } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { Card, Chip, Field, GhostButton, PetAvatar, PrimaryButton, Screen, SectionHeader } from "@/components/ui";

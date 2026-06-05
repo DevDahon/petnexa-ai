@@ -1,21 +1,24 @@
 import { Tabs } from "expo-router";
-import { Bot, Calendar, ClipboardList, Home, PawPrint, Settings } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
 import { palette } from "@/constants/theme";
 
-const icons = {
-  index: Home,
-  pets: PawPrint,
-  records: ClipboardList,
-  reminders: Calendar,
-  "ai-assistant": Bot,
-  settings: Settings,
+type MaterialIconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
+
+const icons: Record<string, MaterialIconName> = {
+  index: "home-outline",
+  pets: "paw",
+  records: "clipboard-text-outline",
+  reminders: "calendar-clock",
+  "ai-assistant": "robot-happy-outline",
+  settings: "cog-outline",
 };
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={({ route }) => {
-        const Icon = icons[route.name as keyof typeof icons] ?? Home;
+        const icon = icons[route.name] ?? "home-outline";
         return {
           headerShown: true,
           headerStyle: { backgroundColor: palette.background },
@@ -25,7 +28,7 @@ export default function TabLayout() {
           tabBarInactiveTintColor: palette.muted,
           tabBarStyle: { backgroundColor: "#fff", borderTopColor: "#EAEFF5", height: 64, paddingTop: 8 },
           tabBarLabelStyle: { fontSize: 10, fontWeight: "700" },
-          tabBarIcon: ({ color, size }) => <Icon color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name={icon} color={color} size={size} />,
         };
       }}
     >

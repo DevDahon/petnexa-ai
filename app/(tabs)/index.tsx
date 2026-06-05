@@ -1,5 +1,6 @@
 import { Link } from "expo-router";
-import { Bot, CalendarDays, Phone, Plus, ShieldCheck } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { BarChart, LineChart, PieChart } from "react-native-gifted-charts";
 import { ScrollView, Text, View } from "react-native";
 import { BrandMark, Card, PetCard, PrimaryButton, ReminderPill, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
@@ -12,6 +13,13 @@ export default function HomeScreen() {
   const overdue = reminders.filter((item) => getReminderStatus(item) === "Overdue");
   const upcoming = reminders.filter((item) => getReminderStatus(item) === "Upcoming").slice(0, 4);
   const primaryVet = veterinarians.find((vet) => vet.isPrimary) ?? veterinarians[0];
+  const chartCounts = [
+    { value: records.filter((record) => record.type === "Vaccination").length, color: palette.teal, text: "Vaccines" },
+    { value: records.filter((record) => record.type === "Deworming").length, color: palette.mint, text: "Deworm" },
+    { value: records.filter((record) => record.type === "Medication").length, color: palette.yellow, text: "Meds" },
+    { value: records.filter((record) => record.type !== "Vaccination" && record.type !== "Deworming" && record.type !== "Medication").length, color: palette.peach, text: "Other" },
+  ].filter((item) => item.value > 0);
+  const weightTrend = pets.slice(0, 5).map((pet, index) => ({ value: pet.weightKg, label: index === 0 ? "Pets" : "" }));
 
   return (
     <Screen>
@@ -33,17 +41,17 @@ export default function HomeScreen() {
 
         <View style={{ flexDirection: "row", gap: 10 }}>
           <Card style={{ flex: 1 }}>
-            <CalendarDays color={palette.warning} />
+            <MaterialCommunityIcons name="calendar-alert" color={palette.warning} size={26} />
             <Text selectable style={{ color: palette.text, fontSize: 24, fontWeight: "900" }}>{due.length}</Text>
             <Text selectable style={{ color: palette.muted, fontSize: 12 }}>Due Today</Text>
           </Card>
           <Card style={{ flex: 1 }}>
-            <ShieldCheck color={palette.danger} />
+            <MaterialCommunityIcons name="shield-alert-outline" color={palette.danger} size={26} />
             <Text selectable style={{ color: palette.text, fontSize: 24, fontWeight: "900" }}>{overdue.length}</Text>
             <Text selectable style={{ color: palette.muted, fontSize: 12 }}>Overdue</Text>
           </Card>
           <Card style={{ flex: 1 }}>
-            <Plus color={palette.teal} />
+            <MaterialCommunityIcons name="calendar-clock" color={palette.teal} size={26} />
             <Text selectable style={{ color: palette.text, fontSize: 24, fontWeight: "900" }}>{upcoming.length}</Text>
             <Text selectable style={{ color: palette.muted, fontSize: 12 }}>Upcoming</Text>
           </Card>
@@ -78,7 +86,7 @@ export default function HomeScreen() {
           return (
             <Card key={record.id}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <Bot color={palette.teal} />
+                <MaterialCommunityIcons name="clipboard-pulse-outline" color={palette.teal} size={24} />
                 <View style={{ flex: 1 }}>
                   <Text selectable style={{ color: palette.text, fontWeight: "900" }}>{record.type}</Text>
                   <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{pet?.name} • {formatFriendlyDate(record.date)}</Text>
@@ -90,13 +98,53 @@ export default function HomeScreen() {
 
         <Card>
           <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
-            <Phone color={palette.navy} />
+            <MaterialCommunityIcons name="phone-in-talk-outline" color={palette.navy} size={24} />
             <View style={{ flex: 1 }}>
               <Text selectable style={{ color: palette.text, fontWeight: "900" }}>{primaryVet?.clinicName ?? "No veterinarian saved"}</Text>
               <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{primaryVet?.emergencyHotline ?? "Add a primary vet in Settings."}</Text>
             </View>
           </View>
         </Card>
+
+        <SectionHeader title="Health Analytics Preview" />
+        <View style={{ gap: 12 }}>
+          <Card>
+            <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Weight Trend</Text>
+            <LineChart
+              data={weightTrend.length ? weightTrend : [{ value: 0 }]}
+              height={120}
+              spacing={42}
+              color={palette.teal}
+              dataPointsColor={palette.navy}
+              thickness={3}
+              hideRules
+              yAxisColor={palette.border}
+              xAxisColor={palette.border}
+            />
+          </Card>
+          <View style={{ flexDirection: "row", gap: 12, flexWrap: "wrap" }}>
+            <Card style={{ flex: 1, minWidth: 160 }}>
+              <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Records</Text>
+              <PieChart data={chartCounts.length ? chartCounts : [{ value: 1, color: palette.border, text: "None" }]} donut radius={54} innerRadius={34} />
+            </Card>
+            <Card style={{ flex: 1, minWidth: 160 }}>
+              <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Reminders</Text>
+              <BarChart
+                data={[
+                  { value: reminders.filter((item) => getReminderStatus(item) === "Completed").length, label: "Done", frontColor: palette.success },
+                  { value: upcoming.length, label: "Soon", frontColor: palette.teal },
+                  { value: overdue.length, label: "Late", frontColor: palette.danger },
+                ]}
+                height={118}
+                barWidth={24}
+                spacing={18}
+                hideRules
+                yAxisThickness={0}
+                xAxisColor={palette.border}
+              />
+            </Card>
+          </View>
+        </View>
       </ScrollView>
     </Screen>
   );
