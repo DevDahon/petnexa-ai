@@ -1,7 +1,7 @@
 import { Tabs } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
-import { palette, radii, shadow } from "@/constants/theme";
+import { palette } from "@/constants/theme";
 
 type MaterialIconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
@@ -26,15 +26,32 @@ export default function TabLayout() {
           headerTitleStyle: { color: palette.text, fontWeight: "900" },
           tabBarActiveTintColor: palette.teal,
           tabBarInactiveTintColor: palette.muted,
-          tabBarStyle: { backgroundColor: "#fff", borderTopColor: "transparent", height: 76, paddingTop: 9, paddingBottom: 10, borderTopLeftRadius: radii.lg, borderTopRightRadius: radii.lg, boxShadow: shadow.md },
-          tabBarItemStyle: { borderRadius: radii.lg, marginHorizontal: 2 },
-          tabBarLabelStyle: { fontSize: 11, fontWeight: "900", letterSpacing: 0 },
+          tabBarHideOnKeyboard: false,
+          tabBarLabelPosition: "below-icon",
+          tabBarStyle: {
+            backgroundColor: "#fff",
+            borderTopColor: "#E4E7EC",
+            borderTopWidth: 1,
+            height: 72,
+            paddingTop: 6,
+            paddingBottom: 8,
+          },
+          tabBarItemStyle: {
+            flex: 1,
+            minWidth: 0,
+            paddingHorizontal: 0,
+          },
+          tabBarLabelStyle: {
+            fontSize: 10,
+            lineHeight: 12,
+            fontWeight: "800",
+            letterSpacing: 0,
+          },
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={icon}
               color={color}
-              size={focused ? 28 : 23}
-              style={focused ? { backgroundColor: palette.softTeal, borderRadius: 999, padding: 6, marginBottom: -2 } : undefined}
+              size={focused ? 24 : 22}
             />
           ),
         };
@@ -43,8 +60,8 @@ export default function TabLayout() {
       <Tabs.Screen name="index" options={{ title: "Home" }} />
       <Tabs.Screen name="pets" options={{ title: "Pets" }} />
       <Tabs.Screen name="records" options={{ title: "Records" }} />
-      <Tabs.Screen name="reminders" options={{ title: "Reminders" }} />
-      <Tabs.Screen name="ai-assistant" options={{ title: "AI Assistant" }} />
+      <Tabs.Screen name="reminders" options={{ title: "Care" }} />
+      <Tabs.Screen name="ai-assistant" options={{ title: "AI" }} />
       <Tabs.Screen name="settings" options={{ title: "Settings" }} />
     </Tabs>
   );
