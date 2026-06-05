@@ -37,7 +37,7 @@ export default function TabLayout() {
       <Tabs.Screen name="records" options={{ title: "Records" }} />
       <Tabs.Screen name="reminders" options={{ title: "Reminders" }} />
       <Tabs.Screen name="ai-assistant" options={{ title: "AI Assistant" }} />
-      <Tabs.Screen name="settings" options={{ title: "Settings" }} />
+      <Tabs.Screen name="settings" options={{ title: "Settings", href: null }} />
     </Tabs>
   );
 }

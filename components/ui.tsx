@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { PropsWithChildren } from "react";
 import { Pressable, Text, View, ViewStyle } from "react-native";
-import { Avatar, Button, Card as PaperCard, Chip as PaperChip, TextInput, Badge, Surface } from "react-native-paper";
+import { Avatar, Button, Card as PaperCard, Chip as PaperChip, TextInput, Badge, Surface, IconButton } from "react-native-paper";
 import { palette, radii } from "@/constants/theme";
 import { Pet, Reminder } from "@/types/domain";
 import { calculateAge, getLifeStage, getReminderStatus } from "@/utils/date";
@@ -42,6 +42,48 @@ export function SectionHeader({ title, action }: { title: string; action?: strin
       {action ? <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "700" }}>{action}</Text> : null}
     </View>
   );
+}
+
+export function ScreenIntro({ title, subtitle, icon }: { title: string; subtitle: string; icon: IconName }) {
+  return (
+    <Card style={{ backgroundColor: palette.softTeal }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <Avatar.Icon size={48} icon={icon} color={palette.teal} style={{ backgroundColor: "#fff" }} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text selectable style={{ color: palette.text, fontSize: 22, fontWeight: "900" }}>{title}</Text>
+          <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>{subtitle}</Text>
+        </View>
+      </View>
+    </Card>
+  );
+}
+
+export function StatCard({ label, value, icon, tone = "teal" }: { label: string; value: string | number; icon: IconName; tone?: "teal" | "danger" | "warning" | "navy" }) {
+  const color = tone === "danger" ? palette.danger : tone === "warning" ? palette.warning : tone === "navy" ? palette.navy : palette.teal;
+  return (
+    <Surface elevation={1} style={{ flex: 1, minWidth: 96, borderRadius: radii.md, backgroundColor: "#fff", padding: 12, gap: 6 }}>
+      <MaterialCommunityIcons name={icon} color={color} size={22} />
+      <Text selectable style={{ color: palette.text, fontSize: 22, fontWeight: "900" }}>{value}</Text>
+      <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{label}</Text>
+    </Surface>
+  );
+}
+
+export function EmptyState({ title, message, actionLabel, onAction, icon = "paw" }: { title: string; message: string; actionLabel?: string; onAction?: () => void; icon?: IconName }) {
+  return (
+    <Card>
+      <View style={{ alignItems: "center", gap: 10, paddingVertical: 8 }}>
+        <Avatar.Icon size={58} icon={icon} color={palette.teal} style={{ backgroundColor: palette.softTeal }} />
+        <Text selectable style={{ color: palette.text, fontSize: 16, fontWeight: "900", textAlign: "center" }}>{title}</Text>
+        <Text selectable style={{ color: palette.muted, textAlign: "center", lineHeight: 20 }}>{message}</Text>
+        {actionLabel && onAction ? <PrimaryButton label={actionLabel} onPress={onAction} /> : null}
+      </View>
+    </Card>
+  );
+}
+
+export function RowAction({ icon, onPress, danger }: { icon: IconName; onPress: () => void; danger?: boolean }) {
+  return <IconButton icon={icon} size={20} iconColor={danger ? palette.danger : palette.muted} onPress={onPress} style={{ margin: 0 }} />;
 }
 
 export function PrimaryButton({ label, onPress, icon = "plus", danger, disabled }: { label: string; onPress: () => void; icon?: "plus" | "heart" | "shield"; danger?: boolean; disabled?: boolean }) {
