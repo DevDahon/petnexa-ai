@@ -1,70 +1,40 @@
-import { SymbolView } from 'expo-symbols';
-import { Link, Tabs } from 'expo-router';
-import { Platform, Pressable } from 'react-native';
+import { Tabs } from "expo-router";
+import { Bot, Calendar, ClipboardList, Home, PawPrint, Settings } from "lucide-react-native";
+import { palette } from "@/constants/theme";
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+const icons = {
+  index: Home,
+  pets: PawPrint,
+  records: ClipboardList,
+  reminders: Calendar,
+  "ai-assistant": Bot,
+  settings: Settings,
+};
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'chevron.left.forwardslash.chevron.right',
-                android: 'code',
-                web: 'code',
-              }}
-              tintColor={color}
-              size={28}
-            />
-          ),
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable style={{ marginRight: 15 }}>
-                {({ pressed }) => (
-                  <SymbolView
-                    name={{ ios: 'info.circle', android: 'info', web: 'info' }}
-                    size={25}
-                    tintColor={Colors[colorScheme].text}
-                    style={{ opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="two"
-        options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'chevron.left.forwardslash.chevron.right',
-                android: 'code',
-                web: 'code',
-              }}
-              tintColor={color}
-              size={28}
-            />
-          ),
-        }}
-      />
+      screenOptions={({ route }) => {
+        const Icon = icons[route.name as keyof typeof icons] ?? Home;
+        return {
+          headerShown: true,
+          headerStyle: { backgroundColor: palette.background },
+          headerShadowVisible: false,
+          headerTitleStyle: { color: palette.text, fontWeight: "900" },
+          tabBarActiveTintColor: palette.teal,
+          tabBarInactiveTintColor: palette.muted,
+          tabBarStyle: { backgroundColor: "#fff", borderTopColor: "#EAEFF5", height: 64, paddingTop: 8 },
+          tabBarLabelStyle: { fontSize: 10, fontWeight: "700" },
+          tabBarIcon: ({ color, size }) => <Icon color={color} size={size} />,
+        };
+      }}
+    >
+      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="pets" options={{ title: "Pets" }} />
+      <Tabs.Screen name="records" options={{ title: "Records" }} />
+      <Tabs.Screen name="reminders" options={{ title: "Reminders" }} />
+      <Tabs.Screen name="ai-assistant" options={{ title: "AI Assistant" }} />
+      <Tabs.Screen name="settings" options={{ title: "Settings" }} />
     </Tabs>
   );
 }
