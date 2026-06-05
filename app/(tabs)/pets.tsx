@@ -21,6 +21,12 @@ const emptyPet = {
   assignedVetId: "",
 };
 
+const breedSuggestions: Record<PetSpecies, string[]> = {
+  Dog: ["Golden Retriever", "Labrador Retriever", "Beagle", "Poodle", "Shih Tzu", "German Shepherd", "Chihuahua", "Mixed Breed"],
+  Cat: ["Persian Cat", "Siamese", "Maine Coon", "British Shorthair", "Ragdoll", "Bengal", "Domestic Shorthair", "Mixed Breed"],
+  Other: ["Rabbit", "Hamster", "Guinea Pig", "Bird", "Turtle", "Fish", "Ferret", "Other"],
+};
+
 export default function PetsScreen() {
   const { pets, records, reminders, savePet, removePet } = useAppData();
   const [form, setForm] = useState(emptyPet);
@@ -32,7 +38,7 @@ export default function PetsScreen() {
 
   const submit = async () => {
     if (!form.name.trim()) return Alert.alert("Pet name required", "Add a name before saving this pet.");
-    await savePet({ ...form, id: editingId ?? undefined, weightKg: Number(form.weightKg) || 0 });
+    await savePet({ ...form, id: editingId ?? undefined, sex: form.sex === "Female" ? "Female" : "Male", weightKg: Number(form.weightKg) || 0 });
     setForm(emptyPet);
     setEditingId(null);
     setShowForm(false);
@@ -53,7 +59,7 @@ export default function PetsScreen() {
   const startEdit = (pet: Pet) => {
     setEditingId(pet.id);
     setShowForm(true);
-    setForm({ ...pet, microchipNumber: pet.microchipNumber ?? "", photoUri: pet.photoUri ?? "", assignedVetId: pet.assignedVetId ?? "" });
+    setForm({ ...pet, sex: pet.sex === "Female" ? "Female" : "Male", microchipNumber: pet.microchipNumber ?? "", photoUri: pet.photoUri ?? "", assignedVetId: pet.assignedVetId ?? "" });
   };
 
   const closeForm = () => {
@@ -78,11 +84,19 @@ export default function PetsScreen() {
             <SectionHeader title={editing ? `Edit ${editing.name}` : "Add Pet"} />
             <Card>
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                {(["Dog", "Cat", "Other"] as PetSpecies[]).map((species) => <Chip key={species} label={species} active={form.species === species} onPress={() => setForm((current) => ({ ...current, species }))} />)}
-                {(["Male", "Female", "Unknown"] as Sex[]).map((sex) => <Chip key={sex} label={sex} active={form.sex === sex} onPress={() => setForm((current) => ({ ...current, sex }))} tone="navy" />)}
+                {(["Dog", "Cat", "Other"] as PetSpecies[]).map((species) => <Chip key={species} label={species} active={form.species === species} onPress={() => setForm((current) => ({ ...current, species, breed: current.breed && !breedSuggestions[current.species].includes(current.breed) ? current.breed : "" }))} />)}
+                {(["Male", "Female"] as Sex[]).map((sex) => <Chip key={sex} label={sex} active={form.sex === sex} onPress={() => setForm((current) => ({ ...current, sex }))} tone="navy" />)}
               </View>
               <Field label="Name" value={form.name} onChangeText={(name) => setForm((current) => ({ ...current, name }))} />
               <Field label="Breed" value={form.breed} onChangeText={(breed) => setForm((current) => ({ ...current, breed }))} />
+              <View style={{ gap: 8 }}>
+                <Text selectable style={{ color: palette.muted, fontSize: 12, fontWeight: "800" }}>Common {form.species === "Other" ? "pet types" : `${form.species.toLowerCase()} breeds`}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                  {breedSuggestions[form.species].map((breed) => (
+                    <Chip key={breed} label={breed} active={form.breed === breed} onPress={() => setForm((current) => ({ ...current, breed }))} tone="teal" />
+                  ))}
+                </ScrollView>
+              </View>
               <Field label="Birthday" value={form.birthday} onChangeText={(birthday) => setForm((current) => ({ ...current, birthday }))} placeholder={todayIso()} />
               <Text selectable style={{ color: palette.teal, fontWeight: "800" }}>{calculateAge(form.birthday)} • {getLifeStage(form.birthday, form.species)}</Text>
               <Field label="Weight (kg)" value={String(form.weightKg)} keyboardType="numeric" onChangeText={(weightKg) => setForm((current) => ({ ...current, weightKg: Number(weightKg) || 0 }))} />

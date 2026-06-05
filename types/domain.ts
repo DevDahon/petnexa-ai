@@ -1,5 +1,5 @@
 export type PetSpecies = "Dog" | "Cat" | "Other";
-export type Sex = "Male" | "Female" | "Unknown";
+export type Sex = "Male" | "Female";
 export type RecordType =
   | "Vaccination"
   | "Deworming"
