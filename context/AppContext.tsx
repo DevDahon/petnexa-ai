@@ -43,6 +43,23 @@ const emptySnapshot: AppSnapshot = {
   settings: { notificationsEnabled: true, dailySummaryTime: "08:00", optionalCloudSyncEnabled: false },
 };
 
+async function getInstallationId() {
+  const key = "petnexa_installation_id";
+  if (process.env.EXPO_OS === "web") {
+    const value = await AsyncStorage.getItem(key);
+    if (value) return value;
+    const next = createId("install");
+    await AsyncStorage.setItem(key, next);
+    return next;
+  }
+
+  const value = await SecureStore.getItemAsync(key);
+  if (value) return value;
+  const next = createId("install");
+  await SecureStore.setItemAsync(key, next);
+  return next;
+}
+
 export function AppProvider({ children }: PropsWithChildren) {
   const [snapshot, setSnapshot] = useState<AppSnapshot>(emptySnapshot);
   const [ready, setReady] = useState(false);
@@ -54,8 +71,7 @@ export function AppProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     async function boot() {
       await initDatabase();
-      const installId = await SecureStore.getItemAsync("petnexa_installation_id");
-      if (!installId) await SecureStore.setItemAsync("petnexa_installation_id", createId("install"));
+      await getInstallationId();
       await AsyncStorage.setItem("petnexa_last_opened", new Date().toISOString());
       await refresh();
       setReady(true);
