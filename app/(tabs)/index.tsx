@@ -93,8 +93,8 @@ export default function HomeScreen() {
             height={104}
             spacing={48}
             color={palette.teal}
-            dataPointsColor={palette.navy}
             thickness={3}
+            hideDataPoints
             hideRules
             yAxisColor={palette.border}
             xAxisColor={palette.border}
