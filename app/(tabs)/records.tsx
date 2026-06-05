@@ -1,7 +1,7 @@
 import * as ImagePicker from "expo-image-picker";
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
-import { Card, Chip, EmptyState, Field, GhostButton, GradientCard, IconBubble, PetAvatar, PrimaryButton, RowAction, Screen, ScreenIntro, SectionHeader, StatCard, TimelineRail } from "@/components/ui";
+import { Card, Chip, EmptyState, Field, GhostButton, IconBubble, PetAvatar, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { HealthRecord, RecordType } from "@/types/domain";
@@ -79,20 +79,21 @@ export default function RecordsScreen() {
   return (
     <Screen>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
-        <ScreenIntro title="Records" subtitle="A clear medical timeline for every pet." icon="clipboard-text-outline" />
-
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <StatCard label="Total" value={records.length} icon="clipboard-list-outline" />
-          <StatCard label="Vaccines" value={records.filter((item) => item.type === "Vaccination").length} icon="needle" tone="navy" />
-          <StatCard label="Follow-ups" value={records.filter((item) => item.nextScheduleDate).length} icon="calendar-plus" tone="warning" />
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Records</Text>
+          <IconBubble icon="plus" size={42} />
         </View>
+        <Field label="Search records..." value={query} onChangeText={setQuery} />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          {quickFilters.map((type) => <Chip key={type} label={type} active={typeFilter === type} onPress={() => setTypeFilter(type)} tone={type === "All" ? "teal" : recordVisual(type).tone} />)}
+        </ScrollView>
 
         {!showForm ? <PrimaryButton label="Add Record" icon="clipboard-plus-outline" onPress={() => setShowForm(true)} /> : null}
 
         {showForm ? (
           <>
             <SectionHeader title={editingId ? "Edit Record" : "Add Record"} />
-            <GradientCard variant="calm">
+            <Card>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                 {pets.map((pet) => <Chip key={pet.id} label={pet.name} active={(form.petId || pets[0]?.id) === pet.id} onPress={() => setForm((current) => ({ ...current, petId: pet.id }))} />)}
               </ScrollView>
@@ -110,22 +111,11 @@ export default function RecordsScreen() {
                 <PrimaryButton label={editingId ? "Save" : "Add"} onPress={submit} />
                 <GhostButton label="Cancel" onPress={closeForm} />
               </View>
-            </GradientCard>
+            </Card>
           </>
         ) : null}
 
-        <SectionHeader title="Medical Timeline" action={`${filtered.length} shown`} />
-        <Card style={{ backgroundColor: palette.softNavy }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <IconBubble icon="magnify" tone="navy" />
-            <View style={{ flex: 1 }}>
-              <Field label="Search Records" value={query} onChangeText={setQuery} placeholder="Pet, type, clinic, notes" />
-            </View>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-            {quickFilters.map((type) => <Chip key={type} label={type} active={typeFilter === type} onPress={() => setTypeFilter(type)} tone={type === "All" ? "teal" : recordVisual(type).tone} />)}
-          </ScrollView>
-        </Card>
+        <SectionHeader title="History" action={`${filtered.length} shown`} />
 
         {filtered.length === 0 ? (
           <EmptyState title="No records found" message="Try a different filter or add a new health record." icon="clipboard-search-outline" />
@@ -135,23 +125,17 @@ export default function RecordsScreen() {
             const visual = recordVisual(record.type);
             return (
               <Card key={record.id}>
-                <View style={{ flexDirection: "row", gap: 12 }}>
-                  <TimelineRail tone={visual.tone} />
-                  <View style={{ flex: 1, gap: 12 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <IconBubble icon={visual.icon} tone={visual.tone} />
-                      <View style={{ flex: 1, gap: 3 }}>
-                        <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900" }}>{record.type}</Text>
-                        <Text selectable style={{ color: palette.muted, fontSize: 13, fontWeight: "700" }}>{formatFriendlyDate(record.date)}</Text>
-                      </View>
-                      <PetAvatar pet={pet} size={46} />
-                    </View>
-                    <View style={{ backgroundColor: "#F8FBFD", borderRadius: 18, padding: 12, gap: 4 }}>
-                      <Text selectable style={{ color: palette.text, fontSize: 14, fontWeight: "900" }}>{pet?.name ?? "Pet"}</Text>
-                      <Text selectable style={{ color: palette.muted, fontSize: 13 }}>{record.clinic || "Clinic not set"}</Text>
-                      {record.attachmentUri ? <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>Image attached</Text> : null}
-                    </View>
-                    <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <IconBubble icon={visual.icon} tone={visual.tone} size={54} />
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>{record.type}</Text>
+                    <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{pet?.name ?? "Pet"} • {formatFriendlyDate(record.date)}</Text>
+                    <Text selectable style={{ color: palette.navy, fontSize: 12 }}>{record.clinic || "Clinic not set"}</Text>
+                    {record.attachmentUri ? <Text selectable style={{ color: palette.teal, fontSize: 11, fontWeight: "900" }}>Image attached</Text> : null}
+                  </View>
+                  <View style={{ alignItems: "center" }}>
+                    <PetAvatar pet={pet} size={42} />
+                    <View style={{ flexDirection: "row" }}>
                       <RowAction icon="pencil-outline" onPress={() => startEdit(record)} />
                       <RowAction icon="trash-can-outline" danger onPress={() => Alert.alert("Delete record?", "Linked reminder will also be removed.", [{ text: "Cancel" }, { text: "Delete", style: "destructive", onPress: () => removeRecord(record.id) }])} />
                     </View>

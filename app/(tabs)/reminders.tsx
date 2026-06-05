@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { Calendar } from "react-native-calendars";
-import { Card, Chip, EmptyState, Field, GhostButton, GradientCard, IconBubble, PetAvatar, PrimaryButton, ReminderPill, RowAction, Screen, ScreenIntro, SectionHeader, StatCard } from "@/components/ui";
+import { Card, Chip, EmptyState, Field, GhostButton, IconBubble, PetAvatar, PrimaryButton, ReminderPill, RowAction, Screen, SectionHeader, StatCard } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Reminder, ReminderType } from "@/types/domain";
@@ -61,7 +61,10 @@ export default function RemindersScreen() {
   return (
     <Screen>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
-        <ScreenIntro title="Reminders" subtitle="A calm care queue with clear priority." icon="calendar-clock" />
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Reminders</Text>
+          <IconBubble icon="calendar-month-outline" tone="navy" size={42} />
+        </View>
 
         <View style={{ flexDirection: "row", gap: 10 }}>
           <StatCard label="Today" value={dueToday.length} icon="calendar-today" tone="warning" />
@@ -73,16 +76,6 @@ export default function RemindersScreen() {
           {!showForm ? <PrimaryButton label="Add Reminder" icon="bell-plus-outline" onPress={() => setShowForm(true)} /> : null}
           <GhostButton label={showCalendar ? "Hide Calendar" : "Calendar"} onPress={() => setShowCalendar((value) => !value)} />
         </View>
-
-        <GradientCard variant="calm">
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-            <IconBubble icon="calendar-month-outline" />
-            <View style={{ flex: 1, gap: 4 }}>
-              <Text selectable style={{ color: palette.text, fontSize: 19, fontWeight: "900" }}>Care calendar</Text>
-              <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>Vaccines, medication, appointments, and grooming are color-coded by urgency.</Text>
-            </View>
-          </View>
-        </GradientCard>
 
         {showCalendar ? (
           <Card>
@@ -103,7 +96,7 @@ export default function RemindersScreen() {
         {showForm ? (
           <>
             <SectionHeader title={editingId ? "Edit Reminder" : "Add Reminder"} />
-            <GradientCard variant="calm">
+            <Card>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                 {pets.map((pet) => <Chip key={pet.id} label={pet.name} active={(form.petId || pets[0]?.id) === pet.id} onPress={() => setForm((current) => ({ ...current, petId: pet.id }))} />)}
               </ScrollView>
@@ -117,7 +110,7 @@ export default function RemindersScreen() {
                 <PrimaryButton label={editingId ? "Save" : "Add"} onPress={submit} />
                 <GhostButton label="Cancel" onPress={closeForm} />
               </View>
-            </GradientCard>
+            </Card>
           </>
         ) : null}
 
@@ -142,9 +135,6 @@ export default function RemindersScreen() {
                       <Text selectable style={{ color: palette.muted, fontSize: 13, fontWeight: "700" }}>{pet?.name ?? "Pet"} • {formatFriendlyDate(reminder.dueDate)}</Text>
                     </View>
                     <ReminderPill reminder={reminder} />
-                  </View>
-                  <View style={{ height: 9, borderRadius: 99, backgroundColor: "#EEF2F6", overflow: "hidden" }}>
-                    <View style={{ width: getReminderStatus(reminder) === "Completed" ? "100%" : getReminderStatus(reminder) === "Overdue" ? "92%" : getReminderStatus(reminder) === "Due Today" ? "68%" : "34%", height: "100%", backgroundColor: getReminderStatus(reminder) === "Overdue" ? palette.danger : getReminderStatus(reminder) === "Due Today" ? palette.warning : getReminderStatus(reminder) === "Completed" ? palette.success : palette.teal }} />
                   </View>
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                     <Chip label={reminder.type} tone={statusTone(reminder)} />

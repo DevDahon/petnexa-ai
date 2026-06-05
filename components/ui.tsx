@@ -42,9 +42,9 @@ export function Card({ children, style }: PropsWithChildren<{ style?: ViewStyle 
     <Animated.View entering={FadeInUp.duration(220)} style={{ borderRadius: radii.lg }}>
       <PaperCard
         mode="elevated"
-        style={[{ backgroundColor: palette.card, borderRadius: radii.lg, boxShadow: shadow.md }, style]}
+        style={[{ backgroundColor: palette.card, borderRadius: radii.lg, borderWidth: 1, borderColor: "#E9EEF5", boxShadow: shadow.sm }, style]}
       >
-        <PaperCard.Content style={{ gap: 12, paddingVertical: 16 }}>
+        <PaperCard.Content style={{ gap: 10, paddingVertical: 13, paddingHorizontal: 13 }}>
           {children}
         </PaperCard.Content>
       </PaperCard>
@@ -54,8 +54,8 @@ export function Card({ children, style }: PropsWithChildren<{ style?: ViewStyle 
 
 export function GradientCard({ children, variant = "primary", style }: PropsWithChildren<{ variant?: keyof typeof gradients; style?: ViewStyle }>) {
   return (
-    <Animated.View entering={FadeInUp.duration(260)} style={[{ borderRadius: radii.lg, overflow: "hidden", boxShadow: shadow.lg }, style]}>
-      <LinearGradient colors={gradients[variant]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 18, gap: 14 }}>
+    <Animated.View entering={FadeInUp.duration(260)} style={[{ borderRadius: radii.lg, overflow: "hidden", borderWidth: 1, borderColor: "#E9EEF5", boxShadow: shadow.sm }, style]}>
+      <LinearGradient colors={gradients[variant]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 14, gap: 10 }}>
         {children}
       </LinearGradient>
     </Animated.View>
@@ -73,8 +73,8 @@ export function Panel({ children, style }: PropsWithChildren<{ style?: ViewStyle
 export function SectionHeader({ title, action }: { title: string; action?: string }) {
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", paddingTop: 2 }}>
-      <Text selectable style={{ color: palette.text, fontSize: 20, fontWeight: "900", letterSpacing: 0 }}>{title}</Text>
-      {action ? <Text selectable style={{ color: palette.teal, fontSize: 13, fontWeight: "800" }}>{action}</Text> : null}
+      <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900", letterSpacing: 0 }}>{title}</Text>
+      {action ? <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "800" }}>{action}</Text> : null}
     </View>
   );
 }
@@ -105,13 +105,12 @@ export function ScreenIntro({ title, subtitle, icon }: { title: string; subtitle
 export function StatCard({ label, value, icon, tone = "teal" }: { label: string; value: string | number; icon: IconName; tone?: Tone }) {
   const color = toneColor(tone);
   return (
-    <Surface elevation={1} style={{ flex: 1, minWidth: 96, borderRadius: radii.lg, backgroundColor: toneSoft(tone), padding: 14, gap: 7, boxShadow: shadow.sm }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <MaterialCommunityIcons name={icon} color={color} size={22} />
-        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />
+    <Surface elevation={1} style={{ flex: 1, minWidth: 92, borderRadius: radii.lg, backgroundColor: "#fff", borderWidth: 1, borderColor: toneSoft(tone), padding: 12, gap: 6, alignItems: "center", boxShadow: shadow.sm }}>
+      <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: toneSoft(tone), alignItems: "center", justifyContent: "center" }}>
+        <MaterialCommunityIcons name={icon} color={color} size={18} />
       </View>
-      <Text selectable style={{ color: palette.text, fontSize: 24, fontWeight: "900", fontVariant: ["tabular-nums"] }}>{value}</Text>
-      <Text selectable style={{ color: palette.muted, fontSize: 12, fontWeight: "700" }}>{label}</Text>
+      <Text selectable style={{ color, fontSize: 22, fontWeight: "900", fontVariant: ["tabular-nums"] }}>{value}</Text>
+      <Text selectable style={{ color: palette.text, fontSize: 11, fontWeight: "800", textAlign: "center" }}>{label}</Text>
     </Surface>
   );
 }
@@ -157,7 +156,7 @@ export function PrimaryButton({ label, onPress, icon = "plus", danger, disabled 
       textColor="#fff"
       onPress={onPress}
       style={{ borderRadius: radii.pill, boxShadow: disabled ? undefined : shadow.sm }}
-      contentStyle={{ minHeight: 48, paddingHorizontal: 8 }}
+      contentStyle={{ minHeight: 44, paddingHorizontal: 8 }}
       labelStyle={{ fontWeight: "900", letterSpacing: 0 }}
     >
       {label}
@@ -172,7 +171,7 @@ export function GhostButton({ label, onPress, danger }: { label: string; onPress
       textColor={danger ? palette.danger : palette.text}
       onPress={onPress}
       style={{ borderRadius: radii.pill, borderColor: danger ? palette.danger : palette.border, backgroundColor: "#fff" }}
-      contentStyle={{ minHeight: 44, paddingHorizontal: 6 }}
+      contentStyle={{ minHeight: 42, paddingHorizontal: 6 }}
       labelStyle={{ fontWeight: "900", letterSpacing: 0 }}
     >
       {label}
@@ -190,7 +189,7 @@ export function Field({ label, value, onChangeText, placeholder, multiline, keyb
       placeholder={placeholder}
       multiline={multiline}
       keyboardType={keyboardType}
-      style={{ backgroundColor: "#fff", minHeight: multiline ? 92 : 50 }}
+      style={{ backgroundColor: "#fff", minHeight: multiline ? 88 : 48 }}
       outlineStyle={{ borderRadius: radii.md }}
       outlineColor={palette.border}
       activeOutlineColor={palette.teal}
@@ -206,8 +205,8 @@ export function Chip({ label, active, onPress, tone = "teal", icon }: { label: s
       icon={icon}
       onPress={onPress}
       mode={active ? "flat" : "outlined"}
-      compact={false}
-      textStyle={{ color: active ? "#fff" : color, fontWeight: "900", fontSize: 12 }}
+      compact
+      textStyle={{ color: active ? "#fff" : color, fontWeight: "900", fontSize: 11 }}
       style={{ backgroundColor: active ? color : "#fff", borderColor: color, borderRadius: radii.pill }}
     >
       {label}

@@ -1,8 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { BarChart } from "react-native-gifted-charts";
 import { useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
-import { Card, Chip, EmptyState, Field, GhostButton, GradientCard, IconBubble, PetAvatar, PrimaryButton, Screen, SectionHeader, StatCard } from "@/components/ui";
+import { Card, Chip, EmptyState, Field, GhostButton, IconBubble, PetAvatar, PrimaryButton, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { AI_PROXY_MODE_NOTICE, AI_SAFETY_NOTICE, buildConsultation, ConsultationInput } from "@/services/ai";
@@ -65,36 +64,27 @@ export default function AiAssistantScreen() {
   return (
     <Screen>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
-        <GradientCard variant="secondary">
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-            <View style={{ flex: 1, gap: 8 }}>
-              <Text selectable style={{ color: "#fff", fontSize: 28, fontWeight: "900", letterSpacing: 0 }}>PetNexa AI</Text>
-              <Text selectable style={{ color: "rgba(255,255,255,0.84)", lineHeight: 22 }}>Guided pet-health support with safety checks first.</Text>
-              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                <View style={{ backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}>
-                  <Text selectable style={{ color: "#fff", fontWeight: "900" }}>{creditState.aiCredits}/3 credits</Text>
-                </View>
-                <View style={{ backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}>
-                  <Text selectable style={{ color: "#fff", fontWeight: "900" }}>{creditState.weeklyAdWatchCount}/5 ads</Text>
-                </View>
-              </View>
-            </View>
-            <View style={{ width: 104, height: 104, borderRadius: 32, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" }}>
-              <MaterialCommunityIcons name="robot-happy-outline" color="#fff" size={56} />
-              <View style={{ position: "absolute", right: 10, bottom: 10 }}>
-                <IconBubble icon="heart-pulse" tone="warning" size={36} />
-              </View>
-            </View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text selectable style={{ color: palette.text, fontSize: 27, fontWeight: "900" }}>AI Assistant</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: palette.mint, borderRadius: 14, paddingHorizontal: 9, paddingVertical: 6, backgroundColor: "#fff" }}>
+            <IconBubble icon="ticket-confirmation-outline" size={28} />
+            <Text selectable style={{ color: palette.navy, fontSize: 11, fontWeight: "900" }}>Credits{"\n"}{creditState.aiCredits}/3</Text>
           </View>
-        </GradientCard>
-
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <StatCard label="Credits" value={`${creditState.aiCredits}/3`} icon="ticket-confirmation-outline" />
-          <StatCard label="Used" value={creditState.totalConsultationsUsed} icon="history" tone="navy" />
-          <StatCard label="Ads" value={`${creditState.weeklyAdWatchCount}/5`} icon="play-circle-outline" tone="warning" />
         </View>
 
-        <GradientCard variant="danger">
+        <Card style={{ backgroundColor: palette.softTeal }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <View style={{ flex: 1, gap: 7 }}>
+              <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Ask AI about your pet's health & get guidance</Text>
+              <PrimaryButton label="Start Consultation" icon="arrow-right" onPress={() => setShowForm(true)} />
+            </View>
+            <View style={{ width: 112, height: 112, borderRadius: 28, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" }}>
+              <MaterialCommunityIcons name="robot-happy-outline" color={palette.navy} size={58} />
+            </View>
+          </View>
+        </Card>
+
+        <Card style={{ backgroundColor: palette.softDanger }}>
           <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
             <IconBubble icon="alert-octagon-outline" tone="danger" />
             <View style={{ flex: 1, gap: 4 }}>
@@ -105,7 +95,7 @@ export default function AiAssistantScreen() {
           <View style={{ alignSelf: "flex-start", backgroundColor: palette.danger, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 8 }}>
             <Text selectable style={{ color: "#fff", fontWeight: "900" }}>Emergency care first</Text>
           </View>
-        </GradientCard>
+        </Card>
 
         <Card>
           <View style={{ flexDirection: "row", gap: 10 }}>
@@ -114,15 +104,20 @@ export default function AiAssistantScreen() {
           </View>
         </Card>
 
-        <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-          {!showForm ? <PrimaryButton label="Start Consultation" icon="heart-pulse" onPress={() => setShowForm(true)} /> : null}
-          <GhostButton label="Watch Ad" onPress={watchAd} />
+        <SectionHeader title="Quick Select (Presets)" action="View all" />
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+          {presets.map((item) => (
+            <View key={item} style={{ width: "48%" }}>
+              <Chip label={item} icon={presetIcon(item)} active={preset === item} onPress={() => { setPreset(item); setForm((current) => ({ ...current, symptoms: item })); }} tone={item === "Poisoning" ? "danger" : "teal"} />
+            </View>
+          ))}
         </View>
+        <GhostButton label="Watch Ad" onPress={watchAd} />
 
         {showForm ? (
           <>
             <SectionHeader title="Guided Consultation" action="Step 1 of 3" />
-            <GradientCard variant="calm">
+            <Card>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 {[1, 2, 3].map((step) => <View key={step} style={{ flex: 1, height: 6, borderRadius: 999, backgroundColor: step === 1 ? palette.teal : palette.border }} />)}
               </View>
@@ -130,9 +125,6 @@ export default function AiAssistantScreen() {
                 {pets.map((item) => <Chip key={item.id} label={item.name} active={(pet?.id ?? "") === item.id} onPress={() => setSelectedPetId(item.id)} />)}
               </ScrollView>
               {pet ? <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}><PetAvatar pet={pet} size={52} /><Text selectable style={{ color: palette.text, fontWeight: "900" }}>{pet.name} • {pet.breed}</Text></View> : null}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                {presets.map((item) => <Chip key={item} label={item} icon={presetIcon(item)} active={preset === item} onPress={() => { setPreset(item); setForm((current) => ({ ...current, symptoms: item })); }} tone={item === "Poisoning" ? "danger" : "teal"} />)}
-              </ScrollView>
               <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>What are you noticing?</Text>
               <Field label="What is happening?" value={form.symptoms} multiline onChangeText={(symptoms) => setForm((current) => ({ ...current, symptoms }))} />
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
@@ -153,7 +145,7 @@ export default function AiAssistantScreen() {
                 <PrimaryButton label={busy ? "Checking..." : "Submit"} icon="heart-pulse" onPress={submit} disabled={busy} />
                 <GhostButton label="Cancel" onPress={() => setShowForm(false)} />
               </View>
-            </GradientCard>
+            </Card>
           </>
         ) : null}
 
@@ -176,22 +168,6 @@ export default function AiAssistantScreen() {
             );
           })
         )}
-
-        <Card>
-          <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Usage</Text>
-          <BarChart
-            data={[
-              { value: consultations.length, label: "Used", frontColor: palette.teal },
-              { value: creditState.aiCredits, label: "Left", frontColor: palette.navy },
-            ]}
-            height={96}
-            barWidth={32}
-            spacing={28}
-            hideRules
-            yAxisThickness={0}
-            xAxisColor={palette.border}
-          />
-        </Card>
       </ScrollView>
     </Screen>
   );
