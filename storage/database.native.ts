@@ -104,28 +104,39 @@ export async function deleteVet(id: string) {
   await run("DELETE FROM veterinarians WHERE id = ?", [id]);
 }
 
+function reminderTypeFromRecord(type: HealthRecord["type"]): Reminder["type"] {
+  if (type === "Checkup") return "Appointment";
+  if (type === "Surgery" || type === "Allergy" || type === "Lab Test" || type === "Other") return "Custom";
+  return type;
+}
+
 export async function upsertRecord(record: Omit<HealthRecord, "id" | "createdAt"> & Partial<Pick<HealthRecord, "id" | "createdAt">>) {
   const value: HealthRecord = { ...record, id: record.id ?? createId("record"), createdAt: record.createdAt ?? todayIso() };
   const database = await db();
+  let linkedReminder: Reminder | null = null;
   await database.withTransactionAsync(async () => {
     await database.runAsync("INSERT OR REPLACE INTO health_records (id, data) VALUES (?, ?)", [value.id, JSON.stringify(value)]);
     if (value.nextScheduleDate) {
       const linked = await database.getFirstAsync<{ data: string }>("SELECT data FROM reminders WHERE json_extract(data, '$.linkedRecordId') = ?", [value.id]);
       const reminder: Reminder = linked
-        ? { ...JSON.parse(linked.data), petId: value.petId, type: value.type === "Checkup" ? "Appointment" : value.type, title: value.type, dueDate: value.nextScheduleDate }
+        ? { ...JSON.parse(linked.data), petId: value.petId, type: reminderTypeFromRecord(value.type), title: value.type, dueDate: value.nextScheduleDate }
         : {
             id: createId("reminder"),
             petId: value.petId,
-            type: value.type === "Checkup" ? "Appointment" : value.type === "Surgery" || value.type === "Allergy" || value.type === "Lab Test" || value.type === "Other" ? "Custom" : value.type,
+            type: reminderTypeFromRecord(value.type),
             title: value.type,
             dueDate: value.nextScheduleDate,
             linkedRecordId: value.id,
             notes: "Auto-created from health record next schedule.",
             createdAt: todayIso(),
           };
+      linkedReminder = reminder;
       await database.runAsync("INSERT OR REPLACE INTO reminders (id, data) VALUES (?, ?)", [reminder.id, JSON.stringify(reminder)]);
+    } else {
+      await database.runAsync("DELETE FROM reminders WHERE json_extract(data, '$.linkedRecordId') = ?", [value.id]);
     }
   });
+  return { record: value, linkedReminder };
 }
 
 export async function deleteRecord(id: string) {

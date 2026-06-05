@@ -3,6 +3,9 @@ import { Consultation, Pet, RiskLevel } from "@/types/domain";
 import { createId, todayIso } from "@/utils/date";
 
 export const AI_SAFETY_NOTICE = "This AI assistant provides informational guidance only and does not replace professional veterinary care.";
+export const AI_PROXY_MODE_NOTICE = process.env.EXPO_PUBLIC_AI_PROXY_URL
+  ? "AI consultations are sent through the configured backend proxy. Provider keys must stay on that server."
+  : "AI consultations use the bundled Expo API route for development/testing only. Configure EXPO_PUBLIC_AI_PROXY_URL to use a production backend proxy.";
 
 const emergencyRules = [
   "difficulty breathing",

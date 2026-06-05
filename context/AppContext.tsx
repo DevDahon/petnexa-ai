@@ -6,7 +6,7 @@ import { AppSnapshot, Consultation, HealthRecord, Owner, Pet, Reminder, Settings
 import { initDatabase, getSnapshot, replaceSnapshot, upsertConsultation, upsertCreditState, upsertOwner, upsertPet, upsertRecord, upsertReminder, upsertSettings, upsertVet, deletePet, deleteRecord, deleteReminder, deleteVet } from "@/storage/database";
 import { createId, currentWeekKey, todayIso } from "@/utils/date";
 import { exportBackup, pickBackupFile } from "@/services/backup";
-import { scheduleReminderNotification } from "@/services/notifications";
+import { cancelReminderNotification, scheduleReminderNotification, syncReminderNotifications } from "@/services/notifications";
 
 type AppContextValue = AppSnapshot & {
   ready: boolean;
@@ -73,11 +73,13 @@ export function AppProvider({ children }: PropsWithChildren) {
       await initDatabase();
       await getInstallationId();
       await AsyncStorage.setItem("petnexa_last_opened", new Date().toISOString());
-      await refresh();
+      const current = await getSnapshot();
+      setSnapshot(current);
+      if (current.settings.notificationsEnabled) await syncReminderNotifications(current.reminders);
       setReady(true);
     }
     boot();
-  }, [refresh]);
+  }, []);
 
   const value = useMemo<AppContextValue>(() => ({
     ...snapshot,
@@ -104,7 +106,8 @@ export function AppProvider({ children }: PropsWithChildren) {
       await refresh();
     },
     saveRecord: async (record) => {
-      await upsertRecord(record);
+      const result = await upsertRecord(record);
+      if (snapshot.settings.notificationsEnabled && result?.linkedReminder) await scheduleReminderNotification(result.linkedReminder);
       await refresh();
     },
     removeRecord: async (id) => {
@@ -119,10 +122,12 @@ export function AppProvider({ children }: PropsWithChildren) {
     },
     completeReminder: async (reminder) => {
       await upsertReminder({ ...reminder, completedAt: new Date().toISOString() });
+      if (snapshot.settings.notificationsEnabled) await cancelReminderNotification(reminder.id);
       await refresh();
     },
     removeReminder: async (id) => {
       await deleteReminder(id);
+      if (snapshot.settings.notificationsEnabled) await cancelReminderNotification(id);
       await refresh();
     },
     saveConsultation: async (consultation) => {
@@ -162,6 +167,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     },
     updateSettings: async (settings) => {
       await upsertSettings(settings);
+      await syncReminderNotifications(settings.notificationsEnabled ? snapshot.reminders : []);
       await refresh();
     },
     exportData: async () => exportBackup(await getSnapshot()),
@@ -179,6 +185,7 @@ export function AppProvider({ children }: PropsWithChildren) {
         );
       });
       await replaceSnapshot(backup);
+      await syncReminderNotifications(backup.settings.notificationsEnabled ? backup.reminders : []);
       await refresh();
     },
   }), [ready, refresh, snapshot]);

@@ -20,3 +20,11 @@ export async function requestNotificationAccess() {
 export async function scheduleReminderNotification(reminder: Reminder) {
   return (await notifications()).scheduleReminderNotification(reminder);
 }
+
+export async function cancelReminderNotification(reminderId: string) {
+  return (await notifications()).cancelReminderNotification(reminderId);
+}
+
+export async function syncReminderNotifications(reminders: Reminder[]) {
+  return (await notifications()).syncReminderNotifications(reminders);
+}

@@ -71,9 +71,10 @@ export async function upsertRecord(record: Omit<HealthRecord, "id" | "createdAt"
   const snapshot = await readSnapshot();
   const value: HealthRecord = { ...record, id: record.id ?? createId("record"), createdAt: record.createdAt ?? todayIso() };
   let reminders = snapshot.reminders;
+  let linkedReminder: Reminder | null = null;
   if (value.nextScheduleDate) {
     const existing = reminders.find((item) => item.linkedRecordId === value.id);
-    const linkedReminder: Reminder = existing
+    linkedReminder = existing
       ? { ...existing, petId: value.petId, type: reminderTypeFromRecord(value.type), title: value.type, dueDate: value.nextScheduleDate }
       : {
           id: createId("reminder"),
@@ -85,9 +86,13 @@ export async function upsertRecord(record: Omit<HealthRecord, "id" | "createdAt"
           notes: "Auto-created from health record next schedule.",
           createdAt: todayIso(),
         };
-    reminders = [...reminders.filter((item) => item.id !== linkedReminder.id), linkedReminder];
+    const reminderToSave = linkedReminder;
+    reminders = [...reminders.filter((item) => item.id !== reminderToSave.id), reminderToSave];
+  } else {
+    reminders = reminders.filter((item) => item.linkedRecordId !== value.id);
   }
   await writeSnapshot({ ...snapshot, records: [...snapshot.records.filter((item) => item.id !== value.id), value], reminders });
+  return { record: value, linkedReminder };
 }
 
 export async function deleteRecord(id: string) {

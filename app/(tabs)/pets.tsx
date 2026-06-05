@@ -41,6 +41,13 @@ export default function PetsScreen() {
     if (!result.canceled) setForm((current) => ({ ...current, photoUri: result.assets[0].uri }));
   };
 
+  const takePhoto = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) return Alert.alert("Camera permission needed", "Allow camera access to take a pet profile photo.");
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    if (!result.canceled) setForm((current) => ({ ...current, photoUri: result.assets[0].uri }));
+  };
+
   const startEdit = (pet: Pet) => {
     setEditingId(pet.id);
     setShowForm(true);
@@ -81,7 +88,8 @@ export default function PetsScreen() {
               <Field label="Weight (kg)" value={String(form.weightKg)} keyboardType="numeric" onChangeText={(weightKg) => setForm((current) => ({ ...current, weightKg: Number(weightKg) || 0 }))} />
               <Field label="Notes" value={form.notes} multiline onChangeText={(notes) => setForm((current) => ({ ...current, notes }))} />
               <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-                <GhostButton label="Photo" onPress={pickImage} />
+                <GhostButton label="Gallery" onPress={pickImage} />
+                <GhostButton label="Camera" onPress={takePhoto} />
                 <PrimaryButton label={editing ? "Save" : "Add"} onPress={submit} />
                 <GhostButton label="Cancel" onPress={closeForm} />
               </View>

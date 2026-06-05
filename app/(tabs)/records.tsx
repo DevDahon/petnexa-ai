@@ -54,6 +54,13 @@ export default function RecordsScreen() {
     if (!result.canceled) setForm((current) => ({ ...current, attachmentUri: result.assets[0].uri }));
   };
 
+  const captureAttachment = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) return Alert.alert("Camera permission needed", "Allow camera access to capture a record attachment.");
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    if (!result.canceled) setForm((current) => ({ ...current, attachmentUri: result.assets[0].uri }));
+  };
+
   const closeForm = () => {
     setEditingId(null);
     setShowForm(false);
@@ -87,8 +94,10 @@ export default function RecordsScreen() {
               <Field label="Clinic" value={form.clinic} onChangeText={(clinic) => setForm((current) => ({ ...current, clinic }))} />
               <Field label="Next Schedule" value={form.nextScheduleDate} onChangeText={(nextScheduleDate) => setForm((current) => ({ ...current, nextScheduleDate }))} />
               <Field label="Notes" value={form.notes} multiline onChangeText={(notes) => setForm((current) => ({ ...current, notes }))} />
+              {form.attachmentUri ? <Text selectable style={{ color: palette.teal, fontWeight: "800" }}>Attachment added</Text> : null}
               <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-                <GhostButton label="Attach" onPress={pickAttachment} />
+                <GhostButton label="Gallery" onPress={pickAttachment} />
+                <GhostButton label="Camera" onPress={captureAttachment} />
                 <PrimaryButton label={editingId ? "Save" : "Add"} onPress={submit} />
                 <GhostButton label="Cancel" onPress={closeForm} />
               </View>
@@ -115,6 +124,7 @@ export default function RecordsScreen() {
                     <Text selectable style={{ color: palette.text, fontWeight: "900" }}>{record.type}</Text>
                     <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{pet?.name ?? "Pet"} • {formatFriendlyDate(record.date)}</Text>
                     <Text selectable style={{ color: palette.text, fontSize: 13 }}>{record.clinic || "Clinic not set"}</Text>
+                    {record.attachmentUri ? <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "800" }}>Image attached</Text> : null}
                   </View>
                   <View>
                     <RowAction icon="pencil-outline" onPress={() => startEdit(record)} />

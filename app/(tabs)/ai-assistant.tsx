@@ -5,7 +5,7 @@ import { Alert, ScrollView, Text, View } from "react-native";
 import { Card, Chip, EmptyState, Field, GhostButton, PetAvatar, PrimaryButton, Screen, ScreenIntro, SectionHeader, StatCard } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
-import { AI_SAFETY_NOTICE, buildConsultation, ConsultationInput } from "@/services/ai";
+import { AI_PROXY_MODE_NOTICE, AI_SAFETY_NOTICE, buildConsultation, ConsultationInput } from "@/services/ai";
 
 const presets = ["Vomiting", "Diarrhea", "Not Eating", "Weakness", "Coughing", "Poisoning"];
 
@@ -71,6 +71,13 @@ export default function AiAssistantScreen() {
               <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Emergency signs bypass AI</Text>
               <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>Breathing trouble, seizures, poisoning, severe bleeding, or collapse should go straight to {emergencyVet?.clinicName ?? "your veterinarian"}.</Text>
             </View>
+          </View>
+        </Card>
+
+        <Card>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <MaterialCommunityIcons name="shield-key-outline" color={palette.navy} size={22} />
+            <Text selectable style={{ color: palette.muted, flex: 1, lineHeight: 20 }}>{AI_PROXY_MODE_NOTICE}</Text>
           </View>
         </Card>
 
