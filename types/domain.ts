@@ -114,7 +114,6 @@ export type AiCreditState = {
 export type Settings = {
   notificationsEnabled: boolean;
   dailySummaryTime: string;
-  optionalCloudSyncEnabled: boolean;
 };
 
 export type AppSnapshot = {

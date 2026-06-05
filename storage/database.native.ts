@@ -22,6 +22,13 @@ async function first<T>(sql: string, params: SQLite.SQLiteBindParams = []) {
   return (await db()).getFirstAsync<T>(sql, params);
 }
 
+function normalizeSettings(value: Partial<Settings> | null | undefined): Settings {
+  return {
+    notificationsEnabled: value?.notificationsEnabled ?? sampleData.settings.notificationsEnabled,
+    dailySummaryTime: value?.dailySummaryTime ?? sampleData.settings.dailySummaryTime,
+  };
+}
+
 export async function initDatabase() {
   const database = await db();
   await database.execAsync(`
@@ -47,6 +54,7 @@ export async function getSnapshot(): Promise<AppSnapshot> {
   const ownerRow = await first<{ data: string }>("SELECT data FROM owners LIMIT 1");
   const settingsRow = await first<{ data: string }>("SELECT data FROM settings WHERE id = ?", ["settings"]);
   const creditRow = await first<{ data: string }>("SELECT data FROM ai_credit_state WHERE id = ?", ["credits"]);
+  const parsedSettings = settingsRow ? JSON.parse(settingsRow.data) as Partial<Settings> : null;
   return {
     owner: ownerRow ? JSON.parse(ownerRow.data) : sampleData.owner,
     pets: (await all<{ data: string }>("SELECT data FROM pets")).map((row) => JSON.parse(row.data)),
@@ -55,7 +63,7 @@ export async function getSnapshot(): Promise<AppSnapshot> {
     reminders: (await all<{ data: string }>("SELECT data FROM reminders")).map((row) => JSON.parse(row.data)),
     consultations: (await all<{ data: string }>("SELECT data FROM consultations")).map((row) => JSON.parse(row.data)),
     creditState: creditRow ? JSON.parse(creditRow.data) : sampleData.creditState,
-    settings: settingsRow ? JSON.parse(settingsRow.data) : sampleData.settings,
+    settings: normalizeSettings(parsedSettings),
   };
 }
 
@@ -66,7 +74,7 @@ export async function replaceSnapshot(snapshot: AppSnapshot) {
       await database.runAsync(`DELETE FROM ${table}`);
     }
     await database.runAsync("INSERT INTO owners (id, data) VALUES (?, ?)", [snapshot.owner.id, JSON.stringify(snapshot.owner)]);
-    await database.runAsync("INSERT INTO settings (id, data) VALUES (?, ?)", ["settings", JSON.stringify(snapshot.settings)]);
+    await database.runAsync("INSERT INTO settings (id, data) VALUES (?, ?)", ["settings", JSON.stringify(normalizeSettings(snapshot.settings))]);
     await database.runAsync("INSERT INTO ai_credit_state (id, data) VALUES (?, ?)", ["credits", JSON.stringify(snapshot.creditState)]);
     for (const pet of snapshot.pets) await database.runAsync("INSERT INTO pets (id, data) VALUES (?, ?)", [pet.id, JSON.stringify(pet)]);
     for (const vet of snapshot.veterinarians) await database.runAsync("INSERT INTO veterinarians (id, data) VALUES (?, ?)", [vet.id, JSON.stringify(vet)]);
@@ -161,7 +169,7 @@ export async function upsertConsultation(consultation: Consultation) {
 }
 
 export async function upsertSettings(settings: Settings) {
-  await run("INSERT OR REPLACE INTO settings (id, data) VALUES (?, ?)", ["settings", JSON.stringify(settings)]);
+  await run("INSERT OR REPLACE INTO settings (id, data) VALUES (?, ?)", ["settings", JSON.stringify(normalizeSettings(settings))]);
 }
 
 export async function upsertCreditState(creditState: AiCreditState) {

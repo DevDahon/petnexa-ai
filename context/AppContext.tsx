@@ -40,7 +40,7 @@ const emptySnapshot: AppSnapshot = {
   reminders: [],
   consultations: [],
   creditState: { aiCredits: 3, starterCreditsGranted: true, weeklyAdWatchCount: 0, lastWeeklyResetDate: todayIso(), totalConsultationsUsed: 0 },
-  settings: { notificationsEnabled: true, dailySummaryTime: "08:00", optionalCloudSyncEnabled: false },
+  settings: { notificationsEnabled: true, dailySummaryTime: "08:00" },
 };
 
 async function getInstallationId() {

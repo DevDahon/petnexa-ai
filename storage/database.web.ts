@@ -5,14 +5,24 @@ import { createId, todayIso } from "@/utils/date";
 
 const STORAGE_KEY = "petnexa_web_snapshot";
 
+function normalizeSnapshot(snapshot: AppSnapshot): AppSnapshot {
+  return {
+    ...snapshot,
+    settings: {
+      notificationsEnabled: snapshot.settings?.notificationsEnabled ?? sampleData.settings.notificationsEnabled,
+      dailySummaryTime: snapshot.settings?.dailySummaryTime ?? sampleData.settings.dailySummaryTime,
+    },
+  };
+}
+
 async function readSnapshot(): Promise<AppSnapshot> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
   if (!raw) return sampleData;
-  return JSON.parse(raw) as AppSnapshot;
+  return normalizeSnapshot(JSON.parse(raw) as AppSnapshot);
 }
 
 async function writeSnapshot(snapshot: AppSnapshot) {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeSnapshot(snapshot)));
 }
 
 export async function initDatabase() {
