@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { Calendar } from "react-native-calendars";
-import { Card, Chip, EmptyState, Field, GhostButton, PetAvatar, PrimaryButton, ReminderPill, RowAction, Screen, ScreenIntro, SectionHeader, StatCard } from "@/components/ui";
+import { Card, Chip, EmptyState, Field, GhostButton, GradientCard, IconBubble, PetAvatar, PrimaryButton, ReminderPill, RowAction, Screen, ScreenIntro, SectionHeader, StatCard } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Reminder, ReminderType } from "@/types/domain";
@@ -9,6 +9,14 @@ import { formatFriendlyDate, getReminderStatus, todayIso } from "@/utils/date";
 
 const reminderTypes: ReminderType[] = ["Vaccination", "Deworming", "Medication", "Appointment", "Grooming", "Custom"];
 const emptyReminder = { petId: "", type: "Vaccination" as ReminderType, title: "", dueDate: todayIso(), notes: "" };
+
+function statusTone(reminder: Reminder) {
+  const value = getReminderStatus(reminder);
+  if (value === "Overdue") return "danger" as const;
+  if (value === "Due Today") return "warning" as const;
+  if (value === "Completed") return "success" as const;
+  return "teal" as const;
+}
 
 export default function RemindersScreen() {
   const { pets, reminders, saveReminder, completeReminder, removeReminder } = useAppData();
@@ -53,7 +61,7 @@ export default function RemindersScreen() {
   return (
     <Screen>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
-        <ScreenIntro title="Reminders" subtitle="Focus on what needs attention next." icon="calendar-clock" />
+        <ScreenIntro title="Reminders" subtitle="A calm care queue with clear priority." icon="calendar-clock" />
 
         <View style={{ flexDirection: "row", gap: 10 }}>
           <StatCard label="Today" value={dueToday.length} icon="calendar-today" tone="warning" />
@@ -62,9 +70,19 @@ export default function RemindersScreen() {
         </View>
 
         <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-          {!showForm ? <PrimaryButton label="Add Reminder" onPress={() => setShowForm(true)} /> : null}
+          {!showForm ? <PrimaryButton label="Add Reminder" icon="bell-plus-outline" onPress={() => setShowForm(true)} /> : null}
           <GhostButton label={showCalendar ? "Hide Calendar" : "Calendar"} onPress={() => setShowCalendar((value) => !value)} />
         </View>
+
+        <GradientCard variant="calm">
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <IconBubble icon="calendar-month-outline" />
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text selectable style={{ color: palette.text, fontSize: 19, fontWeight: "900" }}>Care calendar</Text>
+              <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>Vaccines, medication, appointments, and grooming are color-coded by urgency.</Text>
+            </View>
+          </View>
+        </GradientCard>
 
         {showCalendar ? (
           <Card>
@@ -85,7 +103,7 @@ export default function RemindersScreen() {
         {showForm ? (
           <>
             <SectionHeader title={editingId ? "Edit Reminder" : "Add Reminder"} />
-            <Card>
+            <GradientCard variant="calm">
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                 {pets.map((pet) => <Chip key={pet.id} label={pet.name} active={(form.petId || pets[0]?.id) === pet.id} onPress={() => setForm((current) => ({ ...current, petId: pet.id }))} />)}
               </ScrollView>
@@ -99,7 +117,7 @@ export default function RemindersScreen() {
                 <PrimaryButton label={editingId ? "Save" : "Add"} onPress={submit} />
                 <GhostButton label="Cancel" onPress={closeForm} />
               </View>
-            </Card>
+            </GradientCard>
           </>
         ) : null}
 
@@ -115,17 +133,26 @@ export default function RemindersScreen() {
             const pet = pets.find((item) => item.id === reminder.petId);
             return (
               <Card key={reminder.id}>
-                <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
-                  <PetAvatar pet={pet} size={52} />
-                  <View style={{ flex: 1, gap: 3 }}>
-                    <Text selectable style={{ color: palette.text, fontWeight: "900" }}>{reminder.title}</Text>
-                    <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{pet?.name ?? "Pet"} • {formatFriendlyDate(reminder.dueDate)}</Text>
+                <View style={{ gap: 12 }}>
+                  <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+                    <View style={{ width: 5, alignSelf: "stretch", borderRadius: 99, backgroundColor: getReminderStatus(reminder) === "Overdue" ? palette.danger : getReminderStatus(reminder) === "Due Today" ? palette.warning : getReminderStatus(reminder) === "Completed" ? palette.success : palette.teal }} />
+                    <PetAvatar pet={pet} size={58} />
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900" }}>{reminder.title}</Text>
+                      <Text selectable style={{ color: palette.muted, fontSize: 13, fontWeight: "700" }}>{pet?.name ?? "Pet"} • {formatFriendlyDate(reminder.dueDate)}</Text>
+                    </View>
+                    <ReminderPill reminder={reminder} />
                   </View>
-                  <ReminderPill reminder={reminder} />
-                  <View>
-                    {!reminder.completedAt ? <RowAction icon="check-circle-outline" onPress={() => completeReminder(reminder)} /> : null}
-                    <RowAction icon="pencil-outline" onPress={() => startEdit(reminder)} />
-                    <RowAction icon="trash-can-outline" danger onPress={() => Alert.alert("Delete reminder?", "This removes the local reminder.", [{ text: "Cancel" }, { text: "Delete", style: "destructive", onPress: () => removeReminder(reminder.id) }])} />
+                  <View style={{ height: 9, borderRadius: 99, backgroundColor: "#EEF2F6", overflow: "hidden" }}>
+                    <View style={{ width: getReminderStatus(reminder) === "Completed" ? "100%" : getReminderStatus(reminder) === "Overdue" ? "92%" : getReminderStatus(reminder) === "Due Today" ? "68%" : "34%", height: "100%", backgroundColor: getReminderStatus(reminder) === "Overdue" ? palette.danger : getReminderStatus(reminder) === "Due Today" ? palette.warning : getReminderStatus(reminder) === "Completed" ? palette.success : palette.teal }} />
+                  </View>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <Chip label={reminder.type} tone={statusTone(reminder)} />
+                    <View style={{ flexDirection: "row" }}>
+                      {!reminder.completedAt ? <RowAction icon="check-circle-outline" onPress={() => completeReminder(reminder)} /> : null}
+                      <RowAction icon="pencil-outline" onPress={() => startEdit(reminder)} />
+                      <RowAction icon="trash-can-outline" danger onPress={() => Alert.alert("Delete reminder?", "This removes the local reminder.", [{ text: "Cancel" }, { text: "Delete", style: "destructive", onPress: () => removeReminder(reminder.id) }])} />
+                    </View>
                   </View>
                 </View>
               </Card>
