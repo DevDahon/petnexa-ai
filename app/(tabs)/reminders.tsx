@@ -125,7 +125,7 @@ export default function RemindersScreen() {
           filtered.slice(0, 12).map((reminder) => {
             const pet = pets.find((item) => item.id === reminder.petId);
             return (
-              <Card key={reminder.id}>
+              <Card key={reminder.id} style={{ backgroundColor: getReminderStatus(reminder) === "Overdue" ? palette.softDanger : getReminderStatus(reminder) === "Due Today" ? palette.softYellow : "#fff" }}>
                 <View style={{ gap: 12 }}>
                   <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
                     <View style={{ width: 5, alignSelf: "stretch", borderRadius: 99, backgroundColor: getReminderStatus(reminder) === "Overdue" ? palette.danger : getReminderStatus(reminder) === "Due Today" ? palette.warning : getReminderStatus(reminder) === "Completed" ? palette.success : palette.teal }} />

@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ScrollView, Text, View } from "react-native";
-import { Card, EmptyState, HeaderAppIcon, IconBubble, PetAvatar, ReminderPill, Screen, SectionHeader, StatCard } from "@/components/ui";
+import { Card, EmptyState, GradientCard, HeaderAppIcon, IconBubble, PetAvatar, ReminderPill, Screen, SectionHeader, StatCard } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { calculateAge, formatFriendlyDate, getReminderStatus } from "@/utils/date";
@@ -18,6 +18,7 @@ export default function HomeScreen() {
   const overdue = reminders.filter((item) => getReminderStatus(item) === "Overdue");
   const upcoming = reminders.filter((item) => getReminderStatus(item) === "Upcoming");
   const nextReminder = [...due, ...upcoming][0];
+  const ownerName = owner.fullName.split(" ")[0] || "Pet Parent";
 
   return (
     <Screen>
@@ -25,24 +26,28 @@ export default function HomeScreen() {
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <View>
             <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Home</Text>
-            <Text selectable style={{ color: palette.text, fontSize: 15, fontWeight: "800" }}>{greeting()}, {owner.fullName.split(" ")[0] || "John"}!</Text>
-            <Text selectable style={{ color: palette.muted, fontSize: 12 }}>Here's what's happening today.</Text>
+            <Text selectable style={{ color: palette.text, fontSize: 15, fontWeight: "800" }}>{greeting()}, {ownerName}!</Text>
+            <Text selectable style={{ color: palette.muted, fontSize: 12 }}>Your pet care overview for today.</Text>
           </View>
           <View style={{ flexDirection: "row", gap: 6 }}>
             <HeaderAppIcon size={46} />
           </View>
         </View>
 
-        <Card style={{ borderColor: palette.mint }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-            <IconBubble icon="heart-pulse" size={50} />
-            <View style={{ flex: 1 }}>
-              <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Care Summary</Text>
-              <Text selectable style={{ color: palette.navy, fontSize: 24, fontWeight: "900", fontVariant: ["tabular-nums"] }}>{pets.length} pets</Text>
-              <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{records.length} health records saved</Text>
+        <GradientCard variant="primary">
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <View style={{ flex: 1, gap: 7 }}>
+              <Text selectable style={{ color: "#fff", fontSize: 13, fontWeight: "800" }}>PetNexa AI Care Summary</Text>
+              <Text selectable style={{ color: "#fff", fontSize: 24, lineHeight: 31, fontWeight: "900" }}>
+                {pets.length} {pets.length === 1 ? "pet" : "pets"} with {due.length + overdue.length} care {due.length + overdue.length === 1 ? "item" : "items"} needing attention
+              </Text>
+              <Text selectable style={{ color: "rgba(255,255,255,0.84)", fontSize: 13 }}>{records.length} health records saved locally</Text>
+            </View>
+            <View style={{ width: 68, height: 68, borderRadius: 22, backgroundColor: "rgba(255,255,255,0.22)", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.42)" }}>
+              <MaterialCommunityIcons name="heart-pulse" color="#fff" size={38} />
             </View>
           </View>
-        </Card>
+        </GradientCard>
 
         <View style={{ flexDirection: "row", gap: 10 }}>
           <StatCard label="Due Today" value={due.length} icon="calendar-alert" tone="warning" />
@@ -54,7 +59,7 @@ export default function HomeScreen() {
         {pets.length ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
             {pets.slice(0, 3).map((pet) => (
-              <Card key={pet.id} style={{ width: 118 }}>
+              <Card key={pet.id} style={{ width: 124 }}>
                 <View style={{ alignItems: "center", gap: 7 }}>
                   <PetAvatar pet={pet} size={64} />
                   <Text selectable style={{ color: palette.text, fontWeight: "900", fontSize: 14 }}>{pet.name}</Text>

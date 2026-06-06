@@ -126,12 +126,16 @@ export default function RecordsScreen() {
             return (
               <Card key={record.id}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <View style={{ width: 5, alignSelf: "stretch", borderRadius: 99, backgroundColor: visual.tone === "danger" ? palette.danger : visual.tone === "warning" ? palette.warning : visual.tone === "navy" ? palette.navy : palette.teal }} />
                   <IconBubble icon={visual.icon} tone={visual.tone} size={54} />
                   <View style={{ flex: 1, gap: 4 }}>
                     <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>{record.type}</Text>
                     <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{pet?.name ?? "Pet"} • {formatFriendlyDate(record.date)}</Text>
                     <Text selectable style={{ color: palette.navy, fontSize: 12 }}>{record.clinic || "Clinic not set"}</Text>
-                    {record.attachmentUri ? <Text selectable style={{ color: palette.teal, fontSize: 11, fontWeight: "900" }}>Image attached</Text> : null}
+                    <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+                      <Chip label={record.type} tone={visual.tone} />
+                      {record.attachmentUri ? <Chip label="Image" icon="image-outline" active tone="teal" /> : null}
+                    </View>
                   </View>
                   <View style={{ alignItems: "center" }}>
                     <PetAvatar pet={pet} size={42} />

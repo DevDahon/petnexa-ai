@@ -62,9 +62,9 @@ export function Card({ children, style }: PropsWithChildren<{ style?: ViewStyle 
     <Animated.View entering={FadeInUp.duration(220)} style={{ borderRadius: radii.lg }}>
       <PaperCard
         mode="elevated"
-        style={[{ backgroundColor: palette.card, borderRadius: radii.lg, borderWidth: 1, borderColor: "#E9EEF5", boxShadow: shadow.sm }, style]}
+        style={[{ backgroundColor: palette.card, borderRadius: radii.lg, borderWidth: 1, borderColor: "#E8EEF4", boxShadow: shadow.sm }, style]}
       >
-        <PaperCard.Content style={{ gap: 10, paddingVertical: 13, paddingHorizontal: 13 }}>
+        <PaperCard.Content style={{ gap: 12, paddingVertical: 15, paddingHorizontal: 15 }}>
           {children}
         </PaperCard.Content>
       </PaperCard>
@@ -74,8 +74,8 @@ export function Card({ children, style }: PropsWithChildren<{ style?: ViewStyle 
 
 export function GradientCard({ children, variant = "primary", style }: PropsWithChildren<{ variant?: keyof typeof gradients; style?: ViewStyle }>) {
   return (
-    <Animated.View entering={FadeInUp.duration(260)} style={[{ borderRadius: radii.lg, overflow: "hidden", borderWidth: 1, borderColor: "#E9EEF5", boxShadow: shadow.sm }, style]}>
-      <LinearGradient colors={gradients[variant]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 14, gap: 10 }}>
+    <Animated.View entering={FadeInUp.duration(260)} style={[{ borderRadius: radii.xl, overflow: "hidden", borderWidth: 1, borderColor: "#DDEEEB", boxShadow: shadow.md }, style]}>
+      <LinearGradient colors={gradients[variant]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 18, gap: 12 }}>
         {children}
       </LinearGradient>
     </Animated.View>
@@ -84,7 +84,7 @@ export function GradientCard({ children, variant = "primary", style }: PropsWith
 
 export function Panel({ children, style }: PropsWithChildren<{ style?: ViewStyle }>) {
   return (
-    <Surface elevation={1} style={[{ backgroundColor: palette.card, borderRadius: radii.lg, padding: 16, gap: 12, boxShadow: shadow.sm }, style]}>
+    <Surface elevation={1} style={[{ backgroundColor: palette.card, borderRadius: radii.lg, padding: 16, gap: 12, boxShadow: shadow.sm, borderWidth: 1, borderColor: "#E8EEF4" }, style]}>
       {children}
     </Surface>
   );
@@ -92,8 +92,8 @@ export function Panel({ children, style }: PropsWithChildren<{ style?: ViewStyle
 
 export function SectionHeader({ title, action }: { title: string; action?: string }) {
   return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", paddingTop: 2 }}>
-      <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900", letterSpacing: 0 }}>{title}</Text>
+    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", paddingTop: 4 }}>
+      <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900", letterSpacing: 0 }}>{title}</Text>
       {action ? <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "800" }}>{action}</Text> : null}
     </View>
   );
@@ -102,7 +102,7 @@ export function SectionHeader({ title, action }: { title: string; action?: strin
 export function IconBubble({ icon, tone = "teal", size = 46 }: { icon: IconName; tone?: Tone; size?: number }) {
   const color = toneColor(tone);
   return (
-    <View style={{ width: size, height: size, borderRadius: radii.pill, backgroundColor: toneSoft(tone), alignItems: "center", justifyContent: "center" }}>
+    <View style={{ width: size, height: size, borderRadius: radii.pill, backgroundColor: toneSoft(tone), alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.78)" }}>
       <MaterialCommunityIcons name={icon} color={color} size={Math.round(size * 0.5)} />
     </View>
   );
@@ -113,7 +113,7 @@ export function HeaderAppIcon({ size = 42 }: { size?: number }) {
     <NativeImage
       source={require("../assets/images/icon.png")}
       resizeMode="cover"
-      style={{ width: size, height: size, borderRadius: Math.round(size * 0.3), backgroundColor: "#fff", borderWidth: 1, borderColor: palette.border }}
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.32), backgroundColor: "#fff", borderWidth: 1, borderColor: "#DDEEEB" }}
     />
   );
 }
@@ -171,7 +171,7 @@ export function RowAction({ icon, onPress, danger }: { icon: IconName; onPress: 
       size={20}
       iconColor={danger ? palette.danger : palette.muted}
       onPress={onPress}
-      style={{ margin: 0, backgroundColor: danger ? palette.softDanger : "#F7FAFC" }}
+      style={{ margin: 0, backgroundColor: danger ? palette.softDanger : "#F7FAFC", borderWidth: 1, borderColor: danger ? "#FED7D7" : palette.border }}
     />
   );
 }
@@ -186,8 +186,8 @@ export function PrimaryButton({ label, onPress, icon = "plus", danger, disabled 
       textColor="#fff"
       onPress={onPress}
       style={{ borderRadius: radii.pill, boxShadow: disabled ? undefined : shadow.sm }}
-      contentStyle={{ minHeight: 44, paddingHorizontal: 8 }}
-      labelStyle={{ fontWeight: "900", letterSpacing: 0 }}
+      contentStyle={{ minHeight: 46, paddingHorizontal: 12 }}
+      labelStyle={{ fontWeight: "900", letterSpacing: 0, fontSize: 13 }}
     >
       {label}
     </Button>
@@ -201,8 +201,8 @@ export function GhostButton({ label, onPress, danger }: { label: string; onPress
       textColor={danger ? palette.danger : palette.text}
       onPress={onPress}
       style={{ borderRadius: radii.pill, borderColor: danger ? palette.danger : palette.border, backgroundColor: "#fff" }}
-      contentStyle={{ minHeight: 42, paddingHorizontal: 6 }}
-      labelStyle={{ fontWeight: "900", letterSpacing: 0 }}
+      contentStyle={{ minHeight: 44, paddingHorizontal: 10 }}
+      labelStyle={{ fontWeight: "900", letterSpacing: 0, fontSize: 13 }}
     >
       {label}
     </Button>
@@ -238,7 +238,7 @@ export function Chip({ label, active, onPress, tone = "teal", icon }: { label: s
       mode={active ? "flat" : "outlined"}
       compact
       textStyle={{ color: active ? "#fff" : color, fontWeight: "900", fontSize: 11 }}
-      style={{ backgroundColor: active ? color : "#fff", borderColor: color, borderRadius: radii.pill }}
+      style={{ backgroundColor: active ? color : "#fff", borderColor: active ? color : toneSoft(tone), borderRadius: radii.pill }}
     >
       {label}
     </PaperChip>

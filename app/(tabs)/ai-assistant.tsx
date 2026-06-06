@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
-import { Card, Chip, EmptyState, Field, GhostButton, HeaderAppIcon, IconBubble, PetAvatar, PrimaryButton, Screen, SectionHeader } from "@/components/ui";
+import { Card, Chip, EmptyState, Field, GhostButton, GradientCard, HeaderAppIcon, IconBubble, PetAvatar, PrimaryButton, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { AI_SAFETY_NOTICE, buildConsultation, ConsultationInput } from "@/services/ai";
@@ -72,17 +72,18 @@ export default function AiAssistantScreen() {
           </View>
         </View>
 
-        <Card style={{ backgroundColor: palette.softTeal }}>
+        <GradientCard variant="calm">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
             <View style={{ flex: 1, gap: 7 }}>
-              <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Ask AI about your pet's health & get guidance</Text>
+              <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>Guided pet-care notes</Text>
+              <Text selectable style={{ color: palette.text, fontSize: 20, lineHeight: 26, fontWeight: "900" }}>Ask AI about your pet's health and get organized guidance.</Text>
               <PrimaryButton label="Start Consultation" icon="arrow-right" onPress={() => setShowForm(true)} />
             </View>
-            <View style={{ width: 112, height: 112, borderRadius: 28, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" }}>
+            <View style={{ width: 112, height: 112, borderRadius: 30, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#DDEEEB" }}>
               <MaterialCommunityIcons name="robot-happy-outline" color={palette.navy} size={58} />
             </View>
           </View>
-        </Card>
+        </GradientCard>
 
         <Card style={{ backgroundColor: palette.softDanger }}>
           <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>

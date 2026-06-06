@@ -118,14 +118,18 @@ export default function PetsScreen() {
             const petRecords = records.filter((record) => record.petId === pet.id);
             const petReminders = reminders.filter((reminder) => reminder.petId === pet.id);
             return (
-              <Card key={pet.id}>
+              <Card key={pet.id} style={{ backgroundColor: pet.species === "Cat" ? palette.softPeach : "#fff" }}>
                 <View style={{ flexDirection: "row", gap: 13, alignItems: "center" }}>
                   <PetAvatar pet={pet} size={78} />
                   <View style={{ flex: 1, gap: 4 }}>
                     <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900" }}>{pet.name}</Text>
                     <Text selectable style={{ color: palette.muted, fontSize: 13 }}>{pet.breed || pet.species}</Text>
-                    <Text selectable style={{ color: palette.navy, fontSize: 12 }}>{calculateAge(pet.birthday)} • {pet.weightKg} kg</Text>
-                    <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>{petRecords.length} records • {petReminders.length} reminders</Text>
+                    <Text selectable style={{ color: palette.navy, fontSize: 12, fontWeight: "800" }}>{calculateAge(pet.birthday)} • {pet.weightKg} kg</Text>
+                    <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+                      <Chip label={getLifeStage(pet.birthday, pet.species)} active tone="teal" />
+                      <Chip label={`${petRecords.length} records`} tone="navy" />
+                      <Chip label={`${petReminders.length} care`} tone="warning" />
+                    </View>
                   </View>
                   <View>
                     <RowAction icon="pencil-outline" onPress={() => startEdit(pet)} />

@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
+import { View } from "react-native";
 import { palette } from "@/constants/theme";
 
 type MaterialIconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
@@ -32,9 +33,9 @@ export default function TabLayout() {
             backgroundColor: "#fff",
             borderTopColor: "#E4E7EC",
             borderTopWidth: 1,
-            height: 72,
-            paddingTop: 6,
-            paddingBottom: 8,
+            height: 78,
+            paddingTop: 8,
+            paddingBottom: 10,
           },
           tabBarItemStyle: {
             flex: 1,
@@ -48,11 +49,13 @@ export default function TabLayout() {
             letterSpacing: 0,
           },
           tabBarIcon: ({ color, focused }) => (
-            <MaterialCommunityIcons
-              name={icon}
-              color={color}
-              size={focused ? 24 : 22}
-            />
+            <View style={{ width: 34, height: 28, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: focused ? palette.softTeal : "transparent" }}>
+              <MaterialCommunityIcons
+                name={icon}
+                color={color}
+                size={focused ? 23 : 21}
+              />
+            </View>
           ),
         };
       }}

@@ -8,7 +8,7 @@ export const palette = {
   mint: "#A7E3D5",
   peach: "#FFB384",
   yellow: "#FFD166",
-  background: "#F8FBFD",
+  background: "#F4F8FA",
   card: "#FFFFFF",
   text: "#0B1F4D",
   muted: "#667085",
@@ -24,16 +24,18 @@ export const palette = {
 };
 
 export const radii = {
-  sm: 10,
-  md: 14,
-  lg: 18,
+  sm: 12,
+  md: 16,
+  lg: 22,
+  xl: 26,
   pill: 999,
 };
 
 export const shadow = {
-  sm: "0 4px 12px rgba(30, 58, 138, 0.06)",
-  md: "0 8px 22px rgba(30, 58, 138, 0.08)",
-  lg: "0 12px 28px rgba(30, 58, 138, 0.10)",
+  xs: "0 2px 8px rgba(30, 58, 138, 0.05)",
+  sm: "0 6px 16px rgba(30, 58, 138, 0.07)",
+  md: "0 10px 26px rgba(30, 58, 138, 0.10)",
+  lg: "0 16px 34px rgba(30, 58, 138, 0.12)",
 };
 
 export const gradients = {
@@ -46,7 +48,7 @@ export const gradients = {
 
 export const paperTheme = {
   ...MD3LightTheme,
-  roundness: 18,
+  roundness: 22,
   fonts: configureFonts({
     config: {
       fontFamily: "System",
