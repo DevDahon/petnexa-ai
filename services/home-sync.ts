@@ -1,3 +1,6 @@
+import { makeRedirectUri } from "expo-auth-session";
+import * as QueryParams from "expo-auth-session/build/QueryParams";
+import * as WebBrowser from "expo-web-browser";
 import { AppSnapshot, HealthRecord, Pet, Reminder, Settings, SyncMetadata, Veterinarian } from "@/types/domain";
 import { supabase } from "@/utils/supabase";
 
@@ -158,6 +161,50 @@ export async function signInWithEmailOtp(email: string) {
 export async function verifyOtp(email: string, token: string) {
   const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: token.trim(), type: "email" });
   if (error) throw error;
+}
+
+async function createSessionFromOAuthUrl(url: string) {
+  const { params, errorCode } = QueryParams.getQueryParams(url);
+  if (errorCode) throw new Error(errorCode);
+
+  const accessToken = params.access_token;
+  const refreshToken = params.refresh_token;
+  if (accessToken && refreshToken) {
+    const { error } = await supabase.auth.setSession({
+      access_token: String(accessToken),
+      refresh_token: String(refreshToken),
+    });
+    if (error) throw error;
+    return;
+  }
+
+  const code = params.code;
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(String(code));
+    if (error) throw error;
+    return;
+  }
+
+  throw new Error("Google login did not return a session.");
+}
+
+export async function signInWithGoogle() {
+  if (process.env.EXPO_OS === "web") WebBrowser.maybeCompleteAuthSession();
+  const redirectTo = makeRedirectUri({ scheme: "petnexaai", path: "auth/callback" });
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo,
+      skipBrowserRedirect: true,
+      scopes: "openid email profile",
+    },
+  });
+  if (error) throw error;
+  if (!data?.url) throw new Error("Google login URL was not created.");
+
+  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+  if (result.type !== "success") throw new Error("Google login was cancelled.");
+  await createSessionFromOAuthUrl(result.url);
 }
 
 export async function signOutHome() {

@@ -18,7 +18,7 @@ function validateOwnerProfile(fullName: string, birthday: string) {
 }
 
 export function OwnerOnboarding() {
-  const { owner, settings, saveOwner, chooseSoloMode, sendHomeOtp, verifyHomeOtp, createHomeAccount, joinHomeAccount } = useAppData();
+  const { owner, settings, saveOwner, chooseSoloMode, sendHomeOtp, verifyHomeOtp, signInHomeWithGoogle, createHomeAccount, joinHomeAccount } = useAppData();
   const [fullName, setFullName] = useState(owner.fullName);
   const [birthday, setBirthday] = useState(owner.birthday);
   const [email, setEmail] = useState("");
@@ -81,6 +81,20 @@ export function OwnerOnboarding() {
       setMessage("Email verified. Create or join a Home account.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Verification failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const continueWithGoogle = async () => {
+    setBusy(true);
+    try {
+      await signInHomeWithGoogle();
+      setVerified(true);
+      setOtpSent(false);
+      setMessage("Google account connected. Create or join a Home account.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Google login failed.");
     } finally {
       setBusy(false);
     }
@@ -166,6 +180,8 @@ export function OwnerOnboarding() {
                 <Card>
                   <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900" }}>Home Furparent</Text>
                   <Text selectable style={{ color: palette.muted, lineHeight: 21 }}>Share pet care with your household across devices.</Text>
+                  <PrimaryButton label={busy ? "Opening Google..." : "Continue with Google"} icon="google" disabled={busy} onPress={continueWithGoogle} />
+                  <Text selectable style={{ color: palette.muted, fontSize: 12, fontWeight: "800", textAlign: "center" }}>or use email verification</Text>
                   <Field label="Email" value={email} keyboardType="email-address" onChangeText={(text) => { setEmail(text); setMessage(""); }} />
                   {otpSent ? <Field label="Verification Code" value={otp} onChangeText={(text) => { setOtp(text); setMessage(""); }} /> : null}
                   <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>

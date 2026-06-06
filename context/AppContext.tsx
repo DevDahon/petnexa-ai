@@ -7,7 +7,7 @@ import { initDatabase, getSnapshot, replaceSnapshot, upsertConsultation, upsertC
 import { createId, currentWeekKey, todayIso } from "@/utils/date";
 import { exportBackup, pickBackupFile } from "@/services/backup";
 import { cancelReminderNotification, scheduleReminderNotification, syncReminderNotifications } from "@/services/notifications";
-import { createHome, joinHome, signInWithEmailOtp, signOutHome, softDeleteCloudEntity, syncNow, verifyOtp } from "@/services/home-sync";
+import { createHome, joinHome, signInWithEmailOtp, signInWithGoogle, signOutHome, softDeleteCloudEntity, syncNow, verifyOtp } from "@/services/home-sync";
 
 type AppContextValue = AppSnapshot & {
   ready: boolean;
@@ -30,6 +30,7 @@ type AppContextValue = AppSnapshot & {
   chooseSoloMode: () => Promise<void>;
   sendHomeOtp: (email: string) => Promise<void>;
   verifyHomeOtp: (email: string, token: string) => Promise<void>;
+  signInHomeWithGoogle: () => Promise<void>;
   createHomeAccount: (name: string) => Promise<void>;
   joinHomeAccount: (inviteCode: string) => Promise<void>;
   logoutHomeAccount: () => Promise<void>;
@@ -231,6 +232,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     },
     sendHomeOtp: async (email) => signInWithEmailOtp(email),
     verifyHomeOtp: async (email, token) => verifyOtp(email, token),
+    signInHomeWithGoogle: async () => signInWithGoogle(),
     createHomeAccount: async (name) => {
       const home = await createHome(name || `${snapshot.owner.fullName.split(" ")[0] || "PetNexa"} Home`, snapshot.owner.fullName);
       const current = await getSnapshot();
