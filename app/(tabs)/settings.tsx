@@ -47,7 +47,7 @@ function SettingsRow({ title, subtitle, icon, active, onPress }: { title: string
 }
 
 export default function SettingsScreen() {
-  const { owner, settings, veterinarians, saveVet, removeVet, updateSettings, syncHomeNow, exportData, restoreDataReplaceMode } = useAppData();
+  const { owner, settings, veterinarians, saveVet, removeVet, updateSettings, syncHomeNow, logoutHomeAccount, exportData, restoreDataReplaceMode } = useAppData();
   const [section, setSection] = useState<Section>("vets");
   const [vetForm, setVetForm] = useState(emptyVet);
   const [editingVetId, setEditingVetId] = useState<string | null>(null);
@@ -91,6 +91,27 @@ export default function SettingsScreen() {
     }
   };
 
+  const logoutHome = () => {
+    Alert.alert(
+      "Log out of Home?",
+      "This signs out this device and stops Home sync. Local cached care data will stay on this device.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Log Out",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await logoutHomeAccount();
+            } catch (error) {
+              Alert.alert("Logout failed", error instanceof Error ? error.message : "Please try again.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <Screen>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
@@ -126,6 +147,7 @@ export default function SettingsScreen() {
               </View>
               <RowAction icon="sync" onPress={manualSync} />
             </View>
+            <GhostButton label="Log Out" danger onPress={logoutHome} />
           </Card>
         ) : null}
 

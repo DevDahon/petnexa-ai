@@ -160,6 +160,11 @@ export async function verifyOtp(email: string, token: string) {
   if (error) throw error;
 }
 
+export async function signOutHome() {
+  const { error } = await supabase.auth.signOut({ scope: "local" });
+  if (error) throw error;
+}
+
 export async function getCurrentUserId() {
   const { data, error } = await supabase.auth.getUser();
   if (error) throw error;

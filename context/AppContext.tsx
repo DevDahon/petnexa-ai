@@ -7,7 +7,7 @@ import { initDatabase, getSnapshot, replaceSnapshot, upsertConsultation, upsertC
 import { createId, currentWeekKey, todayIso } from "@/utils/date";
 import { exportBackup, pickBackupFile } from "@/services/backup";
 import { cancelReminderNotification, scheduleReminderNotification, syncReminderNotifications } from "@/services/notifications";
-import { createHome, joinHome, signInWithEmailOtp, softDeleteCloudEntity, syncNow, verifyOtp } from "@/services/home-sync";
+import { createHome, joinHome, signInWithEmailOtp, signOutHome, softDeleteCloudEntity, syncNow, verifyOtp } from "@/services/home-sync";
 
 type AppContextValue = AppSnapshot & {
   ready: boolean;
@@ -32,6 +32,7 @@ type AppContextValue = AppSnapshot & {
   verifyHomeOtp: (email: string, token: string) => Promise<void>;
   createHomeAccount: (name: string) => Promise<void>;
   joinHomeAccount: (inviteCode: string) => Promise<void>;
+  logoutHomeAccount: () => Promise<void>;
   syncHomeNow: () => Promise<void>;
   exportData: () => Promise<string>;
   restoreDataReplaceMode: () => Promise<void>;
@@ -254,6 +255,24 @@ export function AppProvider({ children }: PropsWithChildren) {
       const synced = await syncNow(emptyHomeSnapshot);
       await replaceSnapshot(synced);
       setSnapshot(synced);
+    },
+    logoutHomeAccount: async () => {
+      await signOutHome();
+      const current = await getSnapshot();
+      const next: AppSnapshot = {
+        ...current,
+        settings: {
+          ...current.settings,
+          careMode: null,
+          syncEnabled: false,
+          homeId: undefined,
+          homeName: undefined,
+          homeInviteCode: undefined,
+          lastSyncAt: undefined,
+        },
+      };
+      await replaceSnapshot(next);
+      setSnapshot(next);
     },
     syncHomeNow: async () => {
       const synced = await syncIfEnabled();
