@@ -219,10 +219,11 @@ export function Field({ label, value, onChangeText, placeholder, multiline, keyb
 
 export function Chip({ label, active, onPress, tone = "teal", icon }: { label: string; active?: boolean; onPress?: () => void; tone?: Tone; icon?: IconName }) {
   const color = toneColor(tone);
+  const chipIcon = icon ? ({ size }: { color: string; size: number }) => <MaterialCommunityIcons name={icon} color={active ? "#fff" : color} size={size} /> : undefined;
   return (
     <PaperChip
       selected={active}
-      icon={icon}
+      icon={chipIcon}
       onPress={onPress}
       mode={active ? "flat" : "outlined"}
       compact
