@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { Card, Chip, Field, GhostButton, IconBubble, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
 import { appInfo } from "@/constants/app";
-import { MIN_OWNER_AGE } from "@/constants/owner";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Veterinarian } from "@/types/domain";
@@ -22,10 +21,9 @@ const emptyVet = {
   isPrimary: false,
 };
 
-type Section = "profile" | "vets" | "backup" | "about";
+type Section = "vets" | "backup" | "about";
 
 const sections: { id: Section; title: string; subtitle: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"] }[] = [
-  { id: "profile", title: "Owner Profile", subtitle: "Name and birthday", icon: "account-heart-outline" },
   { id: "vets", title: "Veterinarians", subtitle: "Clinics and emergency contacts", icon: "hospital-building" },
   { id: "backup", title: "Backup & Restore", subtitle: "Export or replace local data", icon: "database-sync-outline" },
   { id: "about", title: "About PetNexa AI", subtitle: "Purpose, version, developer", icon: "information-outline" },
@@ -49,27 +47,11 @@ function SettingsRow({ title, subtitle, icon, active, onPress }: { title: string
 }
 
 export default function SettingsScreen() {
-  const { owner, settings, veterinarians, saveOwner, saveVet, removeVet, updateSettings, exportData, restoreDataReplaceMode } = useAppData();
-  const [section, setSection] = useState<Section>("profile");
-  const [ownerForm, setOwnerForm] = useState(owner);
+  const { owner, settings, veterinarians, saveVet, removeVet, updateSettings, exportData, restoreDataReplaceMode } = useAppData();
+  const [section, setSection] = useState<Section>("vets");
   const [vetForm, setVetForm] = useState(emptyVet);
   const [editingVetId, setEditingVetId] = useState<string | null>(null);
   const [showVetForm, setShowVetForm] = useState(false);
-
-  useEffect(() => {
-    setOwnerForm(owner);
-  }, [owner]);
-
-  const submitOwner = async () => {
-    const fullName = ownerForm.fullName.trim();
-    const birthday = ownerForm.birthday.trim();
-    if (!fullName) return Alert.alert("Name required", "Enter the owner name PetNexa AI should use in greetings.");
-    if (!isValidIsoDate(birthday)) return Alert.alert("Birthday required", "Enter a valid birthday using YYYY-MM-DD.");
-    if (getAgeYears(birthday) < MIN_OWNER_AGE) return Alert.alert("Age restriction", `PetNexa AI requires the owner to be at least ${MIN_OWNER_AGE} years old.`);
-    await saveOwner({ id: ownerForm.id, fullName, birthday });
-    setOwnerForm({ id: ownerForm.id, fullName, birthday });
-    Alert.alert("Owner profile saved");
-  };
 
   const submitVet = async () => {
     if (!vetForm.clinicName.trim()) return Alert.alert("Clinic name required");
@@ -129,17 +111,6 @@ export default function SettingsScreen() {
             <SettingsRow key={item.id} title={item.title} subtitle={item.subtitle} icon={item.icon} active={section === item.id} onPress={() => setSection(item.id)} />
           ))}
         </View>
-
-        {section === "profile" ? (
-          <>
-            <SectionHeader title="Owner Profile" />
-            <Card>
-              <Field label="Full Name" value={ownerForm.fullName} onChangeText={(fullName) => setOwnerForm((current) => ({ ...current, fullName }))} />
-              <Field label="Birthday" value={ownerForm.birthday} placeholder="YYYY-MM-DD" onChangeText={(birthday) => setOwnerForm((current) => ({ ...current, birthday }))} />
-              <PrimaryButton label="Save Profile" icon="content-save-outline" onPress={submitOwner} />
-            </Card>
-          </>
-        ) : null}
 
         {section === "vets" ? (
           <>
