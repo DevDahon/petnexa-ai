@@ -1,0 +1,4 @@
+project_id = "petnexa-ai"
+
+[functions.consultation]
+verify_jwt = false
