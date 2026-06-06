@@ -12,7 +12,7 @@ import { getAgeYears, isValidIsoDate } from "@/utils/date";
 SplashScreen.preventAutoHideAsync();
 
 function RootStack() {
-  const { ready, owner } = useAppData();
+  const { ready, owner, settings } = useAppData();
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
@@ -20,7 +20,7 @@ function RootStack() {
 
   if (!ready) return null;
 
-  const ownerCanProceed = owner.fullName.trim() && isValidIsoDate(owner.birthday) && getAgeYears(owner.birthday) >= MIN_OWNER_AGE;
+  const ownerCanProceed = owner.fullName.trim() && isValidIsoDate(owner.birthday) && getAgeYears(owner.birthday) >= MIN_OWNER_AGE && settings.careMode;
   if (!ownerCanProceed) return <OwnerOnboarding />;
 
   return (

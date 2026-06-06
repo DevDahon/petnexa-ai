@@ -20,6 +20,12 @@ function normalizeSnapshot(snapshot: AppSnapshot): AppSnapshot {
     settings: {
       notificationsEnabled: snapshot.settings?.notificationsEnabled ?? sampleData.settings.notificationsEnabled,
       dailySummaryTime: snapshot.settings?.dailySummaryTime ?? sampleData.settings.dailySummaryTime,
+      careMode: snapshot.settings?.careMode ?? sampleData.settings.careMode,
+      homeId: snapshot.settings?.homeId,
+      homeName: snapshot.settings?.homeName,
+      homeInviteCode: snapshot.settings?.homeInviteCode,
+      syncEnabled: snapshot.settings?.syncEnabled ?? sampleData.settings.syncEnabled,
+      lastSyncAt: snapshot.settings?.lastSyncAt,
     },
   };
 }

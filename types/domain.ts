@@ -13,6 +13,17 @@ export type RecordType =
 export type ReminderType = "Vaccination" | "Deworming" | "Medication" | "Appointment" | "Grooming" | "Custom";
 export type ReminderStatus = "Upcoming" | "Due Today" | "Overdue" | "Completed";
 export type RiskLevel = "Mild" | "Moderate" | "Severe" | "Emergency";
+export type CareMode = "solo" | "home";
+export type SyncStatus = "synced" | "pending" | "error";
+
+export type SyncMetadata = {
+  homeId?: string;
+  updatedAt?: string;
+  deletedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  syncStatus?: SyncStatus;
+};
 
 export type Owner = {
   id: string;
@@ -20,7 +31,7 @@ export type Owner = {
   birthday: string;
 };
 
-export type Pet = {
+export type Pet = SyncMetadata & {
   id: string;
   name: string;
   species: PetSpecies;
@@ -32,11 +43,12 @@ export type Pet = {
   microchipNumber?: string;
   notes: string;
   photoUri?: string;
+  photoStoragePath?: string;
   assignedVetId?: string;
   createdAt: string;
 };
 
-export type Veterinarian = {
+export type Veterinarian = SyncMetadata & {
   id: string;
   clinicName: string;
   veterinarianName: string;
@@ -51,7 +63,7 @@ export type Veterinarian = {
   createdAt: string;
 };
 
-export type HealthRecord = {
+export type HealthRecord = SyncMetadata & {
   id: string;
   petId: string;
   type: RecordType;
@@ -60,11 +72,12 @@ export type HealthRecord = {
   clinic: string;
   notes: string;
   attachmentUri?: string;
+  attachmentStoragePath?: string;
   nextScheduleDate?: string;
   createdAt: string;
 };
 
-export type Reminder = {
+export type Reminder = SyncMetadata & {
   id: string;
   petId: string;
   type: ReminderType;
@@ -108,6 +121,12 @@ export type AiCreditState = {
 export type Settings = {
   notificationsEnabled: boolean;
   dailySummaryTime: string;
+  careMode: CareMode | null;
+  homeId?: string;
+  homeName?: string;
+  homeInviteCode?: string;
+  syncEnabled: boolean;
+  lastSyncAt?: string;
 };
 
 export type AppSnapshot = {

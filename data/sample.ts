@@ -188,5 +188,7 @@ export const sampleData: AppSnapshot = {
   settings: {
     notificationsEnabled: true,
     dailySummaryTime: "08:00",
+    careMode: null,
+    syncEnabled: false,
   },
 };

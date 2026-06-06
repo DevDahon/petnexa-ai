@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
-import { KeyboardAvoidingView, ScrollView, Text, View } from "react-native";
-import { Card, Field, PrimaryButton, BrandMark } from "@/components/ui";
+import { Alert, KeyboardAvoidingView, ScrollView, Text, View } from "react-native";
+import { Card, Field, GhostButton, PrimaryButton, BrandMark } from "@/components/ui";
 import { MIN_OWNER_AGE } from "@/constants/owner";
 import { gradients, palette, radii, shadow } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
@@ -18,24 +18,108 @@ function validateOwnerProfile(fullName: string, birthday: string) {
 }
 
 export function OwnerOnboarding() {
-  const { owner, saveOwner } = useAppData();
+  const { owner, settings, saveOwner, chooseSoloMode, sendHomeOtp, verifyHomeOtp, createHomeAccount, joinHomeAccount } = useAppData();
   const [fullName, setFullName] = useState(owner.fullName);
   const [birthday, setBirthday] = useState(owner.birthday);
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [homeName, setHomeName] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [verified, setVerified] = useState(false);
   const [message, setMessage] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  const continueToApp = async () => {
+  const ownerIsValid = fullName.trim() && isValidIsoDate(birthday) && getAgeYears(birthday) >= MIN_OWNER_AGE;
+  const needsProfile = !ownerIsValid;
+  const needsMode = ownerIsValid && !settings.careMode;
+
+  const saveProfile = async () => {
     const validation = validateOwnerProfile(fullName, birthday);
     if (validation) {
       setMessage(validation);
       return;
     }
-    setSaving(true);
+    setBusy(true);
     try {
       await saveOwner({ id: owner.id, fullName: fullName.trim(), birthday: birthday.trim() });
+      setMessage("");
     } finally {
-      setSaving(false);
+      setBusy(false);
     }
+  };
+
+  const startSolo = async () => {
+    setBusy(true);
+    try {
+      await chooseSoloMode();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const requestOtp = async () => {
+    if (!email.trim()) return setMessage("Enter your email address.");
+    setBusy(true);
+    try {
+      await sendHomeOtp(email);
+      setOtpSent(true);
+      setMessage("Check your email for the verification code.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not send verification code.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmOtp = async () => {
+    if (!otp.trim()) return setMessage("Enter the verification code from your email.");
+    setBusy(true);
+    try {
+      await verifyHomeOtp(email, otp);
+      setVerified(true);
+      setMessage("Email verified. Create or join a Home account.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Verification failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const createHome = async () => {
+    setBusy(true);
+    try {
+      await createHomeAccount(homeName || `${fullName.split(" ")[0] || "PetNexa"} Home`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not create Home account.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const joinHome = async () => {
+    if (!inviteCode.trim()) return setMessage("Enter the Home invite code.");
+    Alert.alert(
+      "Join existing Home?",
+      "Joining a Home will replace this device's local care data with the shared Home data after sync.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Join Home",
+          style: "destructive",
+          onPress: async () => {
+            setBusy(true);
+            try {
+              await joinHomeAccount(inviteCode);
+            } catch (error) {
+              setMessage(error instanceof Error ? error.message : "Could not join Home account.");
+            } finally {
+              setBusy(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -45,36 +129,61 @@ export function OwnerOnboarding() {
           <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 22, gap: 20 }}>
             <View style={{ alignItems: "center", gap: 8 }}>
               <BrandMark />
-              <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900", textAlign: "center" }}>Set up your owner profile</Text>
+              <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900", textAlign: "center" }}>{needsProfile ? "Set up your owner profile" : "Choose your care mode"}</Text>
               <Text selectable style={{ color: palette.muted, fontSize: 14, lineHeight: 22, textAlign: "center", maxWidth: 330 }}>
-                PetNexa AI needs your name for greetings and your birthday to confirm age eligibility.
+                {needsProfile ? "PetNexa AI needs your name for greetings and your birthday to confirm age eligibility." : "Use PetNexa AI solo on this device or sync shared pet care with your household."}
               </Text>
             </View>
 
-            <Card style={{ borderRadius: 24, boxShadow: shadow.md }}>
-              <View style={{ gap: 12 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                  <View style={{ width: 46, height: 46, borderRadius: radii.pill, backgroundColor: palette.softTeal, alignItems: "center", justifyContent: "center" }}>
-                    <MaterialCommunityIcons name="account-heart-outline" color={palette.teal} size={25} />
+            {needsProfile ? (
+              <Card style={{ borderRadius: 24, boxShadow: shadow.md }}>
+                <View style={{ gap: 12 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                    <View style={{ width: 46, height: 46, borderRadius: radii.pill, backgroundColor: palette.softTeal, alignItems: "center", justifyContent: "center" }}>
+                      <MaterialCommunityIcons name="account-heart-outline" color={palette.teal} size={25} />
+                    </View>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Owner Details</Text>
+                      <Text selectable style={{ color: palette.muted, fontSize: 12 }}>Required before entering the app</Text>
+                    </View>
                   </View>
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Owner Details</Text>
-                    <Text selectable style={{ color: palette.muted, fontSize: 12 }}>Required before entering the app</Text>
-                  </View>
+                  <Field label="Full Name" value={fullName} onChangeText={(text) => { setFullName(text); setMessage(""); }} />
+                  <Field label="Birthday" value={birthday} placeholder="YYYY-MM-DD" onChangeText={(text) => { setBirthday(text); setMessage(""); }} />
+                  {message ? <Text selectable style={{ color: palette.danger, fontSize: 13, fontWeight: "800", lineHeight: 19 }}>{message}</Text> : null}
+                  <PrimaryButton label={busy ? "Saving..." : "Continue"} icon="arrow-right" disabled={busy} onPress={saveProfile} />
                 </View>
+              </Card>
+            ) : null}
 
-                <Field label="Full Name" value={fullName} onChangeText={(text) => { setFullName(text); setMessage(""); }} />
-                <Field label="Birthday" value={birthday} placeholder="YYYY-MM-DD" onChangeText={(text) => { setBirthday(text); setMessage(""); }} />
+            {needsMode ? (
+              <>
+                <Card style={{ backgroundColor: palette.softTeal, borderColor: palette.mint }}>
+                  <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900" }}>Solo Furparent</Text>
+                  <Text selectable style={{ color: palette.muted, lineHeight: 21 }}>Keep PetNexa AI private on this device. No sign-in required.</Text>
+                  <PrimaryButton label="Use Solo Mode" icon="cellphone" disabled={busy} onPress={startSolo} />
+                </Card>
 
-                {message ? (
-                  <View style={{ backgroundColor: palette.softDanger, borderRadius: radii.md, padding: 12 }}>
-                    <Text selectable style={{ color: palette.danger, fontSize: 13, fontWeight: "800", lineHeight: 19 }}>{message}</Text>
+                <Card>
+                  <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900" }}>Home Furparent</Text>
+                  <Text selectable style={{ color: palette.muted, lineHeight: 21 }}>Share pet care with your household across devices.</Text>
+                  <Field label="Email" value={email} keyboardType="email-address" onChangeText={(text) => { setEmail(text); setMessage(""); }} />
+                  {otpSent ? <Field label="Verification Code" value={otp} onChangeText={(text) => { setOtp(text); setMessage(""); }} /> : null}
+                  <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
+                    {!otpSent ? <GhostButton label={busy ? "Sending..." : "Send Code"} onPress={requestOtp} /> : null}
+                    {otpSent && !verified ? <PrimaryButton label={busy ? "Verifying..." : "Verify Email"} icon="email-check-outline" disabled={busy} onPress={confirmOtp} /> : null}
                   </View>
-                ) : null}
-
-                <PrimaryButton label={saving ? "Saving..." : "Continue"} icon="arrow-right" disabled={saving} onPress={continueToApp} />
-              </View>
-            </Card>
+                  {verified ? (
+                    <>
+                      <Field label="Home Name" value={homeName} placeholder="Garcia Fur Home" onChangeText={setHomeName} />
+                      <PrimaryButton label="Create Home" icon="home-plus-outline" disabled={busy} onPress={createHome} />
+                      <Field label="Invite Code" value={inviteCode} placeholder="ABC12345" onChangeText={setInviteCode} />
+                      <GhostButton label="Join Existing Home" onPress={joinHome} />
+                    </>
+                  ) : null}
+                  {message ? <Text selectable style={{ color: message.includes("Check") || message.includes("verified") ? palette.teal : palette.danger, fontSize: 13, fontWeight: "800", lineHeight: 19 }}>{message}</Text> : null}
+                </Card>
+              </>
+            ) : null}
           </ScrollView>
         </KeyboardAvoidingView>
       </LinearGradient>

@@ -1,12 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import React, { createContext, PropsWithChildren, useCallback, useEffect, useMemo, useState } from "react";
-import { Alert } from "react-native";
-import { AppSnapshot, Consultation, HealthRecord, Owner, Pet, Reminder, Settings, Veterinarian } from "@/types/domain";
+import { Alert, AppState } from "react-native";
+import { AppSnapshot, Consultation, HealthRecord, Owner, Pet, Reminder, Settings, SyncMetadata, Veterinarian } from "@/types/domain";
 import { initDatabase, getSnapshot, replaceSnapshot, upsertConsultation, upsertCreditState, upsertOwner, upsertPet, upsertRecord, upsertReminder, upsertSettings, upsertVet, deletePet, deleteRecord, deleteReminder, deleteVet } from "@/storage/database";
 import { createId, currentWeekKey, todayIso } from "@/utils/date";
 import { exportBackup, pickBackupFile } from "@/services/backup";
 import { cancelReminderNotification, scheduleReminderNotification, syncReminderNotifications } from "@/services/notifications";
+import { createHome, joinHome, signInWithEmailOtp, softDeleteCloudEntity, syncNow, verifyOtp } from "@/services/home-sync";
 
 type AppContextValue = AppSnapshot & {
   ready: boolean;
@@ -26,6 +27,12 @@ type AppContextValue = AppSnapshot & {
   deductAiCredit: () => Promise<void>;
   watchRewardedAd: () => Promise<string>;
   updateSettings: (settings: Settings) => Promise<void>;
+  chooseSoloMode: () => Promise<void>;
+  sendHomeOtp: (email: string) => Promise<void>;
+  verifyHomeOtp: (email: string, token: string) => Promise<void>;
+  createHomeAccount: (name: string) => Promise<void>;
+  joinHomeAccount: (inviteCode: string) => Promise<void>;
+  syncHomeNow: () => Promise<void>;
   exportData: () => Promise<string>;
   restoreDataReplaceMode: () => Promise<void>;
 };
@@ -40,7 +47,7 @@ const emptySnapshot: AppSnapshot = {
   reminders: [],
   consultations: [],
   creditState: { aiCredits: 3, starterCreditsGranted: true, weeklyAdWatchCount: 0, lastWeeklyResetDate: todayIso(), totalConsultationsUsed: 0 },
-  settings: { notificationsEnabled: true, dailySummaryTime: "08:00" },
+  settings: { notificationsEnabled: true, dailySummaryTime: "08:00", careMode: null, syncEnabled: false },
 };
 
 async function getInstallationId() {
@@ -68,6 +75,25 @@ export function AppProvider({ children }: PropsWithChildren) {
     setSnapshot(await getSnapshot());
   }, []);
 
+  const syncIfEnabled = useCallback(async (base?: AppSnapshot) => {
+    const current = base ?? await getSnapshot();
+    if (current.settings.careMode !== "home" || !current.settings.syncEnabled || !current.settings.homeId) return current;
+    const synced = await syncNow(current);
+    await replaceSnapshot(synced);
+    setSnapshot(synced);
+    return synced;
+  }, []);
+
+  const markPending = useCallback(<T extends SyncMetadata>(value: T): T => {
+    if (snapshot.settings.careMode !== "home" || !snapshot.settings.homeId) return value;
+    return {
+      ...value,
+      homeId: snapshot.settings.homeId,
+      updatedAt: new Date().toISOString(),
+      syncStatus: "pending",
+    };
+  }, [snapshot.settings.careMode, snapshot.settings.homeId]);
+
   useEffect(() => {
     async function boot() {
       await initDatabase();
@@ -76,10 +102,22 @@ export function AppProvider({ children }: PropsWithChildren) {
       const current = await getSnapshot();
       setSnapshot(current);
       if (current.settings.notificationsEnabled) await syncReminderNotifications(current.reminders);
+      try {
+        await syncIfEnabled(current);
+      } catch {
+        // Home sync should never block local app startup.
+      }
       setReady(true);
     }
     boot();
-  }, []);
+  }, [syncIfEnabled]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") syncIfEnabled().catch(() => undefined);
+    });
+    return () => subscription.remove();
+  }, [syncIfEnabled]);
 
   const value = useMemo<AppContextValue>(() => ({
     ...snapshot,
@@ -90,42 +128,58 @@ export function AppProvider({ children }: PropsWithChildren) {
       await refresh();
     },
     savePet: async (pet) => {
-      await upsertPet(pet);
+      await upsertPet(markPending(pet));
       await refresh();
+      await syncIfEnabled().catch(() => undefined);
     },
     removePet: async (id) => {
+      if (snapshot.settings.careMode === "home") {
+        await softDeleteCloudEntity("pets", snapshot.settings.homeId, id).catch(() => undefined);
+        await Promise.all(snapshot.records.filter((item) => item.petId === id).map((item) => softDeleteCloudEntity("records", snapshot.settings.homeId, item.id))).catch(() => undefined);
+        await Promise.all(snapshot.reminders.filter((item) => item.petId === id).map((item) => softDeleteCloudEntity("reminders", snapshot.settings.homeId, item.id))).catch(() => undefined);
+      }
       await deletePet(id);
       await refresh();
     },
     saveVet: async (vet) => {
-      await upsertVet(vet);
+      await upsertVet(markPending(vet));
       await refresh();
+      await syncIfEnabled().catch(() => undefined);
     },
     removeVet: async (id) => {
+      if (snapshot.settings.careMode === "home") await softDeleteCloudEntity("veterinarians", snapshot.settings.homeId, id).catch(() => undefined);
       await deleteVet(id);
       await refresh();
     },
     saveRecord: async (record) => {
-      const result = await upsertRecord(record);
+      const result = await upsertRecord(markPending(record));
       if (snapshot.settings.notificationsEnabled && result?.linkedReminder) await scheduleReminderNotification(result.linkedReminder);
       await refresh();
+      await syncIfEnabled().catch(() => undefined);
     },
     removeRecord: async (id) => {
+      if (snapshot.settings.careMode === "home") {
+        await softDeleteCloudEntity("records", snapshot.settings.homeId, id).catch(() => undefined);
+        await Promise.all(snapshot.reminders.filter((item) => item.linkedRecordId === id).map((item) => softDeleteCloudEntity("reminders", snapshot.settings.homeId, item.id))).catch(() => undefined);
+      }
       await deleteRecord(id);
       await refresh();
     },
     saveReminder: async (reminder) => {
-      const saved = { ...reminder, id: reminder.id ?? createId("reminder"), createdAt: reminder.createdAt ?? todayIso() };
+      const saved = markPending({ ...reminder, id: reminder.id ?? createId("reminder"), createdAt: reminder.createdAt ?? todayIso() });
       await upsertReminder(saved);
       if (snapshot.settings.notificationsEnabled) await scheduleReminderNotification(saved);
       await refresh();
+      await syncIfEnabled().catch(() => undefined);
     },
     completeReminder: async (reminder) => {
-      await upsertReminder({ ...reminder, completedAt: new Date().toISOString() });
+      await upsertReminder(markPending({ ...reminder, completedAt: new Date().toISOString() }));
       if (snapshot.settings.notificationsEnabled) await cancelReminderNotification(reminder.id);
       await refresh();
+      await syncIfEnabled().catch(() => undefined);
     },
     removeReminder: async (id) => {
+      if (snapshot.settings.careMode === "home") await softDeleteCloudEntity("reminders", snapshot.settings.homeId, id).catch(() => undefined);
       await deleteReminder(id);
       if (snapshot.settings.notificationsEnabled) await cancelReminderNotification(id);
       await refresh();
@@ -170,6 +224,42 @@ export function AppProvider({ children }: PropsWithChildren) {
       await syncReminderNotifications(settings.notificationsEnabled ? snapshot.reminders : []);
       await refresh();
     },
+    chooseSoloMode: async () => {
+      await upsertSettings({ ...snapshot.settings, careMode: "solo", syncEnabled: false });
+      await refresh();
+    },
+    sendHomeOtp: async (email) => signInWithEmailOtp(email),
+    verifyHomeOtp: async (email, token) => verifyOtp(email, token),
+    createHomeAccount: async (name) => {
+      const home = await createHome(name || `${snapshot.owner.fullName.split(" ")[0] || "PetNexa"} Home`, snapshot.owner.fullName);
+      const current = await getSnapshot();
+      const next: AppSnapshot = {
+        ...current,
+        settings: { ...current.settings, careMode: "home", syncEnabled: true, homeId: home.homeId, homeName: home.homeName ?? name, homeInviteCode: home.inviteCode },
+      };
+      await replaceSnapshot(next);
+      await syncIfEnabled(next);
+    },
+    joinHomeAccount: async (inviteCode) => {
+      const home = await joinHome(inviteCode, snapshot.owner.fullName);
+      const current = await getSnapshot();
+      const emptyHomeSnapshot: AppSnapshot = {
+        ...current,
+        pets: [],
+        veterinarians: [],
+        records: [],
+        reminders: [],
+        settings: { ...current.settings, careMode: "home", syncEnabled: true, homeId: home.homeId, homeName: home.homeName },
+      };
+      const synced = await syncNow(emptyHomeSnapshot);
+      await replaceSnapshot(synced);
+      setSnapshot(synced);
+    },
+    syncHomeNow: async () => {
+      const synced = await syncIfEnabled();
+      await replaceSnapshot(synced);
+      setSnapshot(synced);
+    },
     exportData: async () => exportBackup(await getSnapshot()),
     restoreDataReplaceMode: async () => {
       const backup = await pickBackupFile();
@@ -188,7 +278,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       await syncReminderNotifications(backup.settings.notificationsEnabled ? backup.reminders : []);
       await refresh();
     },
-  }), [ready, refresh, snapshot]);
+  }), [markPending, ready, refresh, snapshot, syncIfEnabled]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

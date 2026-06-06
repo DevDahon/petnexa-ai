@@ -47,7 +47,7 @@ function SettingsRow({ title, subtitle, icon, active, onPress }: { title: string
 }
 
 export default function SettingsScreen() {
-  const { owner, settings, veterinarians, saveVet, removeVet, updateSettings, exportData, restoreDataReplaceMode } = useAppData();
+  const { owner, settings, veterinarians, saveVet, removeVet, updateSettings, syncHomeNow, exportData, restoreDataReplaceMode } = useAppData();
   const [section, setSection] = useState<Section>("vets");
   const [vetForm, setVetForm] = useState(emptyVet);
   const [editingVetId, setEditingVetId] = useState<string | null>(null);
@@ -82,6 +82,15 @@ export default function SettingsScreen() {
     }
   };
 
+  const manualSync = async () => {
+    try {
+      await syncHomeNow();
+      Alert.alert("Sync complete", "Home care data is up to date.");
+    } catch (error) {
+      Alert.alert("Sync failed", error instanceof Error ? error.message : "Please try again when online.");
+    }
+  };
+
   return (
     <Screen>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
@@ -101,10 +110,24 @@ export default function SettingsScreen() {
               <Text selectable style={{ color: palette.muted, fontSize: 12 }}>
                 {isValidIsoDate(owner.birthday) ? `Owner age: ${getAgeYears(owner.birthday)}` : "Birthday not set"}
               </Text>
-              <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>{veterinarians.length} veterinary contacts saved</Text>
+              <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>{settings.careMode === "home" ? `Home Furparent${settings.homeName ? ` • ${settings.homeName}` : ""}` : "Solo Furparent"} • {veterinarians.length} vets</Text>
             </View>
           </View>
         </Card>
+
+        {settings.careMode === "home" ? (
+          <Card>
+            <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+              <IconBubble icon="home-heart" size={46} />
+              <View style={{ flex: 1, gap: 3 }}>
+                <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>{settings.homeName || "Home Account"}</Text>
+                <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{settings.lastSyncAt ? `Last sync: ${settings.lastSyncAt}` : "Not synced yet"}</Text>
+                {settings.homeInviteCode ? <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>Invite code: {settings.homeInviteCode}</Text> : null}
+              </View>
+              <RowAction icon="sync" onPress={manualSync} />
+            </View>
+          </Card>
+        ) : null}
 
         <View style={{ gap: 8 }}>
           {sections.map((item) => (
@@ -195,7 +218,7 @@ export default function SettingsScreen() {
               <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Purpose</Text>
               <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>PetNexa AI helps pet parents organize pet profiles, health records, reminders, veterinarian contacts, and guided pet-care notes in one offline-first mobile app.</Text>
               <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Privacy</Text>
-              <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>All data stays local by default. Data is only sent online when AI consultation is used.</Text>
+              <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>All data stays local by default. If Home Furparent sync is enabled, selected care data is securely synced to your Home account so your household can access it across devices. AI consultation sends only the consultation details needed for guidance.</Text>
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "center", paddingTop: 4 }}>
                 <Chip label={`Version ${appInfo.version}`} active />
                 <Chip label={`Developer: ${appInfo.developer}`} tone="navy" />

@@ -26,6 +26,12 @@ function normalizeSettings(value: Partial<Settings> | null | undefined): Setting
   return {
     notificationsEnabled: value?.notificationsEnabled ?? sampleData.settings.notificationsEnabled,
     dailySummaryTime: value?.dailySummaryTime ?? sampleData.settings.dailySummaryTime,
+    careMode: value?.careMode ?? sampleData.settings.careMode,
+    homeId: value?.homeId,
+    homeName: value?.homeName,
+    homeInviteCode: value?.homeInviteCode,
+    syncEnabled: value?.syncEnabled ?? sampleData.settings.syncEnabled,
+    lastSyncAt: value?.lastSyncAt,
   };
 }
 
