@@ -118,7 +118,7 @@ export default function SettingsScreen() {
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <View>
             <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Settings</Text>
-            <Text selectable style={{ color: palette.muted, fontSize: 13 }}>Profile, vets, local data, and privacy.</Text>
+            <Text selectable style={{ color: palette.muted, fontSize: 13 }}>Profile, account, local data, and privacy.</Text>
           </View>
           <HeaderAppIcon size={46} />
         </View>
@@ -136,20 +136,31 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        {settings.careMode === "home" ? (
-          <Card>
-            <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
-              <IconBubble icon="home-heart" size={46} />
-              <View style={{ flex: 1, gap: 3 }}>
-                <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>{settings.homeName || "Home Account"}</Text>
-                <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{settings.lastSyncAt ? `Last sync: ${settings.lastSyncAt}` : "Not synced yet"}</Text>
-                {settings.homeInviteCode ? <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>Invite code: {settings.homeInviteCode}</Text> : null}
-              </View>
-              <RowAction icon="sync" onPress={manualSync} />
+        <Card style={{ backgroundColor: settings.careMode === "home" ? "#fff" : palette.softTeal, borderColor: settings.careMode === "home" ? "#E9EEF5" : palette.mint }}>
+          <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+            <IconBubble icon={settings.careMode === "home" ? "home-heart" : "cellphone-lock"} size={46} />
+            <View style={{ flex: 1, gap: 3 }}>
+              <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Account & Sync</Text>
+              <Text selectable style={{ color: palette.muted, fontSize: 12 }}>
+                {settings.careMode === "home" ? settings.homeName || "Home Furparent account" : "Solo Furparent local-only mode"}
+              </Text>
+              {settings.careMode === "home" ? (
+                <>
+                  <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{settings.lastSyncAt ? `Last sync: ${settings.lastSyncAt}` : "Not synced yet"}</Text>
+                  {settings.homeInviteCode ? <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>Invite code: {settings.homeInviteCode}</Text> : null}
+                </>
+              ) : (
+                <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>No Home logout is needed in Solo mode.</Text>
+              )}
             </View>
-            <GhostButton label="Log Out" danger onPress={logoutHome} />
-          </Card>
-        ) : null}
+          </View>
+          {settings.careMode === "home" ? (
+            <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
+              <PrimaryButton label="Sync Now" icon="sync" onPress={manualSync} />
+              <GhostButton label="Log Out" danger onPress={logoutHome} />
+            </View>
+          ) : null}
+        </Card>
 
         <View style={{ gap: 8 }}>
           {sections.map((item) => (
