@@ -192,14 +192,14 @@ export default function SettingsScreen() {
                   <Text selectable style={{ color: palette.teal, fontSize: 13, fontWeight: "900" }}>{appInfo.tagline}</Text>
                 </View>
               </View>
-              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                <Chip label={`Version ${appInfo.version}`} active />
-                <Chip label={`Developer: ${appInfo.developer}`} tone="navy" />
-              </View>
               <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Purpose</Text>
               <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>PetNexa AI helps pet parents organize pet profiles, health records, reminders, veterinarian contacts, and guided pet-care notes in one offline-first mobile app.</Text>
               <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Privacy</Text>
               <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>All data stays local by default. Data is only sent online when AI consultation is used.</Text>
+              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "center", paddingTop: 4 }}>
+                <Chip label={`Version ${appInfo.version}`} active />
+                <Chip label={`Developer: ${appInfo.developer}`} tone="navy" />
+              </View>
             </Card>
           </>
         ) : null}
