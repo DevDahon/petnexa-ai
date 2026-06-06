@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Switch, Text, View } from "react-native";
-import { Card, Chip, Field, GhostButton, IconBubble, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
+import { Card, Chip, Field, GhostButton, HeaderAppIcon, IconBubble, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
 import { appInfo } from "@/constants/app";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
@@ -90,7 +90,7 @@ export default function SettingsScreen() {
             <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Settings</Text>
             <Text selectable style={{ color: palette.muted, fontSize: 13 }}>Profile, vets, local data, and privacy.</Text>
           </View>
-          <IconBubble icon="cog-outline" tone="navy" size={42} />
+          <HeaderAppIcon size={42} />
         </View>
 
         <Card style={{ backgroundColor: palette.softTeal, borderColor: palette.mint }}>

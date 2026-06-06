@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { Calendar } from "react-native-calendars";
-import { Card, Chip, EmptyState, Field, GhostButton, IconBubble, PetAvatar, PrimaryButton, ReminderPill, RowAction, Screen, SectionHeader, StatCard } from "@/components/ui";
+import { Card, Chip, EmptyState, Field, GhostButton, HeaderAppIcon, PetAvatar, PrimaryButton, ReminderPill, RowAction, Screen, SectionHeader, StatCard } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Reminder, ReminderType } from "@/types/domain";
@@ -63,7 +63,7 @@ export default function RemindersScreen() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Reminders</Text>
-          <IconBubble icon="calendar-month-outline" tone="navy" size={42} />
+          <HeaderAppIcon size={42} />
         </View>
 
         <View style={{ flexDirection: "row", gap: 10 }}>

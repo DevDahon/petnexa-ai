@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
-import { Card, Chip, EmptyState, Field, GhostButton, IconBubble, PetAvatar, PrimaryButton, Screen, SectionHeader } from "@/components/ui";
+import { Card, Chip, EmptyState, Field, GhostButton, HeaderAppIcon, IconBubble, PetAvatar, PrimaryButton, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { AI_SAFETY_NOTICE, buildConsultation, ConsultationInput } from "@/services/ai";
@@ -67,7 +67,7 @@ export default function AiAssistantScreen() {
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text selectable style={{ color: palette.text, fontSize: 27, fontWeight: "900" }}>AI Assistant</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: palette.mint, borderRadius: 14, paddingHorizontal: 9, paddingVertical: 6, backgroundColor: "#fff" }}>
-            <IconBubble icon="ticket-confirmation-outline" size={28} />
+            <HeaderAppIcon size={30} />
             <Text selectable style={{ color: palette.navy, fontSize: 11, fontWeight: "900" }}>Credits{"\n"}{creditState.aiCredits}/3</Text>
           </View>
         </View>

@@ -108,6 +108,16 @@ export function IconBubble({ icon, tone = "teal", size = 46 }: { icon: IconName;
   );
 }
 
+export function HeaderAppIcon({ size = 42 }: { size?: number }) {
+  return (
+    <Image
+      source={require("../assets/images/icon.png")}
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.28), backgroundColor: "#fff", borderWidth: 1, borderColor: palette.border }}
+      contentFit="cover"
+    />
+  );
+}
+
 export function ScreenIntro({ title, subtitle, icon }: { title: string; subtitle: string; icon: IconName }) {
   return (
     <GradientCard variant="calm">

@@ -1,7 +1,7 @@
 import * as ImagePicker from "expo-image-picker";
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
-import { Card, Chip, EmptyState, Field, GhostButton, IconBubble, PetAvatar, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
+import { Card, Chip, EmptyState, Field, GhostButton, HeaderAppIcon, PetAvatar, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Pet, PetSpecies, Sex } from "@/types/domain";
@@ -73,7 +73,7 @@ export default function PetsScreen() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Pets</Text>
-          {!showForm ? <IconBubble icon="plus" size={42} /> : null}
+          <HeaderAppIcon size={42} />
         </View>
         <Field label="Search pets..." value={query} onChangeText={setQuery} />
 

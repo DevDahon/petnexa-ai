@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ScrollView, Text, View } from "react-native";
-import { Card, EmptyState, IconBubble, PetAvatar, ReminderPill, Screen, SectionHeader, StatCard } from "@/components/ui";
+import { Card, EmptyState, HeaderAppIcon, IconBubble, PetAvatar, ReminderPill, Screen, SectionHeader, StatCard } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { calculateAge, formatFriendlyDate, getReminderStatus } from "@/utils/date";
@@ -29,7 +29,7 @@ export default function HomeScreen() {
             <Text selectable style={{ color: palette.muted, fontSize: 12 }}>Here's what's happening today.</Text>
           </View>
           <View style={{ flexDirection: "row", gap: 6 }}>
-            <IconBubble icon="bell-outline" tone="navy" size={38} />
+            <HeaderAppIcon size={40} />
           </View>
         </View>
 
