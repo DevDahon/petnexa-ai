@@ -1,9 +1,9 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
-import { Image } from "expo-image";
+import { Image as ExpoImage } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { PropsWithChildren } from "react";
-import { Pressable, Text, View, ViewStyle } from "react-native";
+import { Image as NativeImage, Pressable, Text, View, ViewStyle } from "react-native";
 import Animated, { FadeInUp, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { Avatar, Badge, Button, Card as PaperCard, Chip as PaperChip, IconButton, Surface, TextInput } from "react-native-paper";
 import { gradients, palette, radii, shadow } from "@/constants/theme";
@@ -110,10 +110,10 @@ export function IconBubble({ icon, tone = "teal", size = 46 }: { icon: IconName;
 
 export function HeaderAppIcon({ size = 42 }: { size?: number }) {
   return (
-    <Image
+    <NativeImage
       source={require("../assets/images/icon.png")}
-      style={{ width: size, height: size, borderRadius: Math.round(size * 0.28), backgroundColor: "#fff", borderWidth: 1, borderColor: palette.border }}
-      contentFit="cover"
+      resizeMode="cover"
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.3), backgroundColor: "#fff", borderWidth: 1, borderColor: palette.border }}
     />
   );
 }
@@ -247,7 +247,7 @@ export function Chip({ label, active, onPress, tone = "teal", icon }: { label: s
 
 export function PetAvatar({ pet, size = 62 }: { pet?: Pet; size?: number }) {
   if (pet?.photoUri) {
-    return <Image source={{ uri: pet.photoUri }} style={{ width: size, height: size, borderRadius: radii.lg, backgroundColor: palette.softTeal }} contentFit="cover" />;
+    return <ExpoImage source={{ uri: pet.photoUri }} style={{ width: size, height: size, borderRadius: radii.lg, backgroundColor: palette.softTeal }} contentFit="cover" />;
   }
   const icon = pet?.species === "Cat" ? "cat" : pet?.species === "Dog" ? "dog" : "paw";
   const tone: Tone = pet?.species === "Cat" ? "warning" : "teal";

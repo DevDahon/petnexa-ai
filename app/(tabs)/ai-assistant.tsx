@@ -67,7 +67,7 @@ export default function AiAssistantScreen() {
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text selectable style={{ color: palette.text, fontSize: 27, fontWeight: "900" }}>AI Assistant</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: palette.mint, borderRadius: 14, paddingHorizontal: 9, paddingVertical: 6, backgroundColor: "#fff" }}>
-            <HeaderAppIcon size={30} />
+            <HeaderAppIcon size={34} />
             <Text selectable style={{ color: palette.navy, fontSize: 11, fontWeight: "900" }}>Credits{"\n"}{creditState.aiCredits}/3</Text>
           </View>
         </View>

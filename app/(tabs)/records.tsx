@@ -81,7 +81,7 @@ export default function RecordsScreen() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Records</Text>
-          <HeaderAppIcon size={42} />
+          <HeaderAppIcon size={46} />
         </View>
         <Field label="Search records..." value={query} onChangeText={setQuery} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>

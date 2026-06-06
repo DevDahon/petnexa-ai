@@ -29,7 +29,7 @@ export default function HomeScreen() {
             <Text selectable style={{ color: palette.muted, fontSize: 12 }}>Here's what's happening today.</Text>
           </View>
           <View style={{ flexDirection: "row", gap: 6 }}>
-            <HeaderAppIcon size={40} />
+            <HeaderAppIcon size={46} />
           </View>
         </View>
 

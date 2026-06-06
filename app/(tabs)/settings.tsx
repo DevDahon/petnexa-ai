@@ -90,7 +90,7 @@ export default function SettingsScreen() {
             <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Settings</Text>
             <Text selectable style={{ color: palette.muted, fontSize: 13 }}>Profile, vets, local data, and privacy.</Text>
           </View>
-          <HeaderAppIcon size={42} />
+          <HeaderAppIcon size={46} />
         </View>
 
         <Card style={{ backgroundColor: palette.softTeal, borderColor: palette.mint }}>

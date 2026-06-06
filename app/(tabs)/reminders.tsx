@@ -63,7 +63,7 @@ export default function RemindersScreen() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Reminders</Text>
-          <HeaderAppIcon size={42} />
+          <HeaderAppIcon size={46} />
         </View>
 
         <View style={{ flexDirection: "row", gap: 10 }}>
