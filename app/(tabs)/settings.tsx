@@ -277,9 +277,11 @@ export default function SettingsScreen() {
               <View style={{ alignItems: "center", gap: 8 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
                   <HeaderAppIcon size={58} />
-                  <Text selectable style={{ color: palette.text, fontSize: 24, fontWeight: "900", textAlign: "center" }}>{appInfo.name}</Text>
+                  <View style={{ gap: 2 }}>
+                    <Text selectable style={{ color: palette.text, fontSize: 24, fontWeight: "900" }}>{appInfo.name}</Text>
+                    <Text selectable style={{ color: palette.teal, fontSize: 13, fontWeight: "900" }}>{appInfo.tagline}</Text>
+                  </View>
                 </View>
-                <Text selectable style={{ color: palette.teal, fontSize: 13, fontWeight: "900", textAlign: "center" }}>{appInfo.tagline}</Text>
               </View>
               <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Purpose</Text>
               <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>PetNexa AI helps pet parents organize pet profiles, health records, reminders, veterinarian contacts, and guided pet-care notes in one offline-first mobile app.</Text>
