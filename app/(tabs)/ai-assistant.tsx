@@ -7,12 +7,14 @@ import { useAppData } from "@/context/AppContext";
 import { AI_SAFETY_NOTICE, buildConsultation, ConsultationInput } from "@/services/ai";
 
 const presets = ["Vomiting", "Diarrhea", "Not Eating", "Weakness", "Coughing", "Poisoning"];
-const yesNoOptions = ["No", "Mild", "Yes"];
-const conditionOptions = ["Normal", "Reduced", "Severe"];
+const durationOptions = ["Today", "1-2 days", "3+ days"];
+const frequencyOptions = ["Once", "Few times", "Repeated"];
+const energyOptions = ["Normal", "Low", "Very weak"];
+const breathingOptions = ["Normal", "Changed", "Trouble breathing"];
 
 function stepMeta(step: number) {
   if (step === 1) return { title: "Pet & concern", subtitle: "Start with the pet and what you are noticing.", icon: "clipboard-pulse-outline" as const };
-  if (step === 2) return { title: "Symptom check", subtitle: "Add urgency details with quick selections.", icon: "stethoscope" as const };
+  if (step === 2) return { title: "Severity & urgency", subtitle: "Add timing, frequency, energy, and warning signs.", icon: "stethoscope" as const };
   return { title: "Review & submit", subtitle: "Confirm details before using an AI credit.", icon: "shield-check-outline" as const };
 }
 
@@ -83,8 +85,8 @@ export default function AiAssistantScreen() {
     appetite: "Normal",
     waterIntake: "Normal",
     behaviorChanges: "No major changes",
-    vomiting: "No",
-    diarrhea: "No",
+    vomiting: "Today",
+    diarrhea: "Once",
     mobility: "Normal",
     breathing: "Normal",
     injury: "None",
@@ -211,20 +213,28 @@ export default function AiAssistantScreen() {
 
               {step === 2 ? (
                 <>
-                  <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Symptom details</Text>
-                  <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>Select the closest option for each item. These details help screen for urgency.</Text>
+                  <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>How serious does it look?</Text>
+                  <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>The preset already tells us the symptom. These answers add context for urgency.</Text>
                   <View style={{ gap: 10 }}>
-                    <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Vomiting</Text>
+                    <Text selectable style={{ color: palette.text, fontWeight: "900" }}>How long has this been happening?</Text>
                     <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                      {yesNoOptions.map((vomiting) => <OptionButton key={vomiting} label={vomiting} active={form.vomiting === vomiting} onPress={() => setForm((current) => ({ ...current, vomiting }))} tone={vomiting === "Yes" ? "warning" : "teal"} />)}
+                      {durationOptions.map((duration) => <OptionButton key={duration} label={duration} active={form.vomiting === duration} onPress={() => setForm((current) => ({ ...current, vomiting: duration }))} tone={duration === "3+ days" ? "warning" : "teal"} />)}
                     </View>
-                    <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Diarrhea</Text>
+                    <Text selectable style={{ color: palette.text, fontWeight: "900" }}>How often is it happening?</Text>
                     <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                      {yesNoOptions.map((diarrhea) => <OptionButton key={diarrhea} label={diarrhea} active={form.diarrhea === diarrhea} onPress={() => setForm((current) => ({ ...current, diarrhea }))} tone={diarrhea === "Yes" ? "warning" : "teal"} />)}
+                      {frequencyOptions.map((frequency) => <OptionButton key={frequency} label={frequency} active={form.diarrhea === frequency} onPress={() => setForm((current) => ({ ...current, diarrhea: frequency }))} tone={frequency === "Repeated" ? "warning" : "teal"} />)}
                     </View>
-                    <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Mobility</Text>
+                    <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Energy level</Text>
                     <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                      {conditionOptions.map((mobility) => <OptionButton key={mobility} label={mobility} active={form.mobility === mobility} onPress={() => setForm((current) => ({ ...current, mobility }))} tone={mobility === "Severe" ? "danger" : "teal"} />)}
+                      {energyOptions.map((energy) => <OptionButton key={energy} label={energy} active={form.mobility === energy} onPress={() => setForm((current) => ({ ...current, mobility: energy }))} tone={energy === "Very weak" ? "danger" : energy === "Low" ? "warning" : "teal"} />)}
+                    </View>
+                    <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Breathing</Text>
+                    <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                      {breathingOptions.map((breathing) => <OptionButton key={breathing} label={breathing} active={form.breathing === breathing} onPress={() => setForm((current) => ({ ...current, breathing }))} tone={breathing === "Trouble breathing" ? "danger" : breathing === "Changed" ? "warning" : "teal"} />)}
+                    </View>
+                    <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Any injury, poisoning, collapse, or bleeding?</Text>
+                    <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                      {["None", "Possible", "Yes"].map((injury) => <OptionButton key={injury} label={injury} active={form.injury === injury} onPress={() => setForm((current) => ({ ...current, injury }))} tone={injury === "Yes" ? "danger" : injury === "Possible" ? "warning" : "teal"} />)}
                     </View>
                   </View>
                 </>
@@ -235,13 +245,12 @@ export default function AiAssistantScreen() {
                   <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Final notes and review</Text>
                   <Field label="Water Intake" value={form.waterIntake} onChangeText={(waterIntake) => setForm((current) => ({ ...current, waterIntake }))} />
                   <Field label="Behavior Changes" value={form.behaviorChanges} onChangeText={(behaviorChanges) => setForm((current) => ({ ...current, behaviorChanges }))} />
-                  <Field label="Breathing" value={form.breathing} onChangeText={(breathing) => setForm((current) => ({ ...current, breathing }))} />
-                  <Field label="Injury" value={form.injury} onChangeText={(injury) => setForm((current) => ({ ...current, injury }))} />
                   <Field label="Notes" value={form.notes} multiline onChangeText={(notes) => setForm((current) => ({ ...current, notes }))} />
                   <View style={{ backgroundColor: palette.softTeal, borderRadius: 18, borderWidth: 1, borderColor: palette.mint, padding: 13, gap: 5 }}>
                     <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Review</Text>
                     <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>{pet?.name ?? "Pet"} • {preset} • Appetite: {form.appetite}</Text>
-                    <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>Vomiting: {form.vomiting} • Diarrhea: {form.diarrhea} • Mobility: {form.mobility}</Text>
+                    <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>Duration: {form.vomiting} • Frequency: {form.diarrhea} • Energy: {form.mobility}</Text>
+                    <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>Breathing: {form.breathing} • Warning signs: {form.injury}</Text>
                   </View>
                 </>
               ) : null}
