@@ -34,19 +34,23 @@ function CompactPetButton({
   onPress,
   primary,
   danger,
+  iconOnly,
+  quiet,
 }: {
   label: string;
   icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
   onPress: () => void;
   primary?: boolean;
   danger?: boolean;
+  iconOnly?: boolean;
+  quiet?: boolean;
 }) {
   const color = danger ? palette.danger : primary ? palette.teal : palette.navy;
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}>
-      <View style={{ minHeight: 38, borderRadius: 999, borderWidth: 1.2, borderColor: primary ? palette.teal : danger ? "#FECACA" : palette.border, backgroundColor: primary ? palette.teal : "#fff", paddingHorizontal: 12, paddingVertical: 7, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
+    <Pressable accessibilityLabel={label} accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}>
+      <View style={{ width: iconOnly ? 40 : undefined, minWidth: iconOnly ? 40 : undefined, minHeight: 40, borderRadius: iconOnly ? 15 : 999, borderWidth: quiet ? 0 : 1.2, borderColor: primary ? palette.teal : danger ? "#FECACA" : palette.border, backgroundColor: primary ? palette.teal : iconOnly ? "#F8FBFD" : "#fff", paddingHorizontal: iconOnly ? 0 : quiet ? 8 : 13, paddingVertical: 7, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
         <MaterialCommunityIcons name={icon} size={15} color={primary ? "#fff" : color} />
-        <Text selectable style={{ color: primary ? "#fff" : color, fontSize: 12, fontWeight: "900" }}>{label}</Text>
+        {!iconOnly ? <Text selectable style={{ color: primary ? "#fff" : color, fontSize: 12, fontWeight: "900" }}>{label}</Text> : null}
       </View>
     </Pressable>
   );
@@ -151,11 +155,15 @@ export default function PetsScreen() {
               <Text selectable style={{ color: palette.teal, fontWeight: "800" }}>{calculateAge(form.birthday)} • {getLifeStage(form.birthday, form.species)}</Text>
               <Field label="Weight (kg)" value={String(form.weightKg)} keyboardType="numeric" onChangeText={(weightKg) => setForm((current) => ({ ...current, weightKg: Number(weightKg) || 0 }))} />
               <Field label="Notes" value={form.notes} multiline onChangeText={(notes) => setForm((current) => ({ ...current, notes }))} />
-              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", paddingTop: 2 }}>
-                <CompactPetButton label="Gallery" icon="image-outline" onPress={pickImage} />
-                <CompactPetButton label="Camera" icon="camera-outline" onPress={takePhoto} />
-                <CompactPetButton label={editing ? "Save" : "Add"} icon={editing ? "content-save-outline" : "plus"} primary onPress={submit} />
-                <CompactPetButton label="Cancel" icon="close" danger onPress={closeForm} />
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12, paddingTop: 4 }}>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <CompactPetButton label="Choose from gallery" icon="image-outline" iconOnly onPress={pickImage} />
+                  <CompactPetButton label="Take pet photo" icon="camera-outline" iconOnly onPress={takePhoto} />
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <CompactPetButton label="Cancel" icon="close" danger quiet onPress={closeForm} />
+                  <CompactPetButton label={editing ? "Save" : "Add"} icon={editing ? "content-save-outline" : "plus"} primary onPress={submit} />
+                </View>
               </View>
             </Card>
           </>
