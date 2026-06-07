@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { Card, Chip, EmptyState, Field, GhostButton, GradientCard, HeaderAppIcon, IconBubble, PetAvatar, PrimaryButton, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
@@ -9,6 +9,59 @@ import { AI_SAFETY_NOTICE, buildConsultation, ConsultationInput } from "@/servic
 const presets = ["Vomiting", "Diarrhea", "Not Eating", "Weakness", "Coughing", "Poisoning"];
 const yesNoOptions = ["No", "Mild", "Yes"];
 const conditionOptions = ["Normal", "Reduced", "Severe"];
+
+function stepMeta(step: number) {
+  if (step === 1) return { title: "Pet & concern", subtitle: "Start with the pet and what you are noticing.", icon: "clipboard-pulse-outline" as const };
+  if (step === 2) return { title: "Symptom check", subtitle: "Add urgency details with quick selections.", icon: "stethoscope" as const };
+  return { title: "Review & submit", subtitle: "Confirm details before using an AI credit.", icon: "shield-check-outline" as const };
+}
+
+function StepHeader({ step }: { step: number }) {
+  const current = stepMeta(step);
+  return (
+    <View style={{ backgroundColor: palette.softTeal, borderRadius: 22, borderWidth: 1, borderColor: palette.mint, padding: 14, gap: 12 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <View style={{ width: 46, height: 46, borderRadius: 17, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" }}>
+          <MaterialCommunityIcons name={current.icon} color={palette.teal} size={24} />
+        </View>
+        <View style={{ flex: 1, gap: 3 }}>
+          <Text selectable style={{ color: palette.teal, fontSize: 11, fontWeight: "900" }}>STEP {step} OF 3</Text>
+          <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900" }}>{current.title}</Text>
+          <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18 }}>{current.subtitle}</Text>
+        </View>
+      </View>
+      <View style={{ flexDirection: "row", gap: 7 }}>
+        {[1, 2, 3].map((item) => <View key={item} style={{ flex: 1, height: 7, borderRadius: 999, backgroundColor: item <= step ? palette.teal : "#DCEFEA" }} />)}
+      </View>
+    </View>
+  );
+}
+
+function OptionButton({ label, active, onPress, tone = "teal", icon }: { label: string; active?: boolean; onPress: () => void; tone?: "teal" | "warning" | "danger" | "navy"; icon?: React.ComponentProps<typeof MaterialCommunityIcons>["name"] }) {
+  const color = tone === "danger" ? palette.danger : tone === "warning" ? palette.warning : tone === "navy" ? palette.navy : palette.teal;
+  const backgroundColor = active ? color : "#fff";
+  const borderColor = active ? color : tone === "danger" ? "#FECACA" : tone === "warning" ? "#FDE68A" : palette.mint;
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1, flexGrow: 1, flexBasis: "30%" })}>
+      <View style={{ minHeight: 46, borderRadius: 999, borderWidth: 1.5, borderColor, backgroundColor, paddingHorizontal: 12, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 7 }}>
+        {icon ? <MaterialCommunityIcons name={icon} color={active ? "#fff" : color} size={17} /> : null}
+        <Text selectable style={{ color: active ? "#fff" : color, fontSize: 12, fontWeight: "900", textAlign: "center" }}>{label}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function FooterButton({ label, onPress, primary, danger, disabled, icon }: { label: string; onPress: () => void; primary?: boolean; danger?: boolean; disabled?: boolean; icon?: React.ComponentProps<typeof MaterialCommunityIcons>["name"] }) {
+  const color = danger ? palette.danger : primary ? palette.teal : palette.navy;
+  return (
+    <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={({ pressed }) => ({ opacity: disabled ? 0.48 : pressed ? 0.75 : 1, flex: primary ? 1.35 : 1, minWidth: 118 })}>
+      <View style={{ minHeight: 50, borderRadius: 18, backgroundColor: primary ? color : "#fff", borderWidth: 1.5, borderColor: primary ? color : danger ? "#FECACA" : palette.border, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
+        {icon ? <MaterialCommunityIcons name={icon} color={primary ? "#fff" : color} size={18} /> : null}
+        <Text selectable style={{ color: primary ? "#fff" : color, fontSize: 13, fontWeight: "900", textAlign: "center" }}>{label}</Text>
+      </View>
+    </Pressable>
+  );
+}
 
 function presetIcon(label: string) {
   if (label === "Vomiting") return "stomach" as const;
@@ -129,21 +182,29 @@ export default function AiAssistantScreen() {
 
         {showForm ? (
           <>
-            <SectionHeader title="Guided Consultation" action={`Step ${step} of 3`} />
-            <Card>
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                {[1, 2, 3].map((item) => <View key={item} style={{ flex: 1, height: 6, borderRadius: 999, backgroundColor: item <= step ? palette.teal : palette.border }} />)}
-              </View>
+            <SectionHeader title="Guided Consultation" />
+            <Card style={{ borderColor: palette.mint }}>
+              <StepHeader step={step} />
               {step === 1 ? (
                 <>
-                  <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Choose pet and main concern</Text>
+                  <Text selectable style={{ color: palette.text, fontSize: 16, fontWeight: "900" }}>Choose pet</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                    {pets.map((item) => <Chip key={item.id} label={item.name} active={(pet?.id ?? "") === item.id} onPress={() => setSelectedPetId(item.id)} />)}
+                    {pets.map((item) => <OptionButton key={item.id} label={item.name} active={(pet?.id ?? "") === item.id} onPress={() => setSelectedPetId(item.id)} icon={item.species === "Cat" ? "cat" : item.species === "Dog" ? "dog" : "paw"} />)}
                   </ScrollView>
-                  {pet ? <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}><PetAvatar pet={pet} size={52} /><Text selectable style={{ color: palette.text, fontWeight: "900" }}>{pet.name} • {pet.breed || pet.species}</Text></View> : null}
+                  {pet ? (
+                    <View style={{ flexDirection: "row", gap: 11, alignItems: "center", backgroundColor: "#fff", borderRadius: 20, borderWidth: 1, borderColor: palette.border, padding: 10 }}>
+                      <PetAvatar pet={pet} size={54} />
+                      <View style={{ flex: 1, gap: 3 }}>
+                        <Text selectable style={{ color: palette.text, fontWeight: "900", fontSize: 16 }}>{pet.name}</Text>
+                        <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{pet.breed || pet.species}</Text>
+                      </View>
+                      <MaterialCommunityIcons name="check-circle" color={palette.teal} size={22} />
+                    </View>
+                  ) : null}
                   <Field label="What is happening?" value={form.symptoms} multiline onChangeText={(symptoms) => setForm((current) => ({ ...current, symptoms }))} />
+                  <Text selectable style={{ color: palette.text, fontSize: 16, fontWeight: "900" }}>Appetite</Text>
                   <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                    {["Normal", "Low", "None"].map((appetite) => <Chip key={appetite} label={`Appetite: ${appetite}`} active={form.appetite === appetite} onPress={() => setForm((current) => ({ ...current, appetite }))} />)}
+                    {["Normal", "Low", "None"].map((appetite) => <OptionButton key={appetite} label={appetite} active={form.appetite === appetite} onPress={() => setForm((current) => ({ ...current, appetite }))} tone={appetite === "None" ? "warning" : "teal"} />)}
                   </View>
                 </>
               ) : null}
@@ -155,15 +216,15 @@ export default function AiAssistantScreen() {
                   <View style={{ gap: 10 }}>
                     <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Vomiting</Text>
                     <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                      {yesNoOptions.map((vomiting) => <Chip key={vomiting} label={vomiting} active={form.vomiting === vomiting} onPress={() => setForm((current) => ({ ...current, vomiting }))} tone={vomiting === "Yes" ? "warning" : "teal"} />)}
+                      {yesNoOptions.map((vomiting) => <OptionButton key={vomiting} label={vomiting} active={form.vomiting === vomiting} onPress={() => setForm((current) => ({ ...current, vomiting }))} tone={vomiting === "Yes" ? "warning" : "teal"} />)}
                     </View>
                     <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Diarrhea</Text>
                     <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                      {yesNoOptions.map((diarrhea) => <Chip key={diarrhea} label={diarrhea} active={form.diarrhea === diarrhea} onPress={() => setForm((current) => ({ ...current, diarrhea }))} tone={diarrhea === "Yes" ? "warning" : "teal"} />)}
+                      {yesNoOptions.map((diarrhea) => <OptionButton key={diarrhea} label={diarrhea} active={form.diarrhea === diarrhea} onPress={() => setForm((current) => ({ ...current, diarrhea }))} tone={diarrhea === "Yes" ? "warning" : "teal"} />)}
                     </View>
                     <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Mobility</Text>
                     <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                      {conditionOptions.map((mobility) => <Chip key={mobility} label={mobility} active={form.mobility === mobility} onPress={() => setForm((current) => ({ ...current, mobility }))} tone={mobility === "Severe" ? "danger" : "teal"} />)}
+                      {conditionOptions.map((mobility) => <OptionButton key={mobility} label={mobility} active={form.mobility === mobility} onPress={() => setForm((current) => ({ ...current, mobility }))} tone={mobility === "Severe" ? "danger" : "teal"} />)}
                     </View>
                   </View>
                 </>
@@ -186,10 +247,12 @@ export default function AiAssistantScreen() {
               ) : null}
 
               <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>{AI_SAFETY_NOTICE}</Text>
-              <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-                {step > 1 ? <GhostButton label="Back" onPress={() => setStep((current) => Math.max(1, current - 1))} /> : null}
-                {step < 3 ? <PrimaryButton label="Continue" icon="arrow-right" onPress={goNext} /> : <PrimaryButton label={busy ? "Checking..." : "Submit Consultation"} icon="heart-pulse" onPress={submit} disabled={busy} />}
-                <GhostButton label="Cancel" onPress={closeConsultation} />
+              <View style={{ backgroundColor: "#F8FBFD", borderRadius: 22, borderWidth: 1, borderColor: palette.border, padding: 10, gap: 10 }}>
+                <View style={{ flexDirection: "row", gap: 9, flexWrap: "wrap" }}>
+                  {step > 1 ? <FooterButton label="Back" icon="arrow-left" onPress={() => setStep((current) => Math.max(1, current - 1))} /> : null}
+                  {step < 3 ? <FooterButton label="Continue" icon="arrow-right" primary onPress={goNext} /> : <FooterButton label={busy ? "Checking..." : "Submit"} icon="heart-pulse" primary onPress={submit} disabled={busy} />}
+                  <FooterButton label="Cancel" icon="close" danger onPress={closeConsultation} />
+                </View>
               </View>
             </Card>
           </>
