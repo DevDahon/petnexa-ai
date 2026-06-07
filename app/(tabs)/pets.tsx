@@ -102,12 +102,15 @@ export default function PetsScreen() {
   return (
     <Screen>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <View style={{ flex: 1 }}>
             <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Pets</Text>
             <Text selectable style={{ color: palette.muted, fontSize: 13 }}>Profiles, life stages, and care history.</Text>
           </View>
-          <HeaderAppIcon size={46} />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {!showForm ? <CompactPetButton label="Add" icon="plus" primary onPress={() => setShowForm(true)} /> : null}
+            <HeaderAppIcon size={46} />
+          </View>
         </View>
 
         <GradientCard variant="calm">
@@ -126,12 +129,6 @@ export default function PetsScreen() {
         </GradientCard>
 
         <Field label="Search pets..." value={query} onChangeText={setQuery} />
-
-        {!showForm ? (
-          <View style={{ alignItems: "flex-end" }}>
-            <CompactPetButton label="Add Pet" icon="paw" primary onPress={() => setShowForm(true)} />
-          </View>
-        ) : null}
 
         {showForm ? (
           <>
