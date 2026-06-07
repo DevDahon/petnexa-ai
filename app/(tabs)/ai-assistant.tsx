@@ -5,6 +5,7 @@ import { Card, Chip, EmptyState, Field, GhostButton, GradientCard, HeaderAppIcon
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { AI_SAFETY_NOTICE, buildConsultation, ConsultationInput } from "@/services/ai";
+import { Consultation } from "@/types/domain";
 
 const presets = ["Vomiting", "Diarrhea", "Not Eating", "Weakness", "Coughing", "Poisoning"];
 const durationOptions = ["Today", "1-2 days", "3+ days"];
@@ -80,6 +81,7 @@ export default function AiAssistantScreen() {
   const [preset, setPreset] = useState(presets[0]);
   const [showForm, setShowForm] = useState(false);
   const [step, setStep] = useState(1);
+  const [latestResult, setLatestResult] = useState<{ consultation: Consultation; offline: boolean } | null>(null);
   const [form, setForm] = useState({
     symptoms: "Vomiting once this morning",
     appetite: "Normal",
@@ -122,6 +124,7 @@ export default function AiAssistantScreen() {
       const { consultation, offline } = await buildConsultation(input);
       await saveConsultation(consultation);
       if (!offline && consultation.riskLevel !== "Emergency") await deductAiCredit();
+      setLatestResult({ consultation, offline });
       closeConsultation();
       Alert.alert(
         consultation.riskLevel === "Emergency" ? "Emergency signs detected" : offline ? "Guidance saved" : "Consultation saved",
@@ -270,6 +273,29 @@ export default function AiAssistantScreen() {
           </>
         ) : null}
 
+        {latestResult ? (
+          <>
+            <SectionHeader title="AI Guidance" action={latestResult.offline ? "Local guidance" : "AI response"} />
+            <Card style={{ backgroundColor: latestResult.consultation.riskLevel === "Emergency" ? palette.softDanger : palette.softTeal, borderColor: latestResult.consultation.riskLevel === "Emergency" ? "#FECACA" : palette.mint }}>
+              <View style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
+                <IconBubble icon={latestResult.consultation.riskLevel === "Emergency" ? "alert-octagon-outline" : "robot-happy-outline"} tone={latestResult.consultation.riskLevel === "Emergency" ? "danger" : "teal"} />
+                <View style={{ flex: 1, gap: 8 }}>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                    <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900" }}>{latestResult.consultation.preset}</Text>
+                    <View style={{ borderRadius: 999, backgroundColor: latestResult.consultation.riskLevel === "Emergency" ? palette.danger : "#fff", borderWidth: 1, borderColor: latestResult.consultation.riskLevel === "Emergency" ? palette.danger : palette.mint, paddingHorizontal: 10, paddingVertical: 4 }}>
+                      <Text selectable style={{ color: latestResult.consultation.riskLevel === "Emergency" ? "#fff" : palette.teal, fontSize: 11, fontWeight: "900" }}>{latestResult.consultation.riskLevel}</Text>
+                    </View>
+                  </View>
+                  <Text selectable style={{ color: palette.text, fontSize: 14, lineHeight: 22 }}>{latestResult.consultation.guidance}</Text>
+                  {latestResult.offline ? (
+                    <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18 }}>AI service was unavailable, so PetNexa saved local guidance and no AI credit was deducted.</Text>
+                  ) : null}
+                </View>
+              </View>
+            </Card>
+          </>
+        ) : null}
+
         <SectionHeader title="Recent Consultations" action={`${consultations.length} saved`} />
         {consultations.length === 0 ? (
           <EmptyState title="No consultations yet" message="Start a consultation when you need general guidance." icon="robot-outline" />
@@ -283,6 +309,7 @@ export default function AiAssistantScreen() {
                   <View style={{ flex: 1, gap: 3 }}>
                     <Text selectable style={{ color: palette.text, fontSize: 16, fontWeight: "900" }}>{consultation.preset} • {consultation.riskLevel}</Text>
                     <Text selectable style={{ color: palette.muted }}>{historyPet?.name ?? "Pet"} • {consultation.createdAt}</Text>
+                    <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19 }}>{consultation.guidance}</Text>
                   </View>
                 </View>
               </Card>
