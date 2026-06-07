@@ -92,9 +92,13 @@ export function Panel({ children, style }: PropsWithChildren<{ style?: ViewStyle
 
 export function SectionHeader({ title, action }: { title: string; action?: string }) {
   return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", paddingTop: 4 }}>
-      <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900", letterSpacing: 0 }}>{title}</Text>
-      {action ? <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "800" }}>{action}</Text> : null}
+    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: 4, gap: 10 }}>
+      <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900", letterSpacing: 0, flexShrink: 1 }}>{title}</Text>
+      {action ? (
+        <View style={{ backgroundColor: palette.softTeal, borderRadius: radii.pill, borderWidth: 1, borderColor: palette.mint, paddingHorizontal: 10, paddingVertical: 5 }}>
+          <Text selectable style={{ color: palette.teal, fontSize: 11, fontWeight: "900" }}>{action}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
