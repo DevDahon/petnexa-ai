@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Switch, Text, View } from "react-native";
-import { Card, Chip, EmptyState, Field, GhostButton, GradientCard, HeaderAppIcon, IconBubble, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
+import { Card, Chip, CompactButton, EmptyState, Field, FormActions, GhostButton, GradientCard, HeaderAppIcon, IconBubble, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
 import { appInfo } from "@/constants/app";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
@@ -196,7 +196,7 @@ export default function SettingsScreen() {
           <>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <SectionHeader title="Veterinarians" action={`${veterinarians.length} saved`} />
-              {!showVetForm ? <GhostButton label="Add" onPress={() => setShowVetForm(true)} /> : null}
+              {!showVetForm ? <CompactButton label="Add" icon="plus" primary onPress={() => setShowVetForm(true)} /> : null}
             </View>
             {showVetForm ? (
               <Card style={{ backgroundColor: palette.softTeal }}>
@@ -209,10 +209,7 @@ export default function SettingsScreen() {
                   <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Primary veterinarian</Text>
                   <Switch value={vetForm.isPrimary} onValueChange={(isPrimary) => setVetForm((current) => ({ ...current, isPrimary }))} />
                 </View>
-                <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-                  <PrimaryButton label={editingVetId ? "Save" : "Add"} icon="hospital-building" onPress={submitVet} />
-                  <GhostButton label="Cancel" onPress={() => { setShowVetForm(false); setEditingVetId(null); setVetForm(emptyVet); }} />
-                </View>
+                <FormActions submitLabel={editingVetId ? "Save" : "Add"} submitIcon="hospital-building" onSubmit={submitVet} onCancel={() => { setShowVetForm(false); setEditingVetId(null); setVetForm(emptyVet); }} />
               </Card>
             ) : null}
             {veterinarians.length === 0 ? (

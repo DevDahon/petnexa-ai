@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
-import { Card, Chip, EmptyState, Field, GhostButton, GradientCard, HeaderAppIcon, IconBubble, PetAvatar, PrimaryButton, Screen, SectionHeader } from "@/components/ui";
+import { Card, Chip, CompactButton, EmptyState, Field, GhostButton, GradientCard, HeaderAppIcon, IconBubble, PetAvatar, PrimaryButton, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { AI_SAFETY_NOTICE, buildConsultation, ConsultationInput } from "@/services/ai";
@@ -49,18 +49,6 @@ function OptionButton({ label, active, onPress, tone = "teal", icon }: { label: 
       <View style={{ minHeight: 38, borderRadius: 999, borderWidth: 1.4, borderColor, backgroundColor, paddingHorizontal: 10, paddingVertical: 6, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 6 }}>
         {icon ? <MaterialCommunityIcons name={icon} color={active ? "#fff" : color} size={15} /> : null}
         <Text selectable style={{ color: active ? "#fff" : color, fontSize: 11, fontWeight: "900", textAlign: "center" }}>{label}</Text>
-      </View>
-    </Pressable>
-  );
-}
-
-function FooterButton({ label, onPress, primary, danger, disabled, icon }: { label: string; onPress: () => void; primary?: boolean; danger?: boolean; disabled?: boolean; icon?: React.ComponentProps<typeof MaterialCommunityIcons>["name"] }) {
-  const color = danger ? palette.danger : primary ? palette.teal : palette.navy;
-  return (
-    <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={({ pressed }) => ({ opacity: disabled ? 0.48 : pressed ? 0.75 : 1 })}>
-      <View style={{ minHeight: 40, borderRadius: 999, backgroundColor: primary ? color : "#fff", borderWidth: 1.4, borderColor: primary ? color : danger ? "#FECACA" : palette.border, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 7 }}>
-        {icon ? <MaterialCommunityIcons name={icon} color={primary ? "#fff" : color} size={15} /> : null}
-        <Text selectable style={{ color: primary ? "#fff" : color, fontSize: 11, fontWeight: "900", textAlign: "center" }}>{label}</Text>
       </View>
     </Pressable>
   );
@@ -264,9 +252,9 @@ export default function AiAssistantScreen() {
               <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>{AI_SAFETY_NOTICE}</Text>
               <View style={{ backgroundColor: "#F8FBFD", borderRadius: 18, borderWidth: 1, borderColor: palette.border, padding: 8, gap: 8 }}>
                 <View style={{ flexDirection: "row", gap: 7, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                  {step > 1 ? <FooterButton label="Back" icon="arrow-left" onPress={() => setStep((current) => Math.max(1, current - 1))} /> : null}
-                  {step < 3 ? <FooterButton label="Continue" icon="arrow-right" primary onPress={goNext} /> : <FooterButton label={busy ? "Checking..." : "Submit"} icon="heart-pulse" primary onPress={submit} disabled={busy} />}
-                  <FooterButton label="Cancel" icon="close" danger onPress={closeConsultation} />
+                  {step > 1 ? <CompactButton label="Back" icon="arrow-left" onPress={() => setStep((current) => Math.max(1, current - 1))} /> : null}
+                  {step < 3 ? <CompactButton label="Continue" icon="arrow-right" primary onPress={goNext} /> : <CompactButton label={busy ? "Checking..." : "Submit"} icon="heart-pulse" primary disabled={busy} onPress={submit} />}
+                  <CompactButton label="Cancel" icon="close" danger onPress={closeConsultation} />
                 </View>
               </View>
             </Card>

@@ -2,8 +2,7 @@ import * as ImagePicker from "expo-image-picker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
-import { Button, IconButton } from "react-native-paper";
-import { Card, Chip, EmptyState, Field, GradientCard, HeaderAppIcon, IconBubble, PetAvatar, RowAction, Screen, SectionHeader } from "@/components/ui";
+import { Card, Chip, CompactButton, EmptyState, Field, FormActions, GradientCard, HeaderActionButton, HeaderAppIcon, IconBubble, PetAvatar, RowAction, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Pet, PetSpecies, Sex } from "@/types/domain";
@@ -28,51 +27,6 @@ const breedSuggestions: Record<PetSpecies, string[]> = {
   Cat: ["Persian Cat", "Siamese", "Maine Coon", "British Shorthair", "Ragdoll", "Bengal", "Domestic Shorthair", "Mixed Breed"],
   Other: ["Rabbit", "Hamster", "Guinea Pig", "Bird", "Turtle", "Fish", "Ferret", "Other"],
 };
-
-function MiniButton({
-  label,
-  icon,
-  onPress,
-  primary,
-  danger,
-}: {
-  label: string;
-  icon?: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
-  onPress: () => void;
-  primary?: boolean;
-  danger?: boolean;
-}) {
-  return (
-    <Button
-      compact
-      icon={icon}
-      mode={primary ? "contained" : "text"}
-      buttonColor={primary ? palette.teal : undefined}
-      textColor={danger ? palette.danger : primary ? "#fff" : palette.navy}
-      onPress={onPress}
-      style={{ borderRadius: 12 }}
-      contentStyle={{ minHeight: 34, paddingHorizontal: primary ? 8 : 2 }}
-      labelStyle={{ fontSize: 12, fontWeight: "900", letterSpacing: 0, marginHorizontal: 0 }}
-    >
-      {label}
-    </Button>
-  );
-}
-
-function HeaderAddButton({ onPress }: { onPress: () => void }) {
-  return (
-    <IconButton
-      accessibilityLabel="Add pet"
-      icon="plus"
-      mode="contained"
-      size={22}
-      iconColor="#fff"
-      containerColor={palette.teal}
-      onPress={onPress}
-      style={{ width: 42, height: 42, margin: 0, borderRadius: 16, borderWidth: 1, borderColor: palette.mint }}
-    />
-  );
-}
 
 export default function PetsScreen() {
   const { pets, records, reminders, savePet, removePet } = useAppData();
@@ -142,7 +96,7 @@ export default function PetsScreen() {
             <Text selectable style={{ color: palette.muted, fontSize: 13 }}>Profiles, life stages, and care history.</Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            {!showForm ? <HeaderAddButton onPress={() => setShowForm(true)} /> : null}
+            {!showForm ? <HeaderActionButton label="Add pet" onPress={() => setShowForm(true)} /> : null}
             <HeaderAppIcon size={46} />
           </View>
         </View>
@@ -174,7 +128,7 @@ export default function PetsScreen() {
                   <Text selectable style={{ color: palette.text, fontSize: 15, fontWeight: "900" }}>Profile photo</Text>
                   <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{form.photoUri ? "Photo added to this pet profile." : "Optional, but helps identify your pet faster."}</Text>
                 </View>
-                <MiniButton label={form.photoUri ? "Change" : "Add"} onPress={choosePhoto} />
+                <CompactButton label={form.photoUri ? "Change" : "Add"} onPress={choosePhoto} />
               </View>
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
                 {(["Dog", "Cat", "Other"] as PetSpecies[]).map((species) => <Chip key={species} label={species} active={form.species === species} onPress={() => setForm((current) => ({ ...current, species, breed: current.breed && !breedSuggestions[current.species].includes(current.breed) ? current.breed : "" }))} />)}
@@ -194,10 +148,7 @@ export default function PetsScreen() {
               <Text selectable style={{ color: palette.teal, fontWeight: "800" }}>{calculateAge(form.birthday)} • {getLifeStage(form.birthday, form.species)}</Text>
               <Field label="Weight (kg)" value={String(form.weightKg)} keyboardType="numeric" onChangeText={(weightKg) => setForm((current) => ({ ...current, weightKg: Number(weightKg) || 0 }))} />
               <Field label="Notes" value={form.notes} multiline onChangeText={(notes) => setForm((current) => ({ ...current, notes }))} />
-              <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 6, paddingTop: 2 }}>
-                <MiniButton label="Cancel" danger onPress={closeForm} />
-                <MiniButton label={editing ? "Save" : "Add"} primary onPress={submit} />
-              </View>
+              <FormActions submitLabel={editing ? "Save" : "Add"} onSubmit={submit} onCancel={closeForm} />
             </Card>
           </>
         ) : null}

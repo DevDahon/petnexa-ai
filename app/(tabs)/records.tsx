@@ -1,7 +1,7 @@
 import * as ImagePicker from "expo-image-picker";
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
-import { Card, Chip, EmptyState, Field, GhostButton, HeaderAppIcon, IconBubble, PetAvatar, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
+import { Card, Chip, CompactButton, EmptyState, Field, FormActions, HeaderActionButton, HeaderAppIcon, IconBubble, PetAvatar, RowAction, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { HealthRecord, RecordType } from "@/types/domain";
@@ -70,6 +70,14 @@ export default function RecordsScreen() {
     if (!result.canceled) setForm((current) => ({ ...current, attachmentUri: result.assets[0].uri }));
   };
 
+  const chooseAttachment = () => {
+    Alert.alert("Record Attachment", "Choose an attachment source.", [
+      { text: "Gallery", onPress: pickAttachment },
+      { text: "Camera", onPress: captureAttachment },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
   const closeForm = () => {
     setEditingId(null);
     setShowForm(false);
@@ -79,16 +87,17 @@ export default function RecordsScreen() {
   return (
     <Screen>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Records</Text>
-          <HeaderAppIcon size={46} />
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900", flex: 1 }}>Records</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {!showForm ? <HeaderActionButton label="Add record" icon="plus" onPress={() => setShowForm(true)} /> : null}
+            <HeaderAppIcon size={46} />
+          </View>
         </View>
         <Field label="Search records..." value={query} onChangeText={setQuery} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
           {quickFilters.map((type) => <Chip key={type} label={type} active={typeFilter === type} onPress={() => setTypeFilter(type)} tone={type === "All" ? "teal" : recordVisual(type).tone} />)}
         </ScrollView>
-
-        {!showForm ? <PrimaryButton label="Add Record" icon="clipboard-plus-outline" onPress={() => setShowForm(true)} /> : null}
 
         {showForm ? (
           <>
@@ -104,13 +113,15 @@ export default function RecordsScreen() {
               <Field label="Clinic" value={form.clinic} onChangeText={(clinic) => setForm((current) => ({ ...current, clinic }))} />
               <Field label="Next Schedule" value={form.nextScheduleDate} onChangeText={(nextScheduleDate) => setForm((current) => ({ ...current, nextScheduleDate }))} />
               <Field label="Notes" value={form.notes} multiline onChangeText={(notes) => setForm((current) => ({ ...current, notes }))} />
-              {form.attachmentUri ? <Text selectable style={{ color: palette.teal, fontWeight: "800" }}>Attachment added</Text> : null}
-              <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-                <GhostButton label="Gallery" onPress={pickAttachment} />
-                <GhostButton label="Camera" onPress={captureAttachment} />
-                <PrimaryButton label={editingId ? "Save" : "Add"} onPress={submit} />
-                <GhostButton label="Cancel" onPress={closeForm} />
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#F8FBFD", borderRadius: 18, borderWidth: 1, borderColor: palette.border, padding: 10 }}>
+                <IconBubble icon={form.attachmentUri ? "image-check-outline" : "image-plus"} size={44} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text selectable style={{ color: palette.text, fontSize: 15, fontWeight: "900" }}>Attachment</Text>
+                  <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{form.attachmentUri ? "Image attached to this record." : "Optional photo or document image."}</Text>
+                </View>
+                <CompactButton label={form.attachmentUri ? "Change" : "Add"} onPress={chooseAttachment} />
               </View>
+              <FormActions submitLabel={editingId ? "Save" : "Add"} onSubmit={submit} onCancel={closeForm} />
             </Card>
           </>
         ) : null}

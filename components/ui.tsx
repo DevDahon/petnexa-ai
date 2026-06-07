@@ -180,6 +180,50 @@ export function RowAction({ icon, onPress, danger }: { icon: IconName; onPress: 
   );
 }
 
+export function HeaderActionButton({ icon = "plus", label, onPress, active, danger }: { icon?: IconName; label: string; onPress: () => void; active?: boolean; danger?: boolean }) {
+  const color = danger ? palette.danger : palette.teal;
+  return (
+    <IconButton
+      accessibilityLabel={label}
+      icon={icon}
+      mode={active || danger ? "contained-tonal" : "contained"}
+      size={22}
+      iconColor={active || danger ? color : "#fff"}
+      containerColor={active ? palette.softTeal : danger ? palette.softDanger : palette.teal}
+      onPress={onPress}
+      style={{ width: 42, height: 42, margin: 0, borderRadius: 16, borderWidth: 1, borderColor: active ? palette.mint : danger ? "#FECACA" : palette.teal }}
+    />
+  );
+}
+
+export function CompactButton({ label, onPress, icon, primary, danger, disabled }: { label: string; onPress: () => void; icon?: IconName; primary?: boolean; danger?: boolean; disabled?: boolean }) {
+  return (
+    <Button
+      compact
+      icon={icon}
+      mode={primary ? "contained" : "text"}
+      disabled={disabled}
+      buttonColor={primary ? palette.teal : undefined}
+      textColor={danger ? palette.danger : primary ? "#fff" : palette.navy}
+      onPress={onPress}
+      style={{ borderRadius: radii.md }}
+      contentStyle={{ minHeight: 38, paddingHorizontal: primary ? 10 : 3 }}
+      labelStyle={{ fontSize: 12, fontWeight: "900", letterSpacing: 0, marginHorizontal: 0 }}
+    >
+      {label}
+    </Button>
+  );
+}
+
+export function FormActions({ submitLabel, onSubmit, onCancel, submitIcon, disabled }: { submitLabel: string; onSubmit: () => void; onCancel: () => void; submitIcon?: IconName; disabled?: boolean }) {
+  return (
+    <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 6, paddingTop: 2 }}>
+      <CompactButton label="Cancel" danger onPress={onCancel} />
+      <CompactButton label={submitLabel} icon={submitIcon} primary disabled={disabled} onPress={onSubmit} />
+    </View>
+  );
+}
+
 export function PrimaryButton({ label, onPress, icon = "plus", danger, disabled }: { label: string; onPress: () => void; icon?: IconName; danger?: boolean; disabled?: boolean }) {
   return (
     <Button
