@@ -119,11 +119,14 @@ export default function AiAssistantScreen() {
     setBusy(true);
     try {
       const input: ConsultationInput = { pet, preset, ...form };
-      const { consultation } = await buildConsultation(input);
+      const { consultation, offline } = await buildConsultation(input);
       await saveConsultation(consultation);
-      if (consultation.riskLevel !== "Emergency") await deductAiCredit();
+      if (!offline && consultation.riskLevel !== "Emergency") await deductAiCredit();
       closeConsultation();
-      Alert.alert(consultation.riskLevel === "Emergency" ? "Emergency signs detected" : "Consultation saved", consultation.guidance);
+      Alert.alert(
+        consultation.riskLevel === "Emergency" ? "Emergency signs detected" : offline ? "Guidance saved" : "Consultation saved",
+        offline ? `${consultation.guidance}\n\nAI service is unavailable right now, so no credit was deducted.` : consultation.guidance,
+      );
     } catch (error) {
       Alert.alert("AI consultation unavailable", error instanceof Error ? error.message : "Please try again.");
     } finally {

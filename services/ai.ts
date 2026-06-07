@@ -70,24 +70,28 @@ export async function buildConsultation(input: ConsultationInput): Promise<{ con
     const network = await NetInfo.fetch();
     if (!network.isConnected) {
       offline = true;
-      throw new Error("Internet connection required for AI consultation.");
-    }
-    const endpoint = process.env.EXPO_PUBLIC_AI_PROXY_URL || "/api/consultation";
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        pet: { species: input.pet.species, breed: input.pet.breed, weightKg: input.pet.weightKg, birthday: input.pet.birthday },
-        symptoms: input,
-        safety: AI_SAFETY_NOTICE,
-      }),
-    });
-    if (response.ok) {
-      const data = await response.json();
-      guidance = String(data.guidance || guidance);
-      riskLevel = (data.riskLevel || riskLevel) as RiskLevel;
     } else {
-      throw new Error("AI service unavailable. No credit was deducted.");
+      const endpoint = process.env.EXPO_PUBLIC_AI_PROXY_URL || "/api/consultation";
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pet: { species: input.pet.species, breed: input.pet.breed, weightKg: input.pet.weightKg, birthday: input.pet.birthday },
+            symptoms: input,
+            safety: AI_SAFETY_NOTICE,
+          }),
+        });
+        if (!response.ok) {
+          offline = true;
+        } else {
+          const data = await response.json();
+          guidance = String(data.guidance || guidance);
+          riskLevel = (data.riskLevel || riskLevel) as RiskLevel;
+        }
+      } catch {
+        offline = true;
+      }
     }
   }
 
