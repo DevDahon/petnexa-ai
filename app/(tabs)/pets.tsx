@@ -1,7 +1,8 @@
 import * as ImagePicker from "expo-image-picker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
+import { Button } from "react-native-paper";
 import { Card, Chip, EmptyState, Field, GradientCard, HeaderAppIcon, IconBubble, PetAvatar, RowAction, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
@@ -28,29 +29,33 @@ const breedSuggestions: Record<PetSpecies, string[]> = {
   Other: ["Rabbit", "Hamster", "Guinea Pig", "Bird", "Turtle", "Fish", "Ferret", "Other"],
 };
 
-function CompactPetButton({
+function MiniButton({
   label,
   icon,
   onPress,
   primary,
   danger,
-  quiet,
 }: {
   label: string;
   icon?: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
   onPress: () => void;
   primary?: boolean;
   danger?: boolean;
-  quiet?: boolean;
 }) {
-  const color = danger ? palette.danger : primary ? palette.teal : palette.navy;
   return (
-    <Pressable accessibilityLabel={label} accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}>
-      <View style={{ minHeight: 34, borderRadius: 12, borderWidth: quiet ? 0 : 1, borderColor: primary ? palette.teal : danger ? "#FECACA" : palette.border, backgroundColor: primary ? palette.teal : quiet ? "transparent" : "#fff", paddingHorizontal: primary ? 13 : quiet ? 7 : 10, paddingVertical: 5, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5 }}>
-        {icon ? <MaterialCommunityIcons name={icon} size={13} color={primary ? "#fff" : color} /> : null}
-        <Text selectable style={{ color: primary ? "#fff" : color, fontSize: 11, fontWeight: "900" }}>{label}</Text>
-      </View>
-    </Pressable>
+    <Button
+      compact
+      icon={icon}
+      mode={primary ? "contained" : "text"}
+      buttonColor={primary ? palette.teal : undefined}
+      textColor={danger ? palette.danger : primary ? "#fff" : palette.navy}
+      onPress={onPress}
+      style={{ borderRadius: 12 }}
+      contentStyle={{ minHeight: 34, paddingHorizontal: primary ? 8 : 2 }}
+      labelStyle={{ fontSize: 12, fontWeight: "900", letterSpacing: 0, marginHorizontal: 0 }}
+    >
+      {label}
+    </Button>
   );
 }
 
@@ -105,6 +110,14 @@ export default function PetsScreen() {
     setForm(emptyPet);
   };
 
+  const previewPet: Pet = {
+    ...form,
+    id: editingId ?? "pet-preview",
+    createdAt: todayIso(),
+    sex: form.sex === "Female" ? "Female" : "Male",
+    weightKg: Number(form.weightKg) || 0,
+  };
+
   return (
     <Screen>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
@@ -114,7 +127,7 @@ export default function PetsScreen() {
             <Text selectable style={{ color: palette.muted, fontSize: 13 }}>Profiles, life stages, and care history.</Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            {!showForm ? <CompactPetButton label="Add" icon="plus" primary onPress={() => setShowForm(true)} /> : null}
+            {!showForm ? <MiniButton label="Add" icon="plus" primary onPress={() => setShowForm(true)} /> : null}
             <HeaderAppIcon size={46} />
           </View>
         </View>
@@ -140,6 +153,14 @@ export default function PetsScreen() {
           <>
             <SectionHeader title={editing ? `Edit ${editing.name}` : "Add Pet"} />
             <Card>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#F8FBFD", borderRadius: 18, borderWidth: 1, borderColor: palette.border, padding: 10 }}>
+                <PetAvatar pet={previewPet} size={60} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text selectable style={{ color: palette.text, fontSize: 15, fontWeight: "900" }}>Profile photo</Text>
+                  <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{form.photoUri ? "Photo added to this pet profile." : "Optional, but helps identify your pet faster."}</Text>
+                </View>
+                <MiniButton label={form.photoUri ? "Change" : "Add"} onPress={choosePhoto} />
+              </View>
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
                 {(["Dog", "Cat", "Other"] as PetSpecies[]).map((species) => <Chip key={species} label={species} active={form.species === species} onPress={() => setForm((current) => ({ ...current, species, breed: current.breed && !breedSuggestions[current.species].includes(current.breed) ? current.breed : "" }))} />)}
                 {(["Male", "Female"] as Sex[]).map((sex) => <Chip key={sex} label={sex} active={form.sex === sex} onPress={() => setForm((current) => ({ ...current, sex }))} tone="navy" />)}
@@ -159,9 +180,8 @@ export default function PetsScreen() {
               <Field label="Weight (kg)" value={String(form.weightKg)} keyboardType="numeric" onChangeText={(weightKg) => setForm((current) => ({ ...current, weightKg: Number(weightKg) || 0 }))} />
               <Field label="Notes" value={form.notes} multiline onChangeText={(notes) => setForm((current) => ({ ...current, notes }))} />
               <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 6, paddingTop: 2 }}>
-                <CompactPetButton label={form.photoUri ? "Photo Set" : "Photo"} onPress={choosePhoto} />
-                <CompactPetButton label="Cancel" quiet onPress={closeForm} />
-                <CompactPetButton label={editing ? "Save" : "Add"} primary onPress={submit} />
+                <MiniButton label="Cancel" danger onPress={closeForm} />
+                <MiniButton label={editing ? "Save" : "Add"} primary onPress={submit} />
               </View>
             </Card>
           </>
