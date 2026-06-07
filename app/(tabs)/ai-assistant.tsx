@@ -172,7 +172,7 @@ export default function AiAssistantScreen() {
           </View>
         </Card>
 
-        <SectionHeader title="Quick Select (Presets)" action="View all" />
+        <SectionHeader title="Quick Select (Presets)" />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
           {presets.map((item) => (
             <View key={item} style={{ width: "48%" }}>
