@@ -1,8 +1,8 @@
 import * as ImagePicker from "expo-image-picker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
-import { Card, Chip, EmptyState, Field, GhostButton, GradientCard, HeaderAppIcon, IconBubble, PetAvatar, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Card, Chip, EmptyState, Field, GradientCard, HeaderAppIcon, IconBubble, PetAvatar, RowAction, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Pet, PetSpecies, Sex } from "@/types/domain";
@@ -27,6 +27,30 @@ const breedSuggestions: Record<PetSpecies, string[]> = {
   Cat: ["Persian Cat", "Siamese", "Maine Coon", "British Shorthair", "Ragdoll", "Bengal", "Domestic Shorthair", "Mixed Breed"],
   Other: ["Rabbit", "Hamster", "Guinea Pig", "Bird", "Turtle", "Fish", "Ferret", "Other"],
 };
+
+function CompactPetButton({
+  label,
+  icon,
+  onPress,
+  primary,
+  danger,
+}: {
+  label: string;
+  icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
+  onPress: () => void;
+  primary?: boolean;
+  danger?: boolean;
+}) {
+  const color = danger ? palette.danger : primary ? palette.teal : palette.navy;
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}>
+      <View style={{ minHeight: 38, borderRadius: 999, borderWidth: 1.2, borderColor: primary ? palette.teal : danger ? "#FECACA" : palette.border, backgroundColor: primary ? palette.teal : "#fff", paddingHorizontal: 12, paddingVertical: 7, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        <MaterialCommunityIcons name={icon} size={15} color={primary ? "#fff" : color} />
+        <Text selectable style={{ color: primary ? "#fff" : color, fontSize: 12, fontWeight: "900" }}>{label}</Text>
+      </View>
+    </Pressable>
+  );
+}
 
 export default function PetsScreen() {
   const { pets, records, reminders, savePet, removePet } = useAppData();
@@ -99,7 +123,11 @@ export default function PetsScreen() {
 
         <Field label="Search pets..." value={query} onChangeText={setQuery} />
 
-        {!showForm ? <PrimaryButton label="Add Pet" icon="paw" onPress={() => setShowForm(true)} /> : null}
+        {!showForm ? (
+          <View style={{ alignItems: "flex-end" }}>
+            <CompactPetButton label="Add Pet" icon="paw" primary onPress={() => setShowForm(true)} />
+          </View>
+        ) : null}
 
         {showForm ? (
           <>
@@ -123,11 +151,11 @@ export default function PetsScreen() {
               <Text selectable style={{ color: palette.teal, fontWeight: "800" }}>{calculateAge(form.birthday)} • {getLifeStage(form.birthday, form.species)}</Text>
               <Field label="Weight (kg)" value={String(form.weightKg)} keyboardType="numeric" onChangeText={(weightKg) => setForm((current) => ({ ...current, weightKg: Number(weightKg) || 0 }))} />
               <Field label="Notes" value={form.notes} multiline onChangeText={(notes) => setForm((current) => ({ ...current, notes }))} />
-              <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-                <GhostButton label="Gallery" onPress={pickImage} />
-                <GhostButton label="Camera" onPress={takePhoto} />
-                <PrimaryButton label={editing ? "Save" : "Add"} onPress={submit} />
-                <GhostButton label="Cancel" onPress={closeForm} />
+              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", paddingTop: 2 }}>
+                <CompactPetButton label="Gallery" icon="image-outline" onPress={pickImage} />
+                <CompactPetButton label="Camera" icon="camera-outline" onPress={takePhoto} />
+                <CompactPetButton label={editing ? "Save" : "Add"} icon={editing ? "content-save-outline" : "plus"} primary onPress={submit} />
+                <CompactPetButton label="Cancel" icon="close" danger onPress={closeForm} />
               </View>
             </Card>
           </>
