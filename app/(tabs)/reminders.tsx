@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { Card, Chip, EmptyState, Field, GhostButton, GradientCard, HeaderAppIcon, IconBubble, PetAvatar, PrimaryButton, ReminderPill, RowAction, Screen, SectionHeader, StatCard } from "@/components/ui";
 import { palette } from "@/constants/theme";
@@ -9,6 +9,22 @@ import { formatFriendlyDate, getReminderStatus, todayIso } from "@/utils/date";
 
 const reminderTypes: ReminderType[] = ["Vaccination", "Deworming", "Medication", "Appointment", "Grooming", "Custom"];
 const emptyReminder = { petId: "", type: "Vaccination" as ReminderType, title: "", dueDate: todayIso(), notes: "" };
+
+function CareActionButton({ label, detail, icon, active, primary, onPress }: { label: string; detail: string; icon: React.ComponentProps<typeof IconBubble>["icon"]; active?: boolean; primary?: boolean; onPress: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.72 : 1 })}>
+      <View style={{ minHeight: 78, borderRadius: 22, borderWidth: 1.5, borderColor: primary || active ? palette.teal : palette.border, backgroundColor: primary ? palette.teal : active ? palette.softTeal : "#fff", padding: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <View style={{ width: 40, height: 40, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: primary ? "rgba(255,255,255,0.2)" : active ? "#fff" : palette.softTeal }}>
+          <IconBubble icon={icon} size={34} tone={primary ? "navy" : "teal"} />
+        </View>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text selectable style={{ color: primary ? "#fff" : palette.text, fontSize: 13, fontWeight: "900" }}>{label}</Text>
+          <Text selectable style={{ color: primary ? "rgba(255,255,255,0.82)" : palette.muted, fontSize: 11, lineHeight: 15 }}>{detail}</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
 
 function statusTone(reminder: Reminder) {
   const value = getReminderStatus(reminder);
@@ -89,10 +105,12 @@ export default function RemindersScreen() {
           <StatCard label="Total" value={reminders.length} icon="bell-outline" />
         </View>
 
-        <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "space-between" }}>
-          {!showForm ? <PrimaryButton label="Add Reminder" icon="bell-plus-outline" onPress={() => setShowForm(true)} /> : null}
-          <GhostButton label={showCalendar ? "Hide Calendar" : "Calendar"} onPress={() => setShowCalendar((value) => !value)} />
-        </View>
+        {!showForm ? (
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <CareActionButton label="Add" detail="New reminder" icon="bell-plus-outline" primary onPress={() => setShowForm(true)} />
+            <CareActionButton label={showCalendar ? "Hide" : "Calendar"} detail={showCalendar ? "Close view" : "Monthly view"} icon="calendar-month-outline" active={showCalendar} onPress={() => setShowCalendar((value) => !value)} />
+          </View>
+        ) : null}
 
         {showCalendar ? (
           <Card>
