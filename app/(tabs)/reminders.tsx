@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { Calendar } from "react-native-calendars";
-import { Card, Chip, EmptyState, Field, GhostButton, HeaderAppIcon, PetAvatar, PrimaryButton, ReminderPill, RowAction, Screen, SectionHeader, StatCard } from "@/components/ui";
+import { Card, Chip, EmptyState, Field, GhostButton, GradientCard, HeaderAppIcon, IconBubble, PetAvatar, PrimaryButton, ReminderPill, RowAction, Screen, SectionHeader, StatCard } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Reminder, ReminderType } from "@/types/domain";
@@ -28,6 +28,8 @@ export default function RemindersScreen() {
   const filtered = useMemo(() => reminders.filter((reminder) => status === "All" || getReminderStatus(reminder) === status), [reminders, status]);
   const dueToday = reminders.filter((item) => getReminderStatus(item) === "Due Today");
   const overdue = reminders.filter((item) => getReminderStatus(item) === "Overdue");
+  const upcoming = reminders.filter((item) => getReminderStatus(item) === "Upcoming");
+  const nextReminder = [...dueToday, ...upcoming][0];
   const markedDates = useMemo(() => reminders.reduce<Record<string, { marked: boolean; dotColor: string }>>((acc, reminder) => {
     const reminderStatus = getReminderStatus(reminder);
     acc[reminder.dueDate] = {
@@ -62,9 +64,24 @@ export default function RemindersScreen() {
     <Screen>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Reminders</Text>
+          <View>
+            <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Care</Text>
+            <Text selectable style={{ color: palette.muted, fontSize: 13 }}>Reminders, schedules, and follow-ups.</Text>
+          </View>
           <HeaderAppIcon size={46} />
         </View>
+
+        <GradientCard variant={overdue.length > 0 ? "danger" : "calm"}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <IconBubble icon={overdue.length > 0 ? "alert-outline" : "calendar-heart"} tone={overdue.length > 0 ? "danger" : "teal"} size={58} />
+            <View style={{ flex: 1, gap: 5 }}>
+              <Text selectable style={{ color: palette.text, fontSize: 21, fontWeight: "900" }}>{overdue.length > 0 ? `${overdue.length} overdue care item${overdue.length === 1 ? "" : "s"}` : "Care schedule is on track"}</Text>
+              <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>
+                {nextReminder ? `Next: ${nextReminder.title} • ${formatFriendlyDate(nextReminder.dueDate)}` : "No upcoming reminders right now."}
+              </Text>
+            </View>
+          </View>
+        </GradientCard>
 
         <View style={{ flexDirection: "row", gap: 10 }}>
           <StatCard label="Today" value={dueToday.length} icon="calendar-today" tone="warning" />
@@ -72,7 +89,7 @@ export default function RemindersScreen() {
           <StatCard label="Total" value={reminders.length} icon="bell-outline" />
         </View>
 
-        <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
+        <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "space-between" }}>
           {!showForm ? <PrimaryButton label="Add Reminder" icon="bell-plus-outline" onPress={() => setShowForm(true)} /> : null}
           <GhostButton label={showCalendar ? "Hide Calendar" : "Calendar"} onPress={() => setShowCalendar((value) => !value)} />
         </View>
@@ -115,7 +132,7 @@ export default function RemindersScreen() {
         ) : null}
 
         <SectionHeader title="Care Queue" action={`${filtered.length} shown`} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
           {["All", "Due Today", "Overdue", "Upcoming", "Completed"].map((item) => <Chip key={item} label={item} active={status === item} onPress={() => setStatus(item)} tone={item === "Overdue" ? "danger" : item === "Due Today" ? "warning" : "teal"} />)}
         </ScrollView>
 
@@ -125,7 +142,7 @@ export default function RemindersScreen() {
           filtered.slice(0, 12).map((reminder) => {
             const pet = pets.find((item) => item.id === reminder.petId);
             return (
-              <Card key={reminder.id} style={{ backgroundColor: getReminderStatus(reminder) === "Overdue" ? palette.softDanger : getReminderStatus(reminder) === "Due Today" ? palette.softYellow : "#fff" }}>
+              <Card key={reminder.id} style={{ backgroundColor: getReminderStatus(reminder) === "Overdue" ? palette.softDanger : getReminderStatus(reminder) === "Due Today" ? palette.softYellow : "#fff", borderColor: getReminderStatus(reminder) === "Overdue" ? "#FECACA" : getReminderStatus(reminder) === "Due Today" ? "#FDE68A" : "#E8EEF4" }}>
                 <View style={{ gap: 12 }}>
                   <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
                     <View style={{ width: 5, alignSelf: "stretch", borderRadius: 99, backgroundColor: getReminderStatus(reminder) === "Overdue" ? palette.danger : getReminderStatus(reminder) === "Due Today" ? palette.warning : getReminderStatus(reminder) === "Completed" ? palette.success : palette.teal }} />
@@ -133,12 +150,13 @@ export default function RemindersScreen() {
                     <View style={{ flex: 1, gap: 4 }}>
                       <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900" }}>{reminder.title}</Text>
                       <Text selectable style={{ color: palette.muted, fontSize: 13, fontWeight: "700" }}>{pet?.name ?? "Pet"} • {formatFriendlyDate(reminder.dueDate)}</Text>
+                      {reminder.notes ? <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18 }}>{reminder.notes}</Text> : null}
                     </View>
                     <ReminderPill reminder={reminder} />
                   </View>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                     <Chip label={reminder.type} tone={statusTone(reminder)} />
-                    <View style={{ flexDirection: "row" }}>
+                    <View style={{ flexDirection: "row", gap: 4 }}>
                       {!reminder.completedAt ? <RowAction icon="check-circle-outline" onPress={() => completeReminder(reminder)} /> : null}
                       <RowAction icon="pencil-outline" onPress={() => startEdit(reminder)} />
                       <RowAction icon="trash-can-outline" danger onPress={() => Alert.alert("Delete reminder?", "This removes the local reminder.", [{ text: "Cancel" }, { text: "Delete", style: "destructive", onPress: () => removeReminder(reminder.id) }])} />

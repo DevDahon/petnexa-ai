@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ScrollView, Text, View } from "react-native";
-import { Card, EmptyState, GradientCard, HeaderAppIcon, IconBubble, PetAvatar, ReminderPill, Screen, SectionHeader, StatCard } from "@/components/ui";
+import { Card, Chip, EmptyState, GradientCard, HeaderAppIcon, IconBubble, PetAvatar, ReminderPill, Screen, SectionHeader, StatCard } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { calculateAge, formatFriendlyDate, getReminderStatus } from "@/utils/date";
@@ -18,6 +18,7 @@ export default function HomeScreen() {
   const overdue = reminders.filter((item) => getReminderStatus(item) === "Overdue");
   const upcoming = reminders.filter((item) => getReminderStatus(item) === "Upcoming");
   const nextReminder = [...due, ...upcoming][0];
+  const featuredPet = pets[0];
   const ownerName = owner.fullName.split(" ")[0] || "Pet Parent";
 
   return (
@@ -37,11 +38,11 @@ export default function HomeScreen() {
         <GradientCard variant="primary">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
             <View style={{ flex: 1, gap: 7 }}>
-              <Text selectable style={{ color: "#fff", fontSize: 13, fontWeight: "800" }}>PetNexa AI Care Summary</Text>
-              <Text selectable style={{ color: "#fff", fontSize: 24, lineHeight: 31, fontWeight: "900" }}>
-                {pets.length} {pets.length === 1 ? "pet" : "pets"} with {due.length + overdue.length} care {due.length + overdue.length === 1 ? "item" : "items"} needing attention
+              <Text selectable style={{ color: "rgba(255,255,255,0.84)", fontSize: 12, fontWeight: "900" }}>TODAY'S CARE</Text>
+              <Text selectable style={{ color: "#fff", fontSize: 25, lineHeight: 31, fontWeight: "900" }}>{greeting()}, {ownerName}</Text>
+              <Text selectable style={{ color: "rgba(255,255,255,0.88)", fontSize: 14, lineHeight: 20 }}>
+                {pets.length} {pets.length === 1 ? "pet" : "pets"} tracked • {due.length + overdue.length} care {due.length + overdue.length === 1 ? "item" : "items"} need attention
               </Text>
-              <Text selectable style={{ color: "rgba(255,255,255,0.84)", fontSize: 13 }}>{records.length} health records saved locally</Text>
             </View>
             <View style={{ width: 68, height: 68, borderRadius: 22, backgroundColor: "rgba(255,255,255,0.22)", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.42)" }}>
               <MaterialCommunityIcons name="heart-pulse" color="#fff" size={38} />
@@ -55,7 +56,26 @@ export default function HomeScreen() {
           <StatCard label="Upcoming" value={upcoming.length} icon="calendar-check-outline" tone="teal" />
         </View>
 
-        <SectionHeader title="My Pets" action="View all" />
+        {featuredPet ? (
+          <>
+            <SectionHeader title="Featured Pet" />
+            <Card style={{ backgroundColor: featuredPet.species === "Cat" ? palette.softPeach : palette.softTeal, borderColor: featuredPet.species === "Cat" ? "#FFE1CC" : palette.mint }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+                <PetAvatar pet={featuredPet} size={84} />
+                <View style={{ flex: 1, gap: 5 }}>
+                  <Text selectable style={{ color: palette.text, fontSize: 21, fontWeight: "900" }}>{featuredPet.name}</Text>
+                  <Text selectable style={{ color: palette.muted, fontSize: 13, fontWeight: "700" }}>{featuredPet.breed || featuredPet.species}</Text>
+                  <View style={{ flexDirection: "row", gap: 7, flexWrap: "wrap" }}>
+                    <Chip label={calculateAge(featuredPet.birthday).replace(" old", "")} active />
+                    <Chip label={`${featuredPet.weightKg} kg`} tone="navy" />
+                  </View>
+                </View>
+              </View>
+            </Card>
+          </>
+        ) : null}
+
+        <SectionHeader title="My Pets" action={`${pets.length} saved`} />
         {pets.length ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
             {pets.slice(0, 3).map((pet) => (
@@ -90,6 +110,7 @@ export default function HomeScreen() {
         )}
 
         <SectionHeader title="Recent Activity" />
+        {records.length === 0 ? <EmptyState title="No recent activity" message="New health records will appear here." icon="clipboard-text-outline" /> : null}
         {records.slice(0, 2).map((record) => {
           const pet = pets.find((item) => item.id === record.petId);
           return (
