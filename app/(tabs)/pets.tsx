@@ -2,7 +2,7 @@ import * as ImagePicker from "expo-image-picker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
-import { Button } from "react-native-paper";
+import { Button, IconButton } from "react-native-paper";
 import { Card, Chip, EmptyState, Field, GradientCard, HeaderAppIcon, IconBubble, PetAvatar, RowAction, Screen, SectionHeader } from "@/components/ui";
 import { palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
@@ -56,6 +56,21 @@ function MiniButton({
     >
       {label}
     </Button>
+  );
+}
+
+function HeaderAddButton({ onPress }: { onPress: () => void }) {
+  return (
+    <IconButton
+      accessibilityLabel="Add pet"
+      icon="plus"
+      mode="contained"
+      size={22}
+      iconColor="#fff"
+      containerColor={palette.teal}
+      onPress={onPress}
+      style={{ width: 42, height: 42, margin: 0, borderRadius: 16, borderWidth: 1, borderColor: palette.mint }}
+    />
   );
 }
 
@@ -127,7 +142,7 @@ export default function PetsScreen() {
             <Text selectable style={{ color: palette.muted, fontSize: 13 }}>Profiles, life stages, and care history.</Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            {!showForm ? <MiniButton label="Add" icon="plus" primary onPress={() => setShowForm(true)} /> : null}
+            {!showForm ? <HeaderAddButton onPress={() => setShowForm(true)} /> : null}
             <HeaderAppIcon size={46} />
           </View>
         </View>
