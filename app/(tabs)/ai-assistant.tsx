@@ -127,8 +127,8 @@ export default function AiAssistantScreen() {
       setLatestResult({ consultation, offline });
       closeConsultation();
       Alert.alert(
-        consultation.riskLevel === "Emergency" ? "Emergency signs detected" : offline ? "Guidance saved" : "Consultation saved",
-        offline ? `${consultation.guidance}\n\nAI service is unavailable right now, so no credit was deducted.` : consultation.guidance,
+        consultation.riskLevel === "Emergency" ? "Emergency signs detected" : "Consultation saved",
+        offline ? `${consultation.guidance}\n\nNo AI credit was deducted for this saved guidance.` : consultation.guidance,
       );
     } catch (error) {
       Alert.alert("AI consultation unavailable", error instanceof Error ? error.message : "Please try again.");
@@ -275,7 +275,7 @@ export default function AiAssistantScreen() {
 
         {latestResult ? (
           <>
-            <SectionHeader title="AI Guidance" action={latestResult.offline ? "Local guidance" : "AI response"} />
+            <SectionHeader title="AI Guidance" action={latestResult.offline ? "Saved guidance" : "AI response"} />
             <Card style={{ backgroundColor: latestResult.consultation.riskLevel === "Emergency" ? palette.softDanger : palette.softTeal, borderColor: latestResult.consultation.riskLevel === "Emergency" ? "#FECACA" : palette.mint }}>
               <View style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
                 <IconBubble icon={latestResult.consultation.riskLevel === "Emergency" ? "alert-octagon-outline" : "robot-happy-outline"} tone={latestResult.consultation.riskLevel === "Emergency" ? "danger" : "teal"} />
@@ -288,7 +288,7 @@ export default function AiAssistantScreen() {
                   </View>
                   <Text selectable style={{ color: palette.text, fontSize: 14, lineHeight: 22 }}>{latestResult.consultation.guidance}</Text>
                   {latestResult.offline ? (
-                    <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18 }}>AI service was unavailable, so PetNexa saved local guidance and no AI credit was deducted.</Text>
+                    <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18 }}>No AI credit was deducted for this saved guidance.</Text>
                   ) : null}
                 </View>
               </View>

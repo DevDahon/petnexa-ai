@@ -68,7 +68,8 @@ export async function buildConsultation(input: ConsultationInput): Promise<{ con
 
   if (flags.length === 0) {
     const network = await NetInfo.fetch();
-    if (!network.isConnected) {
+    const confirmedOffline = network.isConnected === false && network.isInternetReachable === false;
+    if (confirmedOffline) {
       offline = true;
     } else {
       const endpoint = process.env.EXPO_PUBLIC_AI_PROXY_URL || "/api/consultation";
