@@ -87,6 +87,14 @@ export default function PetsScreen() {
     if (!result.canceled) setForm((current) => ({ ...current, photoUri: result.assets[0].uri }));
   };
 
+  const choosePhoto = () => {
+    Alert.alert("Pet Photo", "Choose a photo source.", [
+      { text: "Gallery", onPress: pickImage },
+      { text: "Camera", onPress: takePhoto },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
   const startEdit = (pet: Pet) => {
     setEditingId(pet.id);
     setShowForm(true);
@@ -152,13 +160,10 @@ export default function PetsScreen() {
               <Text selectable style={{ color: palette.teal, fontWeight: "800" }}>{calculateAge(form.birthday)} • {getLifeStage(form.birthday, form.species)}</Text>
               <Field label="Weight (kg)" value={String(form.weightKg)} keyboardType="numeric" onChangeText={(weightKg) => setForm((current) => ({ ...current, weightKg: Number(weightKg) || 0 }))} />
               <Field label="Notes" value={form.notes} multiline onChangeText={(notes) => setForm((current) => ({ ...current, notes }))} />
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12, paddingTop: 4 }}>
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                  <CompactPetButton label="Choose from gallery" icon="image-outline" iconOnly onPress={pickImage} />
-                  <CompactPetButton label="Take pet photo" icon="camera-outline" iconOnly onPress={takePhoto} />
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                  <CompactPetButton label="Cancel" icon="close" danger quiet onPress={closeForm} />
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10, paddingTop: 4 }}>
+                <CompactPetButton label={form.photoUri ? "Photo Set" : "Photo"} icon={form.photoUri ? "image-check-outline" : "image-plus"} onPress={choosePhoto} />
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                  <CompactPetButton label="Cancel" icon="close" quiet onPress={closeForm} />
                   <CompactPetButton label={editing ? "Save" : "Add"} icon={editing ? "content-save-outline" : "plus"} primary onPress={submit} />
                 </View>
               </View>
