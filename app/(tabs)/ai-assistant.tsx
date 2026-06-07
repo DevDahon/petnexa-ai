@@ -7,6 +7,8 @@ import { useAppData } from "@/context/AppContext";
 import { AI_SAFETY_NOTICE, buildConsultation, ConsultationInput } from "@/services/ai";
 
 const presets = ["Vomiting", "Diarrhea", "Not Eating", "Weakness", "Coughing", "Poisoning"];
+const yesNoOptions = ["No", "Mild", "Yes"];
+const conditionOptions = ["Normal", "Reduced", "Severe"];
 
 function presetIcon(label: string) {
   if (label === "Vomiting") return "stomach" as const;
@@ -22,7 +24,7 @@ export default function AiAssistantScreen() {
   const [selectedPetId, setSelectedPetId] = useState(pets[0]?.id ?? "");
   const [preset, setPreset] = useState(presets[0]);
   const [showForm, setShowForm] = useState(false);
-  const [advanced, setAdvanced] = useState(false);
+  const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     symptoms: "Vomiting once this morning",
     appetite: "Normal",
@@ -39,6 +41,23 @@ export default function AiAssistantScreen() {
   const pet = pets.find((item) => item.id === selectedPetId) ?? pets[0];
   const emergencyVet = veterinarians.find((vet) => vet.emergencyHotline) ?? veterinarians[0];
 
+  const startConsultation = () => {
+    setSelectedPetId((current) => current || pets[0]?.id || "");
+    setStep(1);
+    setShowForm(true);
+  };
+
+  const closeConsultation = () => {
+    setShowForm(false);
+    setStep(1);
+  };
+
+  const goNext = () => {
+    if (!pet) return Alert.alert("Add a pet first", "Consultations need pet context.");
+    if (!form.symptoms.trim()) return Alert.alert("Symptoms required", "Tell PetNexa AI what you are noticing before continuing.");
+    setStep((current) => Math.min(3, current + 1));
+  };
+
   const submit = async () => {
     if (!pet) return Alert.alert("Add a pet first", "Consultations need pet context.");
     if (!canUseAi()) return Alert.alert("No AI credits", "Watch a rewarded ad if your weekly credit is available.");
@@ -48,7 +67,7 @@ export default function AiAssistantScreen() {
       const { consultation } = await buildConsultation(input);
       await saveConsultation(consultation);
       if (consultation.riskLevel !== "Emergency") await deductAiCredit();
-      setShowForm(false);
+      closeConsultation();
       Alert.alert(consultation.riskLevel === "Emergency" ? "Emergency signs detected" : "Consultation saved", consultation.guidance);
     } catch (error) {
       Alert.alert("AI consultation unavailable", error instanceof Error ? error.message : "Please try again.");
@@ -77,7 +96,7 @@ export default function AiAssistantScreen() {
             <View style={{ flex: 1, gap: 7 }}>
               <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>Guided pet-care notes</Text>
               <Text selectable style={{ color: palette.text, fontSize: 20, lineHeight: 26, fontWeight: "900" }}>Ask AI about your pet's health and get organized guidance.</Text>
-              <PrimaryButton label="Start Consultation" icon="arrow-right" onPress={() => setShowForm(true)} />
+              <PrimaryButton label="Start Consultation" icon="arrow-right" onPress={startConsultation} />
             </View>
             <View style={{ width: 112, height: 112, borderRadius: 30, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#DDEEEB" }}>
               <MaterialCommunityIcons name="robot-happy-outline" color={palette.navy} size={58} />
@@ -110,34 +129,67 @@ export default function AiAssistantScreen() {
 
         {showForm ? (
           <>
-            <SectionHeader title="Guided Consultation" action="Step 1 of 3" />
+            <SectionHeader title="Guided Consultation" action={`Step ${step} of 3`} />
             <Card>
               <View style={{ flexDirection: "row", gap: 8 }}>
-                {[1, 2, 3].map((step) => <View key={step} style={{ flex: 1, height: 6, borderRadius: 999, backgroundColor: step === 1 ? palette.teal : palette.border }} />)}
+                {[1, 2, 3].map((item) => <View key={item} style={{ flex: 1, height: 6, borderRadius: 999, backgroundColor: item <= step ? palette.teal : palette.border }} />)}
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                {pets.map((item) => <Chip key={item.id} label={item.name} active={(pet?.id ?? "") === item.id} onPress={() => setSelectedPetId(item.id)} />)}
-              </ScrollView>
-              {pet ? <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}><PetAvatar pet={pet} size={52} /><Text selectable style={{ color: palette.text, fontWeight: "900" }}>{pet.name} • {pet.breed}</Text></View> : null}
-              <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>What are you noticing?</Text>
-              <Field label="What is happening?" value={form.symptoms} multiline onChangeText={(symptoms) => setForm((current) => ({ ...current, symptoms }))} />
-              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                {["Normal", "Low", "None"].map((appetite) => <Chip key={appetite} label={`Appetite: ${appetite}`} active={form.appetite === appetite} onPress={() => setForm((current) => ({ ...current, appetite }))} />)}
-              </View>
-              <GhostButton label={advanced ? "Hide Details" : "More Details"} onPress={() => setAdvanced((value) => !value)} />
-              {advanced ? (
+              {step === 1 ? (
                 <>
+                  <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Choose pet and main concern</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                    {pets.map((item) => <Chip key={item.id} label={item.name} active={(pet?.id ?? "") === item.id} onPress={() => setSelectedPetId(item.id)} />)}
+                  </ScrollView>
+                  {pet ? <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}><PetAvatar pet={pet} size={52} /><Text selectable style={{ color: palette.text, fontWeight: "900" }}>{pet.name} • {pet.breed || pet.species}</Text></View> : null}
+                  <Field label="What is happening?" value={form.symptoms} multiline onChangeText={(symptoms) => setForm((current) => ({ ...current, symptoms }))} />
+                  <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                    {["Normal", "Low", "None"].map((appetite) => <Chip key={appetite} label={`Appetite: ${appetite}`} active={form.appetite === appetite} onPress={() => setForm((current) => ({ ...current, appetite }))} />)}
+                  </View>
+                </>
+              ) : null}
+
+              {step === 2 ? (
+                <>
+                  <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Symptom details</Text>
+                  <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>Select the closest option for each item. These details help screen for urgency.</Text>
+                  <View style={{ gap: 10 }}>
+                    <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Vomiting</Text>
+                    <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                      {yesNoOptions.map((vomiting) => <Chip key={vomiting} label={vomiting} active={form.vomiting === vomiting} onPress={() => setForm((current) => ({ ...current, vomiting }))} tone={vomiting === "Yes" ? "warning" : "teal"} />)}
+                    </View>
+                    <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Diarrhea</Text>
+                    <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                      {yesNoOptions.map((diarrhea) => <Chip key={diarrhea} label={diarrhea} active={form.diarrhea === diarrhea} onPress={() => setForm((current) => ({ ...current, diarrhea }))} tone={diarrhea === "Yes" ? "warning" : "teal"} />)}
+                    </View>
+                    <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Mobility</Text>
+                    <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                      {conditionOptions.map((mobility) => <Chip key={mobility} label={mobility} active={form.mobility === mobility} onPress={() => setForm((current) => ({ ...current, mobility }))} tone={mobility === "Severe" ? "danger" : "teal"} />)}
+                    </View>
+                  </View>
+                </>
+              ) : null}
+
+              {step === 3 ? (
+                <>
+                  <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Final notes and review</Text>
                   <Field label="Water Intake" value={form.waterIntake} onChangeText={(waterIntake) => setForm((current) => ({ ...current, waterIntake }))} />
                   <Field label="Behavior Changes" value={form.behaviorChanges} onChangeText={(behaviorChanges) => setForm((current) => ({ ...current, behaviorChanges }))} />
                   <Field label="Breathing" value={form.breathing} onChangeText={(breathing) => setForm((current) => ({ ...current, breathing }))} />
                   <Field label="Injury" value={form.injury} onChangeText={(injury) => setForm((current) => ({ ...current, injury }))} />
                   <Field label="Notes" value={form.notes} multiline onChangeText={(notes) => setForm((current) => ({ ...current, notes }))} />
+                  <View style={{ backgroundColor: palette.softTeal, borderRadius: 18, borderWidth: 1, borderColor: palette.mint, padding: 13, gap: 5 }}>
+                    <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Review</Text>
+                    <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>{pet?.name ?? "Pet"} • {preset} • Appetite: {form.appetite}</Text>
+                    <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>Vomiting: {form.vomiting} • Diarrhea: {form.diarrhea} • Mobility: {form.mobility}</Text>
+                  </View>
                 </>
               ) : null}
+
               <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>{AI_SAFETY_NOTICE}</Text>
               <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-                <PrimaryButton label={busy ? "Checking..." : "Submit"} icon="heart-pulse" onPress={submit} disabled={busy} />
-                <GhostButton label="Cancel" onPress={() => setShowForm(false)} />
+                {step > 1 ? <GhostButton label="Back" onPress={() => setStep((current) => Math.max(1, current - 1))} /> : null}
+                {step < 3 ? <PrimaryButton label="Continue" icon="arrow-right" onPress={goNext} /> : <PrimaryButton label={busy ? "Checking..." : "Submit Consultation"} icon="heart-pulse" onPress={submit} disabled={busy} />}
+                <GhostButton label="Cancel" onPress={closeConsultation} />
               </View>
             </Card>
           </>
