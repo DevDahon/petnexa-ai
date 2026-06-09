@@ -1,13 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
+import * as Linking from "expo-linking";
 import React, { createContext, PropsWithChildren, useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, AppState } from "react-native";
+import { Alert, AppState, Platform } from "react-native";
 import { AppSnapshot, Consultation, HealthRecord, Owner, Pet, Reminder, Settings, SyncMetadata, Veterinarian } from "@/types/domain";
 import { initDatabase, getSnapshot, replaceSnapshot, upsertConsultation, upsertCreditState, upsertOwner, upsertPet, upsertRecord, upsertReminder, upsertSettings, upsertVet, deletePet, deleteRecord, deleteReminder, deleteVet } from "@/storage/database";
 import { createId, currentWeekKey, todayIso } from "@/utils/date";
 import { exportBackup, pickBackupFile } from "@/services/backup";
 import { cancelReminderNotification, scheduleReminderNotification, syncReminderNotifications } from "@/services/notifications";
-import { createHome, joinHome, signInWithEmailOtp, signInWithGoogle, signOutHome, softDeleteCloudEntity, syncNow, verifyOtp } from "@/services/home-sync";
+import { createHome, deleteHome, handleAuthCallbackUrl, hasHomeAuthSession, joinHome, listUserHomes, signInWithEmailOtp, signInWithGoogle, signOutHome, softDeleteCloudEntity, syncNow, verifyOtp } from "@/services/home-sync";
+import type { HomeAccount } from "@/services/home-sync";
+import { showRewardedAd } from "@/services/rewarded-ads";
+import { supabase } from "@/utils/supabase";
 
 type AppContextValue = AppSnapshot & {
   ready: boolean;
@@ -31,7 +35,11 @@ type AppContextValue = AppSnapshot & {
   sendHomeOtp: (email: string) => Promise<void>;
   verifyHomeOtp: (email: string, token: string) => Promise<void>;
   signInHomeWithGoogle: () => Promise<void>;
-  createHomeAccount: (name: string) => Promise<void>;
+  hasHomeAuthSession: () => Promise<boolean>;
+  listHomeAccounts: () => Promise<HomeAccount[]>;
+  selectHomeAccount: (home: HomeAccount) => Promise<void>;
+  deleteHomeAccount: (home: HomeAccount) => Promise<void>;
+  createHomeAccount: (name: string) => Promise<string>;
   joinHomeAccount: (inviteCode: string) => Promise<void>;
   logoutHomeAccount: () => Promise<void>;
   syncHomeNow: () => Promise<void>;
@@ -69,9 +77,15 @@ async function getInstallationId() {
   return next;
 }
 
+async function getInitialAuthUrl() {
+  if (Platform.OS === "web" && typeof window !== "undefined") return window.location.href;
+  return Linking.getInitialURL();
+}
+
 export function AppProvider({ children }: PropsWithChildren) {
   const [snapshot, setSnapshot] = useState<AppSnapshot>(emptySnapshot);
   const [ready, setReady] = useState(false);
+  const [authSessionVersion, setAuthSessionVersion] = useState(0);
 
   const refresh = useCallback(async () => {
     setSnapshot(await getSnapshot());
@@ -96,8 +110,14 @@ export function AppProvider({ children }: PropsWithChildren) {
     };
   }, [snapshot.settings.careMode, snapshot.settings.homeId]);
 
+  const processAuthCallback = useCallback(async (url?: string | null) => {
+    const handled = await handleAuthCallbackUrl(url).catch(() => false);
+    if (handled) setAuthSessionVersion((value) => value + 1);
+  }, []);
+
   useEffect(() => {
     async function boot() {
+      await processAuthCallback(await getInitialAuthUrl());
       await initDatabase();
       await getInstallationId();
       await AsyncStorage.setItem("petnexa_last_opened", new Date().toISOString());
@@ -112,7 +132,21 @@ export function AppProvider({ children }: PropsWithChildren) {
       setReady(true);
     }
     boot();
-  }, [syncIfEnabled]);
+  }, [processAuthCallback, syncIfEnabled]);
+
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange(() => {
+      setAuthSessionVersion((value) => value + 1);
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      processAuthCallback(url).catch(() => undefined);
+    });
+    return () => subscription.remove();
+  }, [processAuthCallback]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (state) => {
@@ -154,17 +188,24 @@ export function AppProvider({ children }: PropsWithChildren) {
       await refresh();
     },
     saveRecord: async (record) => {
+      const recordId = record.id;
+      const previousLinkedReminders = recordId ? snapshot.reminders.filter((item) => item.linkedRecordId === recordId) : [];
       const result = await upsertRecord(markPending(record));
       if (snapshot.settings.notificationsEnabled && result?.linkedReminder) await scheduleReminderNotification(result.linkedReminder);
+      if (snapshot.settings.notificationsEnabled && !result?.linkedReminder) {
+        await Promise.all(previousLinkedReminders.map((item) => cancelReminderNotification(item.id)));
+      }
       await refresh();
       await syncIfEnabled().catch(() => undefined);
     },
     removeRecord: async (id) => {
+      const linkedReminders = snapshot.reminders.filter((item) => item.linkedRecordId === id);
       if (snapshot.settings.careMode === "home") {
         await softDeleteCloudEntity("records", snapshot.settings.homeId, id).catch(() => undefined);
         await Promise.all(snapshot.reminders.filter((item) => item.linkedRecordId === id).map((item) => softDeleteCloudEntity("reminders", snapshot.settings.homeId, item.id))).catch(() => undefined);
       }
       await deleteRecord(id);
+      if (snapshot.settings.notificationsEnabled) await Promise.all(linkedReminders.map((item) => cancelReminderNotification(item.id)));
       await refresh();
     },
     saveReminder: async (reminder) => {
@@ -206,6 +247,10 @@ export function AppProvider({ children }: PropsWithChildren) {
         ? snapshot.creditState
         : { ...snapshot.creditState, weeklyAdWatchCount: 0, lastWeeklyResetDate: week, lastWeeklyCreditClaimDate: undefined };
       if (state.weeklyAdWatchCount >= 5) return "Weekly ad watch limit reached.";
+
+      const adResult = await showRewardedAd();
+      if (!adResult.earned) return adResult.message;
+
       const next = { ...state, weeklyAdWatchCount: state.weeklyAdWatchCount + 1 };
       if (next.lastWeeklyCreditClaimDate === week) {
         await upsertCreditState(next);
@@ -233,15 +278,64 @@ export function AppProvider({ children }: PropsWithChildren) {
     sendHomeOtp: async (email) => signInWithEmailOtp(email),
     verifyHomeOtp: async (email, token) => verifyOtp(email, token),
     signInHomeWithGoogle: async () => signInWithGoogle(),
-    createHomeAccount: async (name) => {
-      const home = await createHome(name || `${snapshot.owner.fullName.split(" ")[0] || "PetNexa"} Home`, snapshot.owner.fullName);
+    hasHomeAuthSession: async () => hasHomeAuthSession(),
+    listHomeAccounts: async () => listUserHomes(),
+    deleteHomeAccount: async (home) => {
+      await deleteHome(home.homeId);
       const current = await getSnapshot();
+      if (current.settings.homeId !== home.homeId) return;
       const next: AppSnapshot = {
         ...current,
-        settings: { ...current.settings, careMode: "home", syncEnabled: true, homeId: home.homeId, homeName: home.homeName ?? name, homeInviteCode: home.inviteCode },
+        settings: {
+          ...current.settings,
+          careMode: null,
+          syncEnabled: false,
+          homeId: undefined,
+          homeName: undefined,
+          homeInviteCode: undefined,
+          lastSyncAt: undefined,
+        },
       };
       await replaceSnapshot(next);
-      await syncIfEnabled(next);
+      setSnapshot(next);
+      await refresh();
+    },
+    selectHomeAccount: async (home) => {
+      const current = await getSnapshot();
+      const emptyHomeSnapshot: AppSnapshot = {
+        ...current,
+        pets: [],
+        veterinarians: [],
+        records: [],
+        reminders: [],
+        settings: {
+          ...current.settings,
+          careMode: "home",
+          syncEnabled: true,
+          homeId: home.homeId,
+          homeName: home.homeName,
+          homeInviteCode: home.inviteCode,
+        },
+      };
+      const synced = await syncNow(emptyHomeSnapshot);
+      await replaceSnapshot(synced);
+      setSnapshot(synced);
+      await refresh();
+    },
+    createHomeAccount: async (name) => {
+      const current = await getSnapshot();
+      const safeHomeName = name || `${current.owner.fullName.split(" ")[0] || "PetNexa"} Home`;
+      const home = await createHome(safeHomeName, current.owner.fullName);
+      const nextSettings = { ...current.settings, careMode: "home" as const, syncEnabled: true, homeId: home.homeId, homeName: home.homeName ?? safeHomeName, homeInviteCode: home.inviteCode };
+      const next: AppSnapshot = {
+        ...current,
+        settings: nextSettings,
+      };
+      await replaceSnapshot(next);
+      setSnapshot(next);
+      await refresh();
+      await syncIfEnabled(next).catch(() => undefined);
+      return nextSettings.homeName ?? safeHomeName;
     },
     joinHomeAccount: async (inviteCode) => {
       const home = await joinHome(inviteCode, snapshot.owner.fullName);
@@ -259,7 +353,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       setSnapshot(synced);
     },
     logoutHomeAccount: async () => {
-      await signOutHome();
+      await signOutHome().catch(() => undefined);
       const current = await getSnapshot();
       const next: AppSnapshot = {
         ...current,
@@ -275,6 +369,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       };
       await replaceSnapshot(next);
       setSnapshot(next);
+      await refresh();
     },
     syncHomeNow: async () => {
       const synced = await syncIfEnabled();
@@ -299,7 +394,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       await syncReminderNotifications(backup.settings.notificationsEnabled ? backup.reminders : []);
       await refresh();
     },
-  }), [markPending, ready, refresh, snapshot, syncIfEnabled]);
+  }), [authSessionVersion, markPending, ready, refresh, snapshot, syncIfEnabled]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

@@ -1,14 +1,48 @@
-import { useMemo, useState } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
-import { Calendar } from "react-native-calendars";
-import { Card, Chip, EmptyState, Field, FormActions, GradientCard, HeaderActionButton, HeaderAppIcon, IconBubble, PetAvatar, ReminderPill, RowAction, Screen, SectionHeader, StatCard } from "@/components/ui";
-import { palette } from "@/constants/theme";
+import {
+    Card,
+    Chip,
+    CompactButton,
+    EmptyState,
+    Field,
+    FormActions,
+    GradientCard,
+    HeaderActionButton,
+    IconBubble,
+    PetAvatar,
+    ReminderPill,
+    ResponsiveScrollView,
+    RowAction,
+    Screen,
+    ScreenHeader,
+    SectionHeader,
+    StatCard,
+    StatusRail,
+    useResponsiveLayout,
+} from "@/components/ui";
+import { fontFamily, palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Reminder, ReminderType } from "@/types/domain";
 import { formatFriendlyDate, getReminderStatus, todayIso } from "@/utils/date";
+import { router } from "expo-router";
+import { useMemo, useState } from "react";
+import { Alert, ScrollView, Text, View } from "react-native";
+import { Calendar } from "react-native-calendars";
 
-const reminderTypes: ReminderType[] = ["Vaccination", "Deworming", "Medication", "Appointment", "Grooming", "Custom"];
-const emptyReminder = { petId: "", type: "Vaccination" as ReminderType, title: "", dueDate: todayIso(), notes: "" };
+const reminderTypes: ReminderType[] = [
+  "Vaccination",
+  "Deworming",
+  "Medication",
+  "Appointment",
+  "Grooming",
+  "Custom",
+];
+const emptyReminder = {
+  petId: "",
+  type: "Vaccination" as ReminderType,
+  title: "",
+  dueDate: todayIso(),
+  notes: "",
+};
 
 function statusTone(reminder: Reminder) {
   const value = getReminderStatus(reminder);
@@ -19,30 +53,70 @@ function statusTone(reminder: Reminder) {
 }
 
 export default function RemindersScreen() {
-  const { pets, reminders, saveReminder, completeReminder, removeReminder } = useAppData();
+  const { pets, reminders, saveReminder, completeReminder, removeReminder } =
+    useAppData();
+  const layout = useResponsiveLayout();
   const [status, setStatus] = useState("All");
   const [form, setForm] = useState(emptyReminder);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
-  const filtered = useMemo(() => reminders.filter((reminder) => status === "All" || getReminderStatus(reminder) === status), [reminders, status]);
-  const dueToday = reminders.filter((item) => getReminderStatus(item) === "Due Today");
-  const overdue = reminders.filter((item) => getReminderStatus(item) === "Overdue");
-  const upcoming = reminders.filter((item) => getReminderStatus(item) === "Upcoming");
+
+  const filtered = useMemo(
+    () =>
+      reminders.filter(
+        (reminder) =>
+          status === "All" || getReminderStatus(reminder) === status,
+      ),
+    [reminders, status],
+  );
+  const dueToday = reminders.filter(
+    (item) => getReminderStatus(item) === "Due Today",
+  );
+  const overdue = reminders.filter(
+    (item) => getReminderStatus(item) === "Overdue",
+  );
+  const upcoming = reminders.filter(
+    (item) => getReminderStatus(item) === "Upcoming",
+  );
   const nextReminder = [...dueToday, ...upcoming][0];
-  const markedDates = useMemo(() => reminders.reduce<Record<string, { marked: boolean; dotColor: string }>>((acc, reminder) => {
-    const reminderStatus = getReminderStatus(reminder);
-    acc[reminder.dueDate] = {
-      marked: true,
-      dotColor: reminderStatus === "Completed" ? palette.success : reminderStatus === "Due Today" ? palette.warning : reminderStatus === "Overdue" ? palette.danger : palette.teal,
-    };
-    return acc;
-  }, {}), [reminders]);
+
+  const markedDates = useMemo(
+    () =>
+      reminders.reduce<Record<string, { marked: boolean; dotColor: string }>>(
+        (acc, reminder) => {
+          const reminderStatus = getReminderStatus(reminder);
+          acc[reminder.dueDate] = {
+            marked: true,
+            dotColor:
+              reminderStatus === "Completed"
+                ? palette.success
+                : reminderStatus === "Due Today"
+                  ? palette.warning
+                  : reminderStatus === "Overdue"
+                    ? palette.danger
+                    : palette.teal,
+          };
+          return acc;
+        },
+        {},
+      ),
+    [reminders],
+  );
 
   const submit = async () => {
     const petId = form.petId || pets[0]?.id;
-    if (!petId) return Alert.alert("Add a pet first", "Reminders must be linked to a pet.");
-    await saveReminder({ ...form, id: editingId ?? undefined, petId, title: form.title || form.type });
+    if (!petId)
+      return Alert.alert(
+        "Add a pet first",
+        "Care tasks must be linked to a pet.",
+      );
+    await saveReminder({
+      ...form,
+      id: editingId ?? undefined,
+      petId,
+      title: form.title || form.type,
+    });
     setForm(emptyReminder);
     setEditingId(null);
     setShowForm(false);
@@ -51,7 +125,13 @@ export default function RemindersScreen() {
   const startEdit = (reminder: Reminder) => {
     setEditingId(reminder.id);
     setShowForm(true);
-    setForm({ petId: reminder.petId, type: reminder.type, title: reminder.title, dueDate: reminder.dueDate, notes: reminder.notes });
+    setForm({
+      petId: reminder.petId,
+      type: reminder.type,
+      title: reminder.title,
+      dueDate: reminder.dueDate,
+      notes: reminder.notes,
+    });
   };
 
   const closeForm = () => {
@@ -60,39 +140,85 @@ export default function RemindersScreen() {
     setForm(emptyReminder);
   };
 
+  const hasUrgent = overdue.length > 0;
+
   return (
     <Screen>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <View style={{ flex: 1 }}>
-            <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Care</Text>
-            <Text selectable style={{ color: palette.muted, fontSize: 13 }}>Reminders, schedules, and follow-ups.</Text>
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            {!showForm ? <HeaderActionButton label="Add reminder" icon="plus" onPress={() => setShowForm(true)} /> : null}
-            <HeaderActionButton label={showCalendar ? "Hide calendar" : "Show calendar"} icon="calendar-month-outline" active={showCalendar} onPress={() => setShowCalendar((value) => !value)} />
-            <HeaderAppIcon size={46} />
-          </View>
-        </View>
+      <ResponsiveScrollView>
+        {/* ── Header ── */}
+        <ScreenHeader
+          title="Care"
+          subtitle="Care tasks, schedules & follow-ups"
+          right={
+            <HeaderActionButton
+              icon="cog-outline"
+              label="Open settings"
+              active
+              onPress={() => router.push("/settings")}
+            />
+          }
+        />
 
-        <GradientCard variant={overdue.length > 0 ? "danger" : "calm"}>
+        {/* ── Status Banner ── */}
+        <GradientCard variant={hasUrgent ? "danger" : "calm"}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-            <IconBubble icon={overdue.length > 0 ? "alert-outline" : "calendar-heart"} tone={overdue.length > 0 ? "danger" : "teal"} size={58} />
+            <IconBubble
+              icon={hasUrgent ? "alert-outline" : "calendar-heart"}
+              tone={hasUrgent ? "danger" : "teal"}
+              size={40}
+            />
             <View style={{ flex: 1, gap: 5 }}>
-              <Text selectable style={{ color: palette.text, fontSize: 21, fontWeight: "900" }}>{overdue.length > 0 ? `${overdue.length} overdue care item${overdue.length === 1 ? "" : "s"}` : "Care schedule is on track"}</Text>
-              <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>
-                {nextReminder ? `Next: ${nextReminder.title} • ${formatFriendlyDate(nextReminder.dueDate)}` : "No upcoming reminders right now."}
+              <Text
+                selectable
+                style={{
+                  color: palette.text,
+                  fontSize: 20,
+                  fontFamily: fontFamily.black,
+                }}
+              >
+                {hasUrgent
+                  ? `${overdue.length} overdue care item${overdue.length === 1 ? "" : "s"}`
+                  : "Care schedule is on track"}
+              </Text>
+              <Text
+                selectable
+                style={{
+                  color: palette.muted,
+                  lineHeight: 20,
+                  fontFamily: fontFamily.medium,
+                  fontSize: 13,
+                }}
+              >
+                {nextReminder
+                  ? `Next: ${nextReminder.title} • ${formatFriendlyDate(nextReminder.dueDate)}`
+                  : "No upcoming care tasks right now."}
               </Text>
             </View>
           </View>
         </GradientCard>
 
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <StatCard label="Today" value={dueToday.length} icon="calendar-today" tone="warning" />
-          <StatCard label="Overdue" value={overdue.length} icon="alert-outline" tone="danger" />
-          <StatCard label="Total" value={reminders.length} icon="bell-outline" />
+        {/* ── Stat Row ── */}
+        <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
+          <StatCard
+            label="Today"
+            value={dueToday.length}
+            icon="calendar-today"
+            tone="warning"
+          />
+          <StatCard
+            label="Overdue"
+            value={overdue.length}
+            icon="alert-outline"
+            tone="danger"
+          />
+          <StatCard
+            label="Total"
+            value={reminders.length}
+            icon="bell-outline"
+          />
         </View>
 
+        {/* ── Calendar ── */}
         {showCalendar ? (
           <Card>
             <Calendar
@@ -104,58 +230,279 @@ export default function RemindersScreen() {
                 selectedDayBackgroundColor: palette.teal,
                 textMonthFontWeight: "800",
                 textDayFontWeight: "600",
+                textMonthFontFamily: fontFamily.bold,
+                textDayFontFamily: fontFamily.medium,
               }}
             />
           </Card>
         ) : null}
 
+        {/* ── Add/Edit Form ── */}
         {showForm ? (
           <>
-            <SectionHeader title={editingId ? "Edit Reminder" : "Add Reminder"} />
+            <SectionHeader
+              title={editingId ? "Edit Reminder" : "Add Reminder"}
+            />
             <Card>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                {pets.map((pet) => <Chip key={pet.id} label={pet.name} active={(form.petId || pets[0]?.id) === pet.id} onPress={() => setForm((current) => ({ ...current, petId: pet.id }))} />)}
+              <Text
+                selectable
+                style={{
+                  color: palette.muted,
+                  fontSize: 12,
+                  fontFamily: fontFamily.bold,
+                }}
+              >
+                Select pet
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 8 }}
+              >
+                {pets.map((pet) => (
+                  <Chip
+                    key={pet.id}
+                    label={pet.name}
+                    active={(form.petId || pets[0]?.id) === pet.id}
+                    onPress={() =>
+                      setForm((current) => ({ ...current, petId: pet.id }))
+                    }
+                  />
+                ))}
               </ScrollView>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                {reminderTypes.map((type) => <Chip key={type} label={type} active={form.type === type} onPress={() => setForm((current) => ({ ...current, type, title: current.title || type }))} />)}
+
+              <Text
+                selectable
+                style={{
+                  color: palette.muted,
+                  fontSize: 12,
+                  fontFamily: fontFamily.bold,
+                }}
+              >
+                Care type
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 8 }}
+              >
+                {reminderTypes.map((type) => (
+                  <Chip
+                    key={type}
+                    label={type}
+                    active={form.type === type}
+                    onPress={() =>
+                      setForm((current) => ({
+                        ...current,
+                        type,
+                        title: current.title || type,
+                      }))
+                    }
+                  />
+                ))}
               </ScrollView>
-              <Field label="Title" value={form.title} onChangeText={(title) => setForm((current) => ({ ...current, title }))} />
-              <Field label="Due Date" value={form.dueDate} onChangeText={(dueDate) => setForm((current) => ({ ...current, dueDate }))} />
-              <Field label="Notes" value={form.notes} multiline onChangeText={(notes) => setForm((current) => ({ ...current, notes }))} />
-              <FormActions submitLabel={editingId ? "Save" : "Add"} onSubmit={submit} onCancel={closeForm} />
+
+              <Field
+                label="Title"
+                value={form.title}
+                onChangeText={(title) =>
+                  setForm((current) => ({ ...current, title }))
+                }
+              />
+              <Field
+                label="Due Date"
+                value={form.dueDate}
+                onChangeText={(dueDate) =>
+                  setForm((current) => ({ ...current, dueDate }))
+                }
+              />
+              <Field
+                label="Notes"
+                value={form.notes}
+                multiline
+                onChangeText={(notes) =>
+                  setForm((current) => ({ ...current, notes }))
+                }
+              />
+              <FormActions
+                submitLabel={editingId ? "Save" : "Add"}
+                onSubmit={submit}
+                onCancel={closeForm}
+              />
             </Card>
           </>
         ) : null}
 
-        <SectionHeader title="Care Queue" action={`${filtered.length} shown`} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
-          {["All", "Due Today", "Overdue", "Upcoming", "Completed"].map((item) => <Chip key={item} label={item} active={status === item} onPress={() => setStatus(item)} tone={item === "Overdue" ? "danger" : item === "Due Today" ? "warning" : "teal"} />)}
+        {/* ── Filter Tabs ── */}
+        <SectionHeader
+          title="Care Queue"
+          rightNode={
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 6,
+                flexWrap: "wrap",
+                justifyContent: "flex-end",
+              }}
+            >
+              <CompactButton
+                label="Calendar"
+                icon="calendar-month-outline"
+                onPress={() => setShowCalendar((value) => !value)}
+              />
+              {!showForm ? (
+                <CompactButton
+                  label="Add Care"
+                  icon="plus"
+                  primary
+                  onPress={() => setShowForm(true)}
+                />
+              ) : null}
+            </View>
+          }
+        />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8, paddingVertical: 2 }}
+        >
+          {["All", "Due Today", "Overdue", "Upcoming", "Completed"].map(
+            (item) => (
+              <Chip
+                key={item}
+                label={item}
+                active={status === item}
+                onPress={() => setStatus(item)}
+                tone={
+                  item === "Overdue"
+                    ? "danger"
+                    : item === "Due Today"
+                      ? "warning"
+                      : item === "Completed"
+                        ? "success"
+                        : "teal"
+                }
+              />
+            ),
+          )}
         </ScrollView>
 
+        {/* ── Reminder List ── */}
         {filtered.length === 0 ? (
-          <EmptyState title="No reminders found" message="Add a reminder or change the current filter." icon="bell-off-outline" />
+          <EmptyState
+            title="No care tasks found"
+            message="Add a care task or change the current filter."
+            icon="bell-off-outline"
+          />
         ) : (
-          filtered.slice(0, 12).map((reminder) => {
+          filtered.slice(0, 15).map((reminder) => {
             const pet = pets.find((item) => item.id === reminder.petId);
+            const tone = statusTone(reminder);
             return (
-              <Card key={reminder.id} style={{ backgroundColor: getReminderStatus(reminder) === "Overdue" ? palette.softDanger : getReminderStatus(reminder) === "Due Today" ? palette.softYellow : "#fff", borderColor: getReminderStatus(reminder) === "Overdue" ? "#FECACA" : getReminderStatus(reminder) === "Due Today" ? "#FDE68A" : "#E8EEF4" }}>
+              <Card
+                key={reminder.id}
+                style={{
+                  backgroundColor:
+                    getReminderStatus(reminder) === "Overdue"
+                      ? palette.dangerSoft
+                      : getReminderStatus(reminder) === "Due Today"
+                        ? palette.warningSoft
+                        : "#fff",
+                  borderColor:
+                    getReminderStatus(reminder) === "Overdue"
+                      ? "#FECACA"
+                      : getReminderStatus(reminder) === "Due Today"
+                        ? "#FDE68A"
+                        : palette.borderLight,
+                }}
+              >
                 <View style={{ gap: 12 }}>
-                  <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
-                    <View style={{ width: 5, alignSelf: "stretch", borderRadius: 99, backgroundColor: getReminderStatus(reminder) === "Overdue" ? palette.danger : getReminderStatus(reminder) === "Due Today" ? palette.warning : getReminderStatus(reminder) === "Completed" ? palette.success : palette.teal }} />
-                    <PetAvatar pet={pet} size={58} />
+                  <View
+                    style={{
+                      flexDirection: layout.isCompact ? "column" : "row",
+                      gap: 12,
+                      alignItems: layout.isCompact ? "flex-start" : "center",
+                    }}
+                  >
+                    <StatusRail tone={tone} />
+                    <PetAvatar pet={pet} size={layout.isCompact ? 50 : 56} />
                     <View style={{ flex: 1, gap: 4 }}>
-                      <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900" }}>{reminder.title}</Text>
-                      <Text selectable style={{ color: palette.muted, fontSize: 13, fontWeight: "700" }}>{pet?.name ?? "Pet"} • {formatFriendlyDate(reminder.dueDate)}</Text>
-                      {reminder.notes ? <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18 }}>{reminder.notes}</Text> : null}
+                      <Text
+                        selectable
+                        style={{
+                          color: palette.text,
+                          fontSize: 17,
+                          fontFamily: fontFamily.black,
+                        }}
+                      >
+                        {reminder.title}
+                      </Text>
+                      <Text
+                        selectable
+                        style={{
+                          color: palette.muted,
+                          fontSize: 13,
+                          fontFamily: fontFamily.semiBold,
+                        }}
+                      >
+                        {pet?.name ?? "Pet"} •{" "}
+                        {formatFriendlyDate(reminder.dueDate)}
+                      </Text>
+                      {reminder.notes ? (
+                        <Text
+                          selectable
+                          style={{
+                            color: palette.muted,
+                            fontSize: 12,
+                            fontFamily: fontFamily.medium,
+                            lineHeight: 18,
+                          }}
+                        >
+                          {reminder.notes}
+                        </Text>
+                      ) : null}
                     </View>
                     <ReminderPill reminder={reminder} />
                   </View>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-                    <Chip label={reminder.type} tone={statusTone(reminder)} />
-                    <View style={{ flexDirection: "row", gap: 4 }}>
-                      {!reminder.completedAt ? <RowAction icon="check-circle-outline" onPress={() => completeReminder(reminder)} /> : null}
-                      <RowAction icon="pencil-outline" onPress={() => startEdit(reminder)} />
-                      <RowAction icon="trash-can-outline" danger onPress={() => Alert.alert("Delete reminder?", "This removes the local reminder.", [{ text: "Cancel" }, { text: "Delete", style: "destructive", onPress: () => removeReminder(reminder.id) }])} />
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 10,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Chip label={reminder.type} tone={tone} />
+                    <View style={{ flexDirection: "row", gap: 6 }}>
+                      {!reminder.completedAt ? (
+                        <RowAction
+                          icon="check-circle-outline"
+                          onPress={() => completeReminder(reminder)}
+                        />
+                      ) : null}
+                      <RowAction
+                        icon="pencil-outline"
+                        onPress={() => startEdit(reminder)}
+                      />
+                      <RowAction
+                        icon="trash-can-outline"
+                        danger
+                        onPress={() =>
+                          Alert.alert(
+                            "Delete care task?",
+                            "This removes the local care task.",
+                            [
+                              { text: "Cancel" },
+                              {
+                                text: "Delete",
+                                style: "destructive",
+                                onPress: () => removeReminder(reminder.id),
+                              },
+                            ],
+                          )
+                        }
+                      />
                     </View>
                   </View>
                 </View>
@@ -163,7 +510,7 @@ export default function RemindersScreen() {
             );
           })
         )}
-      </ScrollView>
+      </ResponsiveScrollView>
     </Screen>
   );
 }

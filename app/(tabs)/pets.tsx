@@ -1,9 +1,27 @@
 import * as ImagePicker from "expo-image-picker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
-import { Card, Chip, CompactButton, EmptyState, Field, FormActions, GradientCard, HeaderActionButton, HeaderAppIcon, IconBubble, PetAvatar, RowAction, Screen, SectionHeader } from "@/components/ui";
-import { palette } from "@/constants/theme";
+import {
+  Card,
+  Chip,
+  CompactButton,
+  EmptyState,
+  Field,
+  FormActions,
+  GradientCard,
+  HeaderActionButton,
+  IconBubble,
+  PetAvatar,
+  ResponsiveScrollView,
+  RowAction,
+  Screen,
+  ScreenHeader,
+  SectionHeader,
+  useResponsiveLayout,
+} from "@/components/ui";
+import { fontFamily, palette, radii } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Pet, PetSpecies, Sex } from "@/types/domain";
 import { calculateAge, getLifeStage, todayIso } from "@/utils/date";
@@ -30,12 +48,16 @@ const breedSuggestions: Record<PetSpecies, string[]> = {
 
 export default function PetsScreen() {
   const { pets, records, reminders, savePet, removePet } = useAppData();
+  const layout = useResponsiveLayout();
   const [form, setForm] = useState(emptyPet);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [query, setQuery] = useState("");
   const editing = useMemo(() => pets.find((pet) => pet.id === editingId), [editingId, pets]);
-  const filteredPets = useMemo(() => pets.filter((pet) => `${pet.name} ${pet.breed} ${pet.species}`.toLowerCase().includes(query.toLowerCase())), [pets, query]);
+  const filteredPets = useMemo(
+    () => pets.filter((pet) => `${pet.name} ${pet.breed} ${pet.species}`.toLowerCase().includes(query.toLowerCase())),
+    [pets, query],
+  );
   const dogCount = pets.filter((pet) => pet.species === "Dog").length;
   const catCount = pets.filter((pet) => pet.species === "Cat").length;
 
@@ -89,24 +111,32 @@ export default function PetsScreen() {
 
   return (
     <Screen>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <View style={{ flex: 1 }}>
-            <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Pets</Text>
-            <Text selectable style={{ color: palette.muted, fontSize: 13 }}>Profiles, life stages, and care history.</Text>
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            {!showForm ? <HeaderActionButton label="Add pet" onPress={() => setShowForm(true)} /> : null}
-            <HeaderAppIcon size={46} />
-          </View>
-        </View>
+      <ResponsiveScrollView>
+        {/* ── Header ── */}
+        <ScreenHeader
+          title="Pets"
+          subtitle="Profiles, life stages & care history"
+          right={
+            <HeaderActionButton
+              icon="cog-outline"
+              label="Open settings"
+              active
+              onPress={() => router.push("/settings")}
+            />
+          }
+        />
 
+        {/* ── Summary Banner ── */}
         <GradientCard variant="calm">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
             <IconBubble icon="paw" size={58} />
             <View style={{ flex: 1, gap: 6 }}>
-              <Text selectable style={{ color: palette.text, fontSize: 21, fontWeight: "900" }}>{pets.length} pet profiles</Text>
-              <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>Keep each pet's identity, health notes, and care activity in one place.</Text>
+              <Text selectable style={{ color: palette.text, fontSize: 20, fontFamily: fontFamily.black }}>
+                {pets.length} pet {pets.length === 1 ? "profile" : "profiles"}
+              </Text>
+              <Text selectable style={{ color: palette.muted, lineHeight: 20, fontFamily: fontFamily.medium, fontSize: 13 }}>
+                Keep each pet's identity, health notes, and care activity in one place.
+              </Text>
               <View style={{ flexDirection: "row", gap: 7, flexWrap: "wrap" }}>
                 <Chip label={`${dogCount} dogs`} icon="dog" active={dogCount > 0} />
                 <Chip label={`${catCount} cats`} icon="cat" tone="warning" />
@@ -116,68 +146,191 @@ export default function PetsScreen() {
           </View>
         </GradientCard>
 
+        {/* ── Search ── */}
         <Field label="Search pets..." value={query} onChangeText={setQuery} />
 
+        {/* ── Add/Edit Form ── */}
         {showForm ? (
           <>
             <SectionHeader title={editing ? `Edit ${editing.name}` : "Add Pet"} />
             <Card>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#F8FBFD", borderRadius: 18, borderWidth: 1, borderColor: palette.border, padding: 10 }}>
-                <PetAvatar pet={previewPet} size={60} />
+              {/* Photo row */}
+              <View
+                style={{
+                  flexDirection: layout.isCompact ? "column" : "row",
+                  alignItems: layout.isCompact ? "flex-start" : "center",
+                  gap: 12,
+                  backgroundColor: palette.background,
+                  borderRadius: radii.lg,
+                  borderWidth: 1,
+                  borderColor: palette.border,
+                  padding: 12,
+                }}
+              >
+                <PetAvatar pet={previewPet} size={layout.isCompact ? 56 : 62} />
                 <View style={{ flex: 1, gap: 2 }}>
-                  <Text selectable style={{ color: palette.text, fontSize: 15, fontWeight: "900" }}>Profile photo</Text>
-                  <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{form.photoUri ? "Photo added to this pet profile." : "Optional, but helps identify your pet faster."}</Text>
+                  <Text selectable style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.bold }}>
+                    Profile photo
+                  </Text>
+                  <Text selectable style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.medium }}>
+                    {form.photoUri ? "Photo added to this pet profile." : "Optional — helps identify your pet faster."}
+                  </Text>
                 </View>
                 <CompactButton label={form.photoUri ? "Change" : "Add"} onPress={choosePhoto} />
               </View>
+
+              {/* Species & Sex */}
+              <Text selectable style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.bold }}>
+                Species & Sex
+              </Text>
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                {(["Dog", "Cat", "Other"] as PetSpecies[]).map((species) => <Chip key={species} label={species} active={form.species === species} onPress={() => setForm((current) => ({ ...current, species, breed: current.breed && !breedSuggestions[current.species].includes(current.breed) ? current.breed : "" }))} />)}
-                {(["Male", "Female"] as Sex[]).map((sex) => <Chip key={sex} label={sex} active={form.sex === sex} onPress={() => setForm((current) => ({ ...current, sex }))} tone="navy" />)}
+                {(["Dog", "Cat", "Other"] as PetSpecies[]).map((species) => (
+                  <Chip
+                    key={species}
+                    label={species}
+                    active={form.species === species}
+                    onPress={() =>
+                      setForm((current) => ({
+                        ...current,
+                        species,
+                        breed: current.breed && !breedSuggestions[current.species].includes(current.breed) ? current.breed : "",
+                      }))
+                    }
+                  />
+                ))}
+                {(["Male", "Female"] as Sex[]).map((sex) => (
+                  <Chip
+                    key={sex}
+                    label={sex}
+                    active={form.sex === sex}
+                    onPress={() => setForm((current) => ({ ...current, sex }))}
+                    tone="navy"
+                  />
+                ))}
               </View>
+
               <Field label="Name" value={form.name} onChangeText={(name) => setForm((current) => ({ ...current, name }))} />
               <Field label="Breed" value={form.breed} onChangeText={(breed) => setForm((current) => ({ ...current, breed }))} />
+
+              {/* Breed suggestions */}
               <View style={{ gap: 8 }}>
-                <Text selectable style={{ color: palette.muted, fontSize: 12, fontWeight: "800" }}>Common {form.species === "Other" ? "pet types" : `${form.species.toLowerCase()} breeds`}</Text>
+                <Text selectable style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.bold }}>
+                  Common {form.species === "Other" ? "pet types" : `${form.species.toLowerCase()} breeds`}
+                </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                   {breedSuggestions[form.species].map((breed) => (
-                    <Chip key={breed} label={breed} active={form.breed === breed} onPress={() => setForm((current) => ({ ...current, breed }))} tone="teal" />
+                    <Chip
+                      key={breed}
+                      label={breed}
+                      active={form.breed === breed}
+                      onPress={() => setForm((current) => ({ ...current, breed }))}
+                      tone="teal"
+                    />
                   ))}
                 </ScrollView>
               </View>
-              <Field label="Birthday" value={form.birthday} onChangeText={(birthday) => setForm((current) => ({ ...current, birthday }))} placeholder={todayIso()} />
-              <Text selectable style={{ color: palette.teal, fontWeight: "800" }}>{calculateAge(form.birthday)} • {getLifeStage(form.birthday, form.species)}</Text>
-              <Field label="Weight (kg)" value={String(form.weightKg)} keyboardType="numeric" onChangeText={(weightKg) => setForm((current) => ({ ...current, weightKg: Number(weightKg) || 0 }))} />
-              <Field label="Notes" value={form.notes} multiline onChangeText={(notes) => setForm((current) => ({ ...current, notes }))} />
-              <FormActions submitLabel={editing ? "Save" : "Add"} onSubmit={submit} onCancel={closeForm} />
+
+              <Field
+                label="Birthday"
+                value={form.birthday}
+                onChangeText={(birthday) => setForm((current) => ({ ...current, birthday }))}
+                placeholder={todayIso()}
+              />
+              <Text selectable style={{ color: palette.teal, fontFamily: fontFamily.bold, fontSize: 13 }}>
+                {calculateAge(form.birthday)} • {getLifeStage(form.birthday, form.species)}
+              </Text>
+              <Field
+                label="Weight (kg)"
+                value={String(form.weightKg)}
+                keyboardType="numeric"
+                onChangeText={(weightKg) => setForm((current) => ({ ...current, weightKg: Number(weightKg) || 0 }))}
+              />
+              <Field
+                label="Notes"
+                value={form.notes}
+                multiline
+                onChangeText={(notes) => setForm((current) => ({ ...current, notes }))}
+              />
+              <FormActions submitLabel={editing ? "Save" : "Add Pet"} onSubmit={submit} onCancel={closeForm} />
             </Card>
           </>
         ) : null}
 
-        <SectionHeader title="Pet Profiles" action={`${filteredPets.length} shown`} />
+        {/* ── Pet List ── */}
+        <SectionHeader
+          title="Pet Profiles"
+          action={`${filteredPets.length} shown`}
+          rightNode={
+            !showForm ? <CompactButton label="Add Pet" icon="plus" primary onPress={() => setShowForm(true)} /> : undefined
+          }
+        />
         {filteredPets.length === 0 ? (
-          <EmptyState title="No pets registered yet" message="Add a pet profile to start tracking records and reminders." actionLabel="Add Pet" onAction={() => setShowForm(true)} />
+          <EmptyState
+            title="No pets registered yet"
+            message="Add a pet profile to start tracking records and care tasks."
+            actionLabel="Add Pet"
+            onAction={() => setShowForm(true)}
+          />
         ) : (
           filteredPets.map((pet) => {
             const petRecords = records.filter((record) => record.petId === pet.id);
             const petReminders = reminders.filter((reminder) => reminder.petId === pet.id);
+            const isCat = pet.species === "Cat";
             return (
-              <Card key={pet.id} style={{ backgroundColor: pet.species === "Cat" ? palette.softPeach : "#fff", borderColor: pet.species === "Cat" ? "#FFE1CC" : "#E8EEF4" }}>
+              <Card
+                key={pet.id}
+                style={{
+                  backgroundColor: isCat ? palette.softPeach : "#fff",
+                  borderColor: isCat ? "#FFE1CC" : palette.borderLight,
+                }}
+              >
                 <View style={{ gap: 12 }}>
-                  <View style={{ flexDirection: "row", gap: 13, alignItems: "center" }}>
-                    <PetAvatar pet={pet} size={82} />
+                  {/* Top row: avatar + info + actions */}
+                  <View style={{ flexDirection: layout.isCompact ? "column" : "row", gap: 14, alignItems: layout.isCompact ? "flex-start" : "center" }}>
+                    {/* Species stripe */}
+                    <View
+                      style={{
+                        width: 4,
+                        alignSelf: "stretch",
+                        borderRadius: 4,
+                        backgroundColor: isCat ? palette.peach : palette.teal,
+                      }}
+                    />
+                    <PetAvatar pet={pet} size={layout.isCompact ? 76 : 84} />
                     <View style={{ flex: 1, gap: 5 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
-                        <Text selectable style={{ color: palette.text, fontSize: 19, fontWeight: "900" }}>{pet.name}</Text>
-                        <MaterialCommunityIcons name={pet.species === "Cat" ? "cat" : pet.species === "Dog" ? "dog" : "paw"} color={palette.teal} size={18} />
+                        <Text selectable style={{ color: palette.text, fontSize: 19, fontFamily: fontFamily.black }}>
+                          {pet.name}
+                        </Text>
+                        <MaterialCommunityIcons
+                          name={pet.species === "Cat" ? "cat" : pet.species === "Dog" ? "dog" : "paw"}
+                          color={isCat ? palette.peach : palette.teal}
+                          size={18}
+                        />
                       </View>
-                      <Text selectable style={{ color: palette.muted, fontSize: 13 }}>{pet.breed || pet.species}</Text>
-                      <Text selectable style={{ color: palette.navy, fontSize: 12, fontWeight: "800" }}>{calculateAge(pet.birthday)} • {pet.weightKg} kg</Text>
+                      <Text selectable style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.medium }}>
+                        {pet.breed || pet.species}
+                      </Text>
+                      <Text selectable style={{ color: palette.navy, fontSize: 12, fontFamily: fontFamily.bold }}>
+                        {calculateAge(pet.birthday)} • {pet.weightKg} kg
+                      </Text>
                     </View>
-                    <View>
+                    <View style={{ flexDirection: layout.isCompact ? "row" : "column", gap: 6, alignSelf: layout.isCompact ? "flex-end" : "auto" }}>
                       <RowAction icon="pencil-outline" onPress={() => startEdit(pet)} />
-                      <RowAction icon="trash-can-outline" danger onPress={() => Alert.alert("Delete pet?", "This also removes linked records, reminders, and consultations.", [{ text: "Cancel" }, { text: "Delete", style: "destructive", onPress: () => removePet(pet.id) }])} />
+                      <RowAction
+                        icon="trash-can-outline"
+                        danger
+                        onPress={() =>
+                          Alert.alert("Delete pet?", "This also removes linked records, care tasks, and consultations.", [
+                            { text: "Cancel" },
+                            { text: "Delete", style: "destructive", onPress: () => removePet(pet.id) },
+                          ])
+                        }
+                      />
                     </View>
                   </View>
+
+                  {/* Badge row */}
                   <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
                     <Chip label={getLifeStage(pet.birthday, pet.species)} active tone="teal" />
                     <Chip label={`${petRecords.length} records`} tone="navy" />
@@ -188,7 +341,7 @@ export default function PetsScreen() {
             );
           })
         )}
-      </ScrollView>
+      </ResponsiveScrollView>
     </Screen>
   );
 }

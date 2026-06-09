@@ -1,12 +1,31 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, Switch, Text, View } from "react-native";
-import { Card, Chip, CompactButton, EmptyState, Field, FormActions, GhostButton, GradientCard, HeaderAppIcon, IconBubble, PrimaryButton, RowAction, Screen, SectionHeader } from "@/components/ui";
-import { appInfo } from "@/constants/app";
-import { palette } from "@/constants/theme";
+import type { ComponentProps, ReactNode } from "react";
+import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { Switch } from "react-native-paper";
+import {
+  Card,
+  Chip,
+  CompactButton,
+  Field,
+  FormActions,
+  HeaderActionButton,
+  HeaderAppIcon,
+  IconBubble,
+  ResponsiveScrollView,
+  RowAction,
+  Screen,
+  ScreenHeader,
+  SectionHeader,
+  useResponsiveLayout,
+} from "@/components/ui";
+import { fontFamily, palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Veterinarian } from "@/types/domain";
-import { getAgeYears, isValidIsoDate } from "@/utils/date";
+import { getAgeYears, getReminderStatus, isValidIsoDate } from "@/utils/date";
+
+const MIN_OWNER_AGE = 13;
 
 const emptyVet = {
   clinicName: "",
@@ -21,277 +40,420 @@ const emptyVet = {
   isPrimary: false,
 };
 
-type Section = "vets" | "backup" | "about";
+type Panel = "profile" | "vets" | "data" | "preferences" | "about";
 
-const sections: { id: Section; title: string; subtitle: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"] }[] = [
-  { id: "vets", title: "Vets", subtitle: "Care team", icon: "hospital-building" },
-  { id: "backup", title: "Backup", subtitle: "Local data", icon: "database-sync-outline" },
-  { id: "about", title: "About", subtitle: "App details", icon: "information-outline" },
-];
+function Divider() {
+  return <View style={{ height: 1, backgroundColor: palette.borderLight, marginVertical: 6 }} />;
+}
 
-function SettingsTile({ title, subtitle, icon, active, onPress }: { title: string; subtitle: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"]; active?: boolean; onPress: () => void }) {
+function MenuRow({
+  icon,
+  title,
+  subtitle,
+  active,
+  onPress,
+}: {
+  icon: ComponentProps<typeof MaterialCommunityIcons>["name"];
+  title: string;
+  subtitle: string;
+  active?: boolean;
+  onPress: () => void;
+}) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.72 : 1 })}>
-      <Card style={{ backgroundColor: active ? palette.softTeal : "#fff", borderColor: active ? palette.teal : "#E9EEF5" }}>
-        <View style={{ gap: 9, minHeight: 96 }}>
-          <IconBubble icon={icon} tone={active ? "teal" : "navy"} size={40} />
-          <View style={{ gap: 2 }}>
-            <Text selectable style={{ color: palette.text, fontSize: 14, fontWeight: "900" }}>{title}</Text>
-            <Text selectable style={{ color: palette.muted, fontSize: 11, fontWeight: "700" }}>{subtitle}</Text>
-          </View>
-          {active ? <View style={{ width: 24, height: 4, borderRadius: 99, backgroundColor: palette.teal }} /> : null}
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.68 : 1 })}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 }}>
+        <IconBubble icon={icon} tone={active ? "teal" : "navy"} size={42} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text selectable style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.black }}>
+            {title}
+          </Text>
+          <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18, fontFamily: fontFamily.medium }}>
+            {subtitle}
+          </Text>
         </View>
-      </Card>
+        <MaterialCommunityIcons name={active ? "chevron-up" : "chevron-right"} color={active ? palette.teal : palette.muted} size={24} />
+      </View>
     </Pressable>
   );
 }
 
-function InfoPill({ icon, label, tone = "teal" }: { icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"]; label: string; tone?: "teal" | "navy" | "warning" }) {
-  const color = tone === "navy" ? palette.navy : tone === "warning" ? palette.warning : palette.teal;
-  const backgroundColor = tone === "navy" ? palette.softNavy : tone === "warning" ? palette.softYellow : palette.softTeal;
+function DetailRow({
+  icon,
+  title,
+  subtitle,
+  right,
+  danger,
+}: {
+  icon: ComponentProps<typeof MaterialCommunityIcons>["name"];
+  title: string;
+  subtitle?: string;
+  right?: ReactNode;
+  danger?: boolean;
+}) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 }}>
-      <MaterialCommunityIcons name={icon} color={color} size={15} />
-      <Text selectable style={{ color, fontSize: 11, fontWeight: "900" }}>{label}</Text>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 6 }}>
+      <IconBubble icon={icon} tone={danger ? "danger" : "teal"} size={42} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text selectable style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.bold }}>
+          {title}
+        </Text>
+        {subtitle ? (
+          <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18, fontFamily: fontFamily.medium }}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+      {right}
     </View>
   );
 }
 
+function LogoutAction({
+  mode,
+  disabled,
+  onPress,
+}: {
+  mode: "solo" | "home";
+  disabled?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Log out"
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => ({
+        opacity: disabled ? 0.55 : pressed ? 0.75 : 1,
+        marginTop: 12,
+        minHeight: 50,
+        borderRadius: 18,
+        borderWidth: 1.5,
+        borderColor: "#FECACA",
+        backgroundColor: palette.dangerSoft,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        paddingHorizontal: 14,
+      })}
+    >
+      <MaterialCommunityIcons name="logout" color={palette.danger} size={19} />
+      <Text style={{ color: palette.danger, fontSize: 14, fontFamily: fontFamily.black }}>
+        {disabled ? "Logging Out" : mode === "home" ? "Log Out of Home" : "Exit Solo Mode"}
+      </Text>
+    </Pressable>
+  );
+}
+
+function callNumber(value?: string) {
+  if (!value) {
+    Alert.alert("No phone number", "Add a phone number for this clinic first.");
+    return;
+  }
+  Linking.openURL(`tel:${value}`).catch(() => Alert.alert("Call unavailable", "This device cannot open phone calls right now."));
+}
+
+function VetCard({ vet, onEdit, onDelete }: { vet: Veterinarian; onEdit: () => void; onDelete: () => void }) {
+  const emergency = Boolean(vet.emergencyHotline);
+
+  return (
+    <Card style={{ backgroundColor: "#fff" }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <IconBubble icon={emergency ? "hospital-marker" : "hospital-building"} tone={emergency ? "danger" : vet.isPrimary ? "navy" : "teal"} size={42} />
+        <View style={{ flex: 1, gap: 4 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <Text selectable style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.black }}>
+              {vet.clinicName}
+            </Text>
+            {vet.isPrimary ? <Chip label="Primary" active tone="navy" /> : null}
+            {emergency ? <Chip label="Emergency" active tone="danger" /> : null}
+          </View>
+          <Text selectable style={{ color: palette.navy, fontSize: 12, fontFamily: fontFamily.medium }}>
+            {vet.phone || vet.emergencyHotline || "No phone saved"}
+          </Text>
+        </View>
+        <View style={{ flexDirection: "row", gap: 4 }}>
+          <RowAction icon="phone-outline" onPress={() => callNumber(vet.emergencyHotline || vet.phone)} />
+          <RowAction icon="pencil-outline" onPress={onEdit} />
+          <RowAction icon="trash-can-outline" danger onPress={onDelete} />
+        </View>
+      </View>
+    </Card>
+  );
+}
+
 export default function SettingsScreen() {
-  const { owner, settings, veterinarians, saveVet, removeVet, updateSettings, syncHomeNow, logoutHomeAccount, exportData, restoreDataReplaceMode } = useAppData();
-  const [section, setSection] = useState<Section>("vets");
-  const [vetForm, setVetForm] = useState(emptyVet);
-  const [editingVetId, setEditingVetId] = useState<string | null>(null);
+  const {
+    owner,
+    pets,
+    veterinarians,
+    reminders,
+    settings,
+    saveOwner,
+    saveVet,
+    removeVet,
+    updateSettings,
+    syncHomeNow,
+    logoutHomeAccount,
+    exportData,
+    restoreDataReplaceMode,
+  } = useAppData();
+  const layout = useResponsiveLayout();
+
+  const [activePanel, setActivePanel] = useState<Panel | null>(null);
+  const [ownerForm, setOwnerForm] = useState({ fullName: owner.fullName, birthday: owner.birthday });
   const [showVetForm, setShowVetForm] = useState(false);
+  const [editingVetId, setEditingVetId] = useState<string | null>(null);
+  const [vetForm, setVetForm] = useState(emptyVet);
+  const [syncing, setSyncing] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const activeCare = reminders.filter((item) => ["Due Today", "Overdue"].includes(getReminderStatus(item))).length;
+  const primaryVet = veterinarians.find((vet) => vet.isPrimary);
+  const emergencyVet = veterinarians.find((vet) => vet.emergencyHotline);
+  const careModeLabel = settings.careMode === "home" ? "Home Furparent" : settings.careMode === "solo" ? "Solo Furparent" : "Choose mode";
+  const syncState =
+    settings.careMode !== "home"
+      ? "Solo mode"
+      : syncing
+        ? "Syncing"
+        : settings.syncEnabled
+          ? "Ready"
+          : "Off";
+
+  const submitOwner = async () => {
+    const fullName = ownerForm.fullName.trim();
+    const birthday = ownerForm.birthday.trim();
+
+    if (!fullName) return Alert.alert("Name required", "Enter the owner full name.");
+    if (!isValidIsoDate(birthday)) return Alert.alert("Invalid birthday", "Use YYYY-MM-DD format.");
+    if (getAgeYears(birthday) < MIN_OWNER_AGE) return Alert.alert("Age requirement", `Owner must be at least ${MIN_OWNER_AGE} years old.`);
+
+    await saveOwner({ id: owner.id, fullName, birthday });
+  };
 
   const submitVet = async () => {
-    if (!vetForm.clinicName.trim()) return Alert.alert("Clinic name required");
+    if (!vetForm.clinicName.trim()) return Alert.alert("Clinic name required", "Please enter a clinic name.");
+
     await saveVet({ ...vetForm, id: editingVetId ?? undefined });
     setVetForm(emptyVet);
     setEditingVetId(null);
     setShowVetForm(false);
   };
 
-  const editVet = (vet: Veterinarian) => {
+  const startEditVet = (vet: Veterinarian) => {
     setEditingVetId(vet.id);
-    setVetForm(vet);
     setShowVetForm(true);
+    setVetForm({
+      clinicName: vet.clinicName,
+      veterinarianName: vet.veterinarianName || "",
+      phone: vet.phone || "",
+      email: vet.email || "",
+      address: vet.address || "",
+      website: vet.website || "",
+      emergencyHotline: vet.emergencyHotline || "",
+      hours: vet.hours || "",
+      notes: vet.notes || "",
+      isPrimary: vet.isPrimary,
+    });
   };
 
-  const exportBackup = async () => {
-    const uri = await exportData();
-    Alert.alert("Backup exported", uri);
-  };
-
-  const restoreBackup = async () => {
-    try {
-      await restoreDataReplaceMode();
-      Alert.alert("Restore complete", "Local data was replaced by the selected backup.");
-    } catch (error) {
-      if (error instanceof Error && error.message === "Restore cancelled.") return;
-      Alert.alert("Restore failed", error instanceof Error ? error.message : "The backup could not be restored.");
-    }
-  };
-
-  const manualSync = async () => {
+  const handleSyncNow = async () => {
+    setSyncing(true);
     try {
       await syncHomeNow();
-      Alert.alert("Sync complete", "Home care data is up to date.");
-    } catch (error) {
-      Alert.alert("Sync failed", error instanceof Error ? error.message : "Please try again when online.");
+      Alert.alert("Sync complete", "Your Home Furparent data is up to date.");
+    } catch {
+      Alert.alert("Sync unavailable", "Check your connection and Home Furparent setup, then try again.");
+    } finally {
+      setSyncing(false);
     }
   };
 
-  const logoutHome = () => {
-    Alert.alert(
-      "Log out of Home?",
-      "This signs out this device and stops Home sync. Local cached care data will stay on this device.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Log Out",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await logoutHomeAccount();
-            } catch (error) {
-              Alert.alert("Logout failed", error instanceof Error ? error.message : "Please try again.");
-            }
-          },
-        },
-      ],
-    );
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    console.log("[PetNexa] logout pressed", settings.careMode);
+    setLoggingOut(true);
+    try {
+      await logoutHomeAccount();
+    } catch (error) {
+      Alert.alert("Logout failed", error instanceof Error ? error.message : "Could not log out on this device.");
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   return (
     <Screen>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 104 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <View>
-            <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900" }}>Settings</Text>
-            <Text selectable style={{ color: palette.muted, fontSize: 13 }}>Profile, account, data, and app details.</Text>
-          </View>
-          <HeaderAppIcon size={46} />
-        </View>
+      <ResponsiveScrollView contentContainerStyle={{ gap: 14 }}>
+        <ScreenHeader
+          title="Settings"
+          subtitle="Account and app controls."
+          right={
+            <HeaderActionButton
+              icon="home-outline"
+              label="Go home"
+              active
+              onPress={() => router.replace("/")}
+            />
+          }
+        />
 
-        <GradientCard variant="secondary">
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-            <View style={{ flex: 1, gap: 8 }}>
-              <Text selectable style={{ color: "rgba(255,255,255,0.82)", fontSize: 12, fontWeight: "900" }}>Owner Profile</Text>
-              <Text selectable style={{ color: "#fff", fontSize: 23, lineHeight: 29, fontWeight: "900" }}>{owner.fullName || "Pet Parent"}</Text>
-              <View style={{ flexDirection: "row", gap: 7, flexWrap: "wrap" }}>
-                <View style={{ backgroundColor: "rgba(255,255,255,0.18)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 }}>
-                  <Text selectable style={{ color: "#fff", fontSize: 11, fontWeight: "900" }}>
-                    {isValidIsoDate(owner.birthday) ? `Age ${getAgeYears(owner.birthday)}` : "Birthday not set"}
-                  </Text>
-                </View>
-                <View style={{ backgroundColor: "rgba(255,255,255,0.18)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 }}>
-                  <Text selectable style={{ color: "#fff", fontSize: 11, fontWeight: "900" }}>{settings.careMode === "home" ? "Home Furparent" : "Solo Furparent"}</Text>
-                </View>
-              </View>
-            </View>
-            <View style={{ width: 66, height: 66, borderRadius: 24, backgroundColor: "rgba(255,255,255,0.18)", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.32)" }}>
-              <MaterialCommunityIcons name="account-heart-outline" color="#fff" size={35} />
-            </View>
-          </View>
-        </GradientCard>
-
-        <Card style={{ backgroundColor: settings.careMode === "home" ? "#fff" : palette.softTeal, borderColor: settings.careMode === "home" ? "#E9EEF5" : palette.mint }}>
-          <View style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
-            <IconBubble icon={settings.careMode === "home" ? "home-heart" : "cellphone-lock"} size={48} />
-            <View style={{ flex: 1, gap: 3 }}>
-              <Text selectable style={{ color: palette.text, fontSize: 18, fontWeight: "900" }}>Account & Sync</Text>
-              <Text selectable style={{ color: palette.muted, fontSize: 12 }}>
-                {settings.careMode === "home" ? settings.homeName || "Home Furparent account" : "Solo Furparent local-only mode"}
+        <Card style={{ backgroundColor: palette.softTeal, borderColor: palette.mintLight }}>
+          <View style={{ gap: 5 }}>
+            <View style={{ flex: 1, gap: 5 }}>
+              <Text selectable style={{ color: palette.text, fontSize: 20, fontFamily: fontFamily.black }}>
+                {owner.fullName || "Pet Parent"}
               </Text>
-              {settings.careMode === "home" ? (
-                <>
-                  <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{settings.lastSyncAt ? `Last sync: ${settings.lastSyncAt}` : "Not synced yet"}</Text>
-                  {settings.homeInviteCode ? <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>Invite code: {settings.homeInviteCode}</Text> : null}
-                </>
-              ) : (
-                <Text selectable style={{ color: palette.teal, fontSize: 12, fontWeight: "900" }}>No Home logout is needed in Solo mode.</Text>
-              )}
+              <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18, fontFamily: fontFamily.medium }}>
+                {careModeLabel} · {pets.length} pets · {activeCare} active care
+              </Text>
             </View>
           </View>
-          <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-            <InfoPill icon={settings.careMode === "home" ? "cloud-check-outline" : "cellphone"} label={settings.careMode === "home" ? "Cloud sync on" : "Local only"} />
-            <InfoPill icon="hospital-building" label={`${veterinarians.length} vets`} tone="navy" />
-          </View>
-          {settings.careMode === "home" ? (
-            <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-              <PrimaryButton label="Sync Now" icon="sync" onPress={manualSync} />
-              <GhostButton label="Log Out" danger onPress={logoutHome} />
-            </View>
-          ) : null}
         </Card>
 
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          {sections.map((item) => (
-            <SettingsTile key={item.id} title={item.title} subtitle={item.subtitle} icon={item.icon} active={section === item.id} onPress={() => setSection(item.id)} />
-          ))}
-        </View>
+        {settings.careMode ? (
+          <Card style={{ gap: 0 }}>
+            <DetailRow
+              icon={settings.careMode === "home" ? "home-account" : "account-lock-outline"}
+              title={settings.careMode === "home" ? "Home Account" : "Solo Account"}
+              subtitle={settings.careMode === "home" ? settings.homeName || "Home Furparent sync is connected" : "Local-only care on this device"}
+            />
+            <LogoutAction mode={settings.careMode} disabled={loggingOut} onPress={handleLogout} />
+          </Card>
+        ) : null}
 
-        {section === "vets" ? (
+        <SectionHeader title="Settings" />
+        <Card style={{ gap: 0 }}>
+          <MenuRow icon="account-outline" title="Owner Profile" subtitle="Name and birthday" active={activePanel === "profile"} onPress={() => setActivePanel(activePanel === "profile" ? null : "profile")} />
+          <Divider />
+          <MenuRow icon="hospital-building" title="Veterinarians" subtitle={`${veterinarians.length} saved clinics`} active={activePanel === "vets"} onPress={() => setActivePanel(activePanel === "vets" ? null : "vets")} />
+          <Divider />
+          <MenuRow icon="database-sync-outline" title="Data" subtitle="Backup, restore, and Home sync" active={activePanel === "data"} onPress={() => setActivePanel(activePanel === "data" ? null : "data")} />
+          <Divider />
+          <MenuRow icon="bell-outline" title="Preferences" subtitle="Notifications and daily summary" active={activePanel === "preferences"} onPress={() => setActivePanel(activePanel === "preferences" ? null : "preferences")} />
+          <Divider />
+          <MenuRow icon="information-outline" title="About" subtitle="Version, developer, and privacy" active={activePanel === "about"} onPress={() => setActivePanel(activePanel === "about" ? null : "about")} />
+        </Card>
+
+        {activePanel === "profile" ? (
+          <Card>
+            <SectionHeader title="Owner Profile" />
+            <Field label="Owner Full Name" value={ownerForm.fullName} onChangeText={(fullName) => setOwnerForm((current) => ({ ...current, fullName }))} />
+            <Field label="Birthday" value={ownerForm.birthday} placeholder="YYYY-MM-DD" onChangeText={(birthday) => setOwnerForm((current) => ({ ...current, birthday }))} />
+            <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18, fontFamily: fontFamily.medium }}>
+              Used for greetings and age eligibility.
+            </Text>
+            <FormActions submitLabel="Save" submitIcon="content-save-outline" onSubmit={submitOwner} onCancel={() => setActivePanel(null)} />
+          </Card>
+        ) : null}
+
+        {activePanel === "vets" ? (
           <>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <SectionHeader title="Veterinarians" action={`${veterinarians.length} saved`} />
-              {!showVetForm ? <CompactButton label="Add" icon="plus" primary onPress={() => setShowVetForm(true)} /> : null}
-            </View>
+            <Card>
+              <SectionHeader title="Veterinarians" rightNode={!showVetForm ? <CompactButton label="Add" icon="plus" primary onPress={() => setShowVetForm(true)} /> : undefined} />
+              <DetailRow icon="hospital-building" title="Primary Vet" subtitle={primaryVet?.clinicName || "No primary clinic selected"} />
+              <Divider />
+              <DetailRow icon="alert-octagon-outline" title="Emergency Vet" subtitle={emergencyVet?.clinicName || "No emergency hotline saved"} danger={Boolean(emergencyVet)} />
+            </Card>
+
             {showVetForm ? (
-              <Card style={{ backgroundColor: palette.softTeal }}>
+              <Card style={{ borderColor: palette.mintLight }}>
+                <Text selectable style={{ color: palette.text, fontSize: 16, fontFamily: fontFamily.bold }}>
+                  {editingVetId ? "Edit clinic" : "Add clinic"}
+                </Text>
                 <Field label="Clinic Name" value={vetForm.clinicName} onChangeText={(clinicName) => setVetForm((current) => ({ ...current, clinicName }))} />
                 <Field label="Veterinarian Name" value={vetForm.veterinarianName} onChangeText={(veterinarianName) => setVetForm((current) => ({ ...current, veterinarianName }))} />
-                <Field label="Phone" value={vetForm.phone} keyboardType="phone-pad" onChangeText={(phone) => setVetForm((current) => ({ ...current, phone }))} />
+                <Field label="Phone Number" value={vetForm.phone} keyboardType="phone-pad" onChangeText={(phone) => setVetForm((current) => ({ ...current, phone }))} />
                 <Field label="Emergency Hotline" value={vetForm.emergencyHotline} keyboardType="phone-pad" onChangeText={(emergencyHotline) => setVetForm((current) => ({ ...current, emergencyHotline }))} />
-                <Field label="Address" value={vetForm.address} onChangeText={(address) => setVetForm((current) => ({ ...current, address }))} />
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                  <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Primary veterinarian</Text>
-                  <Switch value={vetForm.isPrimary} onValueChange={(isPrimary) => setVetForm((current) => ({ ...current, isPrimary }))} />
+                <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                  <Chip label="Regular Clinic" active={!vetForm.isPrimary} onPress={() => setVetForm((current) => ({ ...current, isPrimary: false }))} />
+                  <Chip label="Primary Vet" active={vetForm.isPrimary} onPress={() => setVetForm((current) => ({ ...current, isPrimary: true }))} tone="navy" />
                 </View>
-                <FormActions submitLabel={editingVetId ? "Save" : "Add"} submitIcon="hospital-building" onSubmit={submitVet} onCancel={() => { setShowVetForm(false); setEditingVetId(null); setVetForm(emptyVet); }} />
+                <FormActions
+                  submitLabel={editingVetId ? "Save" : "Add"}
+                  submitIcon="content-save-outline"
+                  onSubmit={submitVet}
+                  onCancel={() => {
+                    setShowVetForm(false);
+                    setEditingVetId(null);
+                    setVetForm(emptyVet);
+                  }}
+                />
               </Card>
             ) : null}
-            {veterinarians.length === 0 ? (
-              <EmptyState title="No veterinarians yet" message="Add your trusted clinic and emergency contact for quick access." actionLabel="Add Vet" onAction={() => setShowVetForm(true)} icon="hospital-building" />
-            ) : null}
+
             {veterinarians.map((vet) => (
-              <Card key={vet.id}>
-                <View style={{ gap: 12 }}>
-                  <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
-                    <IconBubble icon="hospital-building" />
-                    <View style={{ flex: 1, gap: 3 }}>
-                      <Text selectable style={{ color: palette.text, fontWeight: "900", fontSize: 16 }}>{vet.clinicName}</Text>
-                      <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{vet.veterinarianName || (vet.isPrimary ? "Primary veterinarian" : "Veterinary contact")}</Text>
-                      <Text selectable style={{ color: palette.navy, fontSize: 12, fontWeight: "800" }}>{vet.phone || vet.emergencyHotline || "Phone not set"}</Text>
-                    </View>
-                    {vet.isPrimary ? <Chip label="Primary" active /> : null}
-                  </View>
-                  <View style={{ flexDirection: "row", gap: 7, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                    <RowAction icon="phone-outline" onPress={() => Linking.openURL(`tel:${vet.phone || vet.emergencyHotline}`)} />
-                    <RowAction icon="map-marker-outline" onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(vet.address)}`)} />
-                    <RowAction icon="pencil-outline" onPress={() => editVet(vet)} />
-                    <RowAction icon="trash-can-outline" danger onPress={() => Alert.alert("Delete vet?", "This removes the local veterinarian record.", [{ text: "Cancel" }, { text: "Delete", style: "destructive", onPress: () => removeVet(vet.id) }])} />
-                  </View>
-                </View>
-              </Card>
+              <VetCard
+                key={vet.id}
+                vet={vet}
+                onEdit={() => startEditVet(vet)}
+                onDelete={() =>
+                  Alert.alert("Delete clinic?", "This removes the local veterinarian contact.", [
+                    { text: "Cancel" },
+                    { text: "Delete", style: "destructive", onPress: () => removeVet(vet.id) },
+                  ])
+                }
+              />
             ))}
           </>
         ) : null}
 
-        {section === "backup" ? (
-          <>
-            <SectionHeader title="Local Data" />
-            <Card style={{ backgroundColor: "#fff" }}>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                <IconBubble icon="bell-ring-outline" tone={settings.notificationsEnabled ? "teal" : "navy"} />
-                <View style={{ flex: 1, gap: 3 }}>
-                  <Text selectable style={{ color: palette.text, fontWeight: "900" }}>Local reminders</Text>
-                  <Text selectable style={{ color: palette.muted, fontSize: 12 }}>Schedule native notifications for saved reminders.</Text>
-                </View>
-                <Switch value={settings.notificationsEnabled} onValueChange={(notificationsEnabled) => updateSettings({ ...settings, notificationsEnabled })} />
-              </View>
-            </Card>
-            <Card style={{ backgroundColor: palette.softTeal, borderColor: palette.mint }}>
-              <IconBubble icon="database-export-outline" size={46} />
-              <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Create Backup</Text>
-              <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>Export local PetNexa AI data to a JSON file on this device.</Text>
-              <PrimaryButton label="Create Backup" icon="download-outline" onPress={exportBackup} />
-            </Card>
-            <Card style={{ backgroundColor: palette.softDanger }}>
-              <IconBubble icon="backup-restore" tone="danger" size={46} />
-              <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Restore Backup</Text>
-              <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>Restore replaces all current local data after confirmation.</Text>
-              <GhostButton label="Restore Backup" danger onPress={restoreBackup} />
-            </Card>
-          </>
+        {activePanel === "data" ? (
+          <Card>
+            <SectionHeader title="Data" />
+            <DetailRow icon="backup-restore" title="Backup & Restore" subtitle="Export or replace local data. Image files are not bundled." />
+            <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", paddingTop: 4 }}>
+              <CompactButton label="Export" icon="export" onPress={exportData} />
+              <CompactButton label="Import" icon="import" danger onPress={restoreDataReplaceMode} />
+            </View>
+            <Divider />
+            <DetailRow icon="cloud-sync-outline" title="Home Sync" subtitle={`${syncState} · Last synced: ${settings.lastSyncAt || "Not yet"}`} />
+            <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", paddingTop: 4 }}>
+              <CompactButton label="Sync Now" icon="sync" disabled={settings.careMode !== "home" || syncing} onPress={handleSyncNow} />
+            </View>
+          </Card>
         ) : null}
 
-        {section === "about" ? (
-          <>
-            <SectionHeader title="About PetNexa AI" />
-            <Card style={{ alignItems: "stretch" }}>
-              <View style={{ alignItems: "center", gap: 8 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
-                  <HeaderAppIcon size={58} />
-                  <View style={{ gap: 2 }}>
-                    <Text selectable style={{ color: palette.text, fontSize: 24, fontWeight: "900" }}>{appInfo.name}</Text>
-                    <Text selectable style={{ color: palette.teal, fontSize: 13, fontWeight: "900" }}>{appInfo.tagline}</Text>
-                  </View>
-                </View>
-              </View>
-              <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Purpose</Text>
-              <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>PetNexa AI helps pet parents organize pet profiles, health records, reminders, veterinarian contacts, and guided pet-care notes in one offline-first mobile app.</Text>
-              <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>Privacy</Text>
-              <Text selectable style={{ color: palette.muted, lineHeight: 20 }}>All data stays local by default. If Home Furparent sync is enabled, selected care data is securely synced to your Home account so your household can access it across devices. AI consultation sends only the consultation details needed for guidance.</Text>
-              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "center", paddingTop: 8 }}>
-                <Chip label={`Version ${appInfo.version}`} active />
-                <Chip label={`Developer: ${appInfo.developer}`} tone="navy" />
-              </View>
-            </Card>
-          </>
+        {activePanel === "preferences" ? (
+          <Card>
+            <SectionHeader title="Preferences" />
+            <DetailRow
+              icon="bell-outline"
+              title="Notifications"
+              subtitle="Local care reminders when supported."
+              right={<Switch value={settings.notificationsEnabled} onValueChange={(notificationsEnabled) => updateSettings({ ...settings, notificationsEnabled })} color={palette.teal} />}
+            />
+            <Divider />
+            <DetailRow icon="clock-outline" title="Daily Summary" subtitle={`Preferred time: ${settings.dailySummaryTime}`} />
+          </Card>
         ) : null}
-      </ScrollView>
+
+        {activePanel === "about" ? (
+          <Card>
+            <View style={{ alignItems: "center", gap: 10 }}>
+              <HeaderAppIcon size={72} />
+              <View style={{ alignItems: "center", gap: 2 }}>
+                <Text selectable style={{ color: palette.text, fontSize: 21, fontFamily: fontFamily.black }}>
+                  PetNexa AI
+                </Text>
+                <Text selectable style={{ color: palette.teal, fontSize: 13, fontFamily: fontFamily.bold }}>
+                  Smart Pet Health, Connected Care.
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "center", maxWidth: layout.isCompact ? 250 : undefined }}>
+                <Chip label="Version 1.0.0" active />
+                <Chip label="Developer: Dahon" tone="navy" />
+              </View>
+            </View>
+            <Divider />
+            <DetailRow icon="shield-check-outline" title="Privacy" subtitle="All data stays local by default. Data is only sent online when AI consultation or optional cloud sync is enabled." />
+            <Divider />
+            <DetailRow icon="information-outline" title="AI Safety" subtitle="The AI provides informational guidance only and does not replace veterinary care." />
+          </Card>
+        ) : null}
+      </ResponsiveScrollView>
     </Screen>
   );
 }

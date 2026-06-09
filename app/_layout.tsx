@@ -8,6 +8,15 @@ import { paperTheme } from "@/constants/theme";
 import { MIN_OWNER_AGE } from "@/constants/owner";
 import { OwnerOnboarding } from "@/components/owner-onboarding";
 import { getAgeYears, isValidIsoDate } from "@/utils/date";
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+  Inter_900Black,
+} from "@expo-google-fonts/inter";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,6 +41,21 @@ function RootStack() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+    Inter_900Black,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      // Fonts are ready — splash hide is controlled by RootStack
+    }
+  }, [fontsLoaded]);
+
   return (
     <PaperProvider theme={paperTheme}>
       <AppProvider>

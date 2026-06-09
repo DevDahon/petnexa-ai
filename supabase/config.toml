@@ -1,4 +1,25 @@
 project_id = "petnexa-ai"
 
+[auth]
+site_url = "petnexaai://auth/callback"
+additional_redirect_urls = [
+  "petnexaai://auth/callback",
+  "petnexaai://**",
+  "http://localhost:8081/**",
+  "http://localhost:19006/**"
+]
+
+[auth.email]
+enable_confirmations = true
+max_frequency = "1m0s"
+otp_length = 8
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[storage.vector]
+enabled = false
+
 [functions.consultation]
 verify_jwt = false

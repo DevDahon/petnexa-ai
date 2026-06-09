@@ -2,7 +2,8 @@ import NetInfo from "@react-native-community/netinfo";
 import { Consultation, Pet, RiskLevel } from "@/types/domain";
 import { createId, todayIso } from "@/utils/date";
 
-export const AI_SAFETY_NOTICE = "This AI assistant provides informational guidance only and does not replace professional veterinary care.";
+export const AI_SAFETY_NOTICE =
+  "This AI assistant provides informational guidance only. It does not diagnose, prescribe medication, provide dosage instructions, or replace professional veterinary care.";
 
 const emergencyRules = [
   "difficulty breathing",
@@ -43,19 +44,54 @@ function localGuidance(input: ConsultationInput, flags: string[]) {
   if (flags.length > 0) {
     return {
       riskLevel: "Emergency" as RiskLevel,
-      guidance: "Emergency signs were detected. Contact a veterinarian or emergency clinic immediately before continuing any home monitoring.",
+      guidance:
+        "Emergency signs were detected. Contact a veterinarian or emergency clinic immediately before continuing any home monitoring.",
     };
   }
-  const joined = `${input.symptoms} ${input.vomiting} ${input.diarrhea} ${input.appetite} ${input.behaviorChanges}`.toLowerCase();
-  if (joined.includes("weak") || joined.includes("not eating") || joined.includes("cough") || joined.includes("wound")) {
+  const joined = `${input.preset} ${input.symptoms} ${input.vomiting} ${input.diarrhea} ${input.appetite} ${input.behaviorChanges} ${input.mobility} ${input.breathing} ${input.injury} ${input.notes}`.toLowerCase();
+  if (
+    joined.includes("weak") ||
+    joined.includes("not eating") ||
+    joined.includes("cough") ||
+    joined.includes("wound") ||
+    joined.includes("repeated") ||
+    joined.includes("abnormal breathing")
+  ) {
     return {
       riskLevel: "Moderate" as RiskLevel,
-      guidance: "A veterinary consultation is recommended, especially if symptoms persist, worsen, or combine with lethargy, pain, dehydration, or abnormal breathing.",
+      guidance:
+        "Use supportive monitoring while you plan timely veterinary advice if this continues: keep your pet calm, offer fresh water, avoid sudden diet changes, track appetite, water intake, stool, breathing, energy, and symptom timing, and do not give medication unless a veterinarian already instructed it. Escalate sooner if symptoms repeat, worsen, or combine with lethargy, pain, dehydration, or breathing changes.",
     };
   }
   return {
     riskLevel: "Mild" as RiskLevel,
-    guidance: "Monitor your pet closely, keep notes on appetite, water intake, stool, energy, and symptom timing, and contact a veterinarian if the issue persists or worsens.",
+    guidance:
+      "This sounds mild from the details provided. Monitor at home for now: keep fresh water available, offer normal food gently if your pet wants it, avoid new treats or sudden diet changes, keep activity calm, and record appetite, water intake, stool, energy, and symptom timing. Get veterinary help only if it repeats, persists beyond a short observation period, worsens, or any red flags appear.",
+  };
+}
+
+function buildProviderPayload(input: ConsultationInput) {
+  return {
+    pet: {
+      species: input.pet.species,
+      breed: input.pet.breed,
+      weightKg: input.pet.weightKg,
+      birthday: input.pet.birthday,
+    },
+    symptoms: {
+      preset: input.preset,
+      description: input.symptoms,
+      duration: input.vomiting,
+      frequency: input.diarrhea,
+      appetite: input.appetite,
+      waterIntake: input.waterIntake,
+      energyOrMobility: input.mobility,
+      breathing: input.breathing,
+      injuryOrWarningSigns: input.injury,
+      behaviorChanges: input.behaviorChanges,
+      notes: input.notes,
+    },
+    safety: AI_SAFETY_NOTICE,
   };
 }
 
@@ -77,11 +113,7 @@ export async function buildConsultation(input: ConsultationInput): Promise<{ con
         const response = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            pet: { species: input.pet.species, breed: input.pet.breed, weightKg: input.pet.weightKg, birthday: input.pet.birthday },
-            symptoms: input,
-            safety: AI_SAFETY_NOTICE,
-          }),
+          body: JSON.stringify(buildProviderPayload(input)),
         });
         if (!response.ok) {
           offline = true;

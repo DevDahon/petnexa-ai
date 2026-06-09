@@ -1,13 +1,33 @@
 import * as ImagePicker from "expo-image-picker";
+import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
-import { Card, Chip, CompactButton, EmptyState, Field, FormActions, HeaderActionButton, HeaderAppIcon, IconBubble, PetAvatar, RowAction, Screen, SectionHeader } from "@/components/ui";
-import { palette } from "@/constants/theme";
+import {
+  Card,
+  Chip,
+  CompactButton,
+  EmptyState,
+  Field,
+  FormActions,
+  HeaderActionButton,
+  IconBubble,
+  PetAvatar,
+  ResponsiveScrollView,
+  RowAction,
+  Screen,
+  ScreenHeader,
+  SectionHeader,
+  StatusRail,
+  useResponsiveLayout,
+} from "@/components/ui";
+import { fontFamily, palette, radii } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { HealthRecord, RecordType } from "@/types/domain";
 import { formatFriendlyDate, todayIso } from "@/utils/date";
 
-const recordTypes: RecordType[] = ["Vaccination", "Deworming", "Medication", "Surgery", "Checkup", "Grooming", "Allergy", "Lab Test", "Other"];
+const recordTypes: RecordType[] = [
+  "Vaccination", "Deworming", "Medication", "Surgery", "Checkup", "Grooming", "Allergy", "Lab Test", "Other",
+];
 const quickFilters: (RecordType | "All")[] = ["All", "Vaccination", "Deworming", "Medication", "Checkup"];
 
 const emptyRecord = {
@@ -27,21 +47,28 @@ function recordVisual(type: RecordType) {
   if (type === "Medication") return { icon: "pill" as const, tone: "warning" as const };
   if (type === "Checkup") return { icon: "stethoscope" as const, tone: "success" as const };
   if (type === "Surgery") return { icon: "hospital-box-outline" as const, tone: "danger" as const };
+  if (type === "Grooming") return { icon: "content-cut" as const, tone: "peach" as const };
   return { icon: "clipboard-pulse-outline" as const, tone: "peach" as const };
 }
 
 export default function RecordsScreen() {
   const { pets, records, saveRecord, removeRecord } = useAppData();
+  const layout = useResponsiveLayout();
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<RecordType | "All">("All");
   const [form, setForm] = useState(emptyRecord);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const filtered = useMemo(() => records.filter((record) => {
-    const pet = pets.find((item) => item.id === record.petId);
-    const text = `${record.type} ${record.veterinarian} ${record.clinic} ${record.notes} ${pet?.name}`.toLowerCase();
-    return (typeFilter === "All" || record.type === typeFilter) && text.includes(query.toLowerCase());
-  }), [pets, query, records, typeFilter]);
+
+  const filtered = useMemo(
+    () =>
+      records.filter((record) => {
+        const pet = pets.find((item) => item.id === record.petId);
+        const text = `${record.type} ${record.veterinarian} ${record.clinic} ${record.notes} ${pet?.name}`.toLowerCase();
+        return (typeFilter === "All" || record.type === typeFilter) && text.includes(query.toLowerCase());
+      }),
+    [pets, query, records, typeFilter],
+  );
 
   const submit = async () => {
     const petId = form.petId || pets[0]?.id;
@@ -86,81 +113,170 @@ export default function RecordsScreen() {
 
   return (
     <Screen>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <Text selectable style={{ color: palette.text, fontSize: 28, fontWeight: "900", flex: 1 }}>Records</Text>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            {!showForm ? <HeaderActionButton label="Add record" icon="plus" onPress={() => setShowForm(true)} /> : null}
-            <HeaderAppIcon size={46} />
-          </View>
-        </View>
+      <ResponsiveScrollView>
+        {/* ── Header ── */}
+        <ScreenHeader
+          title="Records"
+          subtitle="Track every health event"
+          right={
+            <HeaderActionButton
+              icon="cog-outline"
+              label="Open settings"
+              active
+              onPress={() => router.push("/settings")}
+            />
+          }
+        />
+
+        {/* ── Search & Filters ── */}
         <Field label="Search records..." value={query} onChangeText={setQuery} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-          {quickFilters.map((type) => <Chip key={type} label={type} active={typeFilter === type} onPress={() => setTypeFilter(type)} tone={type === "All" ? "teal" : recordVisual(type).tone} />)}
+          {quickFilters.map((type) => (
+            <Chip
+              key={type}
+              label={type}
+              active={typeFilter === type}
+              onPress={() => setTypeFilter(type)}
+              tone={type === "All" ? "teal" : recordVisual(type as RecordType).tone}
+            />
+          ))}
         </ScrollView>
 
+        {/* ── Add/Edit Form ── */}
         {showForm ? (
           <>
             <SectionHeader title={editingId ? "Edit Record" : "Add Record"} />
             <Card>
+              {/* Pet selector */}
+              <Text selectable style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.bold }}>Select pet</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                {pets.map((pet) => <Chip key={pet.id} label={pet.name} active={(form.petId || pets[0]?.id) === pet.id} onPress={() => setForm((current) => ({ ...current, petId: pet.id }))} />)}
+                {pets.map((pet) => (
+                  <Chip
+                    key={pet.id}
+                    label={pet.name}
+                    active={(form.petId || pets[0]?.id) === pet.id}
+                    onPress={() => setForm((current) => ({ ...current, petId: pet.id }))}
+                  />
+                ))}
               </ScrollView>
+
+              {/* Type selector */}
+              <Text selectable style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.bold }}>Record type</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                {recordTypes.map((type) => <Chip key={type} label={type} active={form.type === type} onPress={() => setForm((current) => ({ ...current, type }))} />)}
+                {recordTypes.map((type) => (
+                  <Chip
+                    key={type}
+                    label={type}
+                    active={form.type === type}
+                    onPress={() => setForm((current) => ({ ...current, type }))}
+                  />
+                ))}
               </ScrollView>
+
               <Field label="Date" value={form.date} onChangeText={(date) => setForm((current) => ({ ...current, date }))} />
               <Field label="Clinic" value={form.clinic} onChangeText={(clinic) => setForm((current) => ({ ...current, clinic }))} />
-              <Field label="Next Schedule" value={form.nextScheduleDate} onChangeText={(nextScheduleDate) => setForm((current) => ({ ...current, nextScheduleDate }))} />
-              <Field label="Notes" value={form.notes} multiline onChangeText={(notes) => setForm((current) => ({ ...current, notes }))} />
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#F8FBFD", borderRadius: 18, borderWidth: 1, borderColor: palette.border, padding: 10 }}>
+              <Field
+                label="Next Schedule"
+                value={form.nextScheduleDate}
+                onChangeText={(nextScheduleDate) => setForm((current) => ({ ...current, nextScheduleDate }))}
+              />
+              <Field
+                label="Notes"
+                value={form.notes}
+                multiline
+                onChangeText={(notes) => setForm((current) => ({ ...current, notes }))}
+              />
+
+              {/* Attachment row */}
+              <View
+                style={{
+                  flexDirection: layout.isCompact ? "column" : "row",
+                  alignItems: layout.isCompact ? "flex-start" : "center",
+                  gap: 12,
+                  backgroundColor: palette.background,
+                  borderRadius: radii.lg,
+                  borderWidth: 1,
+                  borderColor: palette.border,
+                  padding: 12,
+                }}
+              >
                 <IconBubble icon={form.attachmentUri ? "image-check-outline" : "image-plus"} size={44} />
                 <View style={{ flex: 1, gap: 2 }}>
-                  <Text selectable style={{ color: palette.text, fontSize: 15, fontWeight: "900" }}>Attachment</Text>
-                  <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{form.attachmentUri ? "Image attached to this record." : "Optional photo or document image."}</Text>
+                  <Text selectable style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.bold }}>Attachment</Text>
+                  <Text selectable style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.medium }}>
+                    {form.attachmentUri ? "Image attached to this record." : "Optional photo or document image."}
+                  </Text>
                 </View>
                 <CompactButton label={form.attachmentUri ? "Change" : "Add"} onPress={chooseAttachment} />
               </View>
-              <FormActions submitLabel={editingId ? "Save" : "Add"} onSubmit={submit} onCancel={closeForm} />
+
+              <FormActions submitLabel={editingId ? "Save" : "Add Record"} onSubmit={submit} onCancel={closeForm} />
             </Card>
           </>
         ) : null}
 
-        <SectionHeader title="History" action={`${filtered.length} shown`} />
+        {/* ── Record List ── */}
+        <SectionHeader
+          title="History"
+          action={`${filtered.length} shown`}
+          rightNode={
+            !showForm ? <CompactButton label="Add Record" icon="plus" primary onPress={() => setShowForm(true)} /> : undefined
+          }
+        />
 
         {filtered.length === 0 ? (
           <EmptyState title="No records found" message="Try a different filter or add a new health record." icon="clipboard-search-outline" />
         ) : (
-          filtered.slice(0, 12).map((record) => {
+          filtered.slice(0, 15).map((record) => {
             const pet = pets.find((item) => item.id === record.petId);
             const visual = recordVisual(record.type);
             return (
               <Card key={record.id}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                  <View style={{ width: 5, alignSelf: "stretch", borderRadius: 99, backgroundColor: visual.tone === "danger" ? palette.danger : visual.tone === "warning" ? palette.warning : visual.tone === "navy" ? palette.navy : palette.teal }} />
-                  <IconBubble icon={visual.icon} tone={visual.tone} size={54} />
+              <View style={{ flexDirection: layout.isCompact ? "column" : "row", alignItems: layout.isCompact ? "flex-start" : "center", gap: 12 }}>
+                  <StatusRail tone={visual.tone} />
+                  <IconBubble icon={visual.icon} tone={visual.tone} size={52} />
                   <View style={{ flex: 1, gap: 4 }}>
-                    <Text selectable style={{ color: palette.text, fontSize: 17, fontWeight: "900" }}>{record.type}</Text>
-                    <Text selectable style={{ color: palette.muted, fontSize: 12 }}>{pet?.name ?? "Pet"} • {formatFriendlyDate(record.date)}</Text>
-                    <Text selectable style={{ color: palette.navy, fontSize: 12 }}>{record.clinic || "Clinic not set"}</Text>
-                    <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+                    <Text selectable style={{ color: palette.text, fontSize: 16, fontFamily: fontFamily.bold }}>
+                      {record.type}
+                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <PetAvatar pet={pet} size={18} />
+                      <Text selectable style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.medium }}>
+                        {pet?.name ?? "Pet"} • {formatFriendlyDate(record.date)}
+                      </Text>
+                    </View>
+                    {record.clinic ? (
+                      <Text selectable style={{ color: palette.navy, fontSize: 12, fontFamily: fontFamily.semiBold }}>
+                        {record.clinic}
+                      </Text>
+                    ) : null}
+                    <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
                       <Chip label={record.type} tone={visual.tone} />
                       {record.attachmentUri ? <Chip label="Image" icon="image-outline" active tone="teal" /> : null}
+                      {record.nextScheduleDate ? (
+                        <Chip label={`Next: ${record.nextScheduleDate}`} tone="navy" />
+                      ) : null}
                     </View>
                   </View>
-                  <View style={{ alignItems: "center" }}>
-                    <PetAvatar pet={pet} size={42} />
-                    <View style={{ flexDirection: "row" }}>
-                      <RowAction icon="pencil-outline" onPress={() => startEdit(record)} />
-                      <RowAction icon="trash-can-outline" danger onPress={() => Alert.alert("Delete record?", "Linked reminder will also be removed.", [{ text: "Cancel" }, { text: "Delete", style: "destructive", onPress: () => removeRecord(record.id) }])} />
-                    </View>
+                  <View style={{ flexDirection: layout.isCompact ? "row" : "column", alignItems: "center", gap: 6, alignSelf: layout.isCompact ? "flex-end" : "auto" }}>
+                    <RowAction icon="pencil-outline" onPress={() => startEdit(record)} />
+                    <RowAction
+                      icon="trash-can-outline"
+                      danger
+                      onPress={() =>
+                        Alert.alert("Delete record?", "Linked care task will also be removed.", [
+                          { text: "Cancel" },
+                          { text: "Delete", style: "destructive", onPress: () => removeRecord(record.id) },
+                        ])
+                      }
+                    />
                   </View>
                 </View>
               </Card>
             );
           })
         )}
-      </ScrollView>
+      </ResponsiveScrollView>
     </Screen>
   );
 }
