@@ -14,7 +14,7 @@ import {
   SectionHeader,
   useResponsiveLayout,
 } from "@/components/ui";
-import { fontFamily, palette, radii } from "@/constants/theme";
+import { fontFamily, lineHeights, palette, radii, typeScale } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import {
   AI_SAFETY_NOTICE,
@@ -62,6 +62,7 @@ function stepMeta(step: number) {
 
 function StepHeader({ step }: { step: number }) {
   const current = stepMeta(step);
+  const layout = useResponsiveLayout();
   return (
     <View
       style={{
@@ -73,7 +74,13 @@ function StepHeader({ step }: { step: number }) {
         gap: 10,
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <View
+        style={{
+          flexDirection: layout.isTiny ? "column" : "row",
+          alignItems: layout.isTiny ? "flex-start" : "center",
+          gap: 10,
+        }}
+      >
         <View
           style={{
             width: 40,
@@ -92,12 +99,13 @@ function StepHeader({ step }: { step: number }) {
             size={21}
           />
         </View>
-        <View style={{ flex: 1, gap: 3 }}>
+        <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
           <Text
             selectable
+            numberOfLines={2}
             style={{
               color: palette.teal,
-              fontSize: 10,
+              fontSize: typeScale.caption,
               fontFamily: fontFamily.bold,
               letterSpacing: 0.7,
             }}
@@ -106,6 +114,7 @@ function StepHeader({ step }: { step: number }) {
           </Text>
           <Text
             selectable
+            numberOfLines={3}
             style={{
               color: palette.text,
               fontSize: 16,
@@ -118,9 +127,9 @@ function StepHeader({ step }: { step: number }) {
             selectable
             style={{
               color: palette.muted,
-              fontSize: 11,
+              fontSize: typeScale.bodySmall,
               fontFamily: fontFamily.medium,
-              lineHeight: 16,
+              lineHeight: lineHeights.bodySmall,
             }}
           >
             {current.subtitle}
@@ -184,38 +193,41 @@ function OptionButton({
         opacity: pressed ? 0.78 : 1,
         flexGrow: 0,
         flexShrink: 1,
+        minWidth: 0,
       })}
     >
       <View
         style={{
-          minHeight: 34,
+          minHeight: 40,
           borderRadius: 13,
           borderWidth: 1,
           borderColor: active ? color : `${color}35`,
           backgroundColor: active ? color : soft,
-          paddingHorizontal: 10,
-          paddingVertical: 6,
+          paddingHorizontal: 12,
+          paddingVertical: 8,
           alignItems: "center",
           justifyContent: "center",
           flexDirection: "row",
           gap: 5,
+          minWidth: 0,
         }}
       >
         {icon ? (
           <MaterialCommunityIcons
             name={icon}
             color={active ? "#fff" : color}
-            size={14}
+            size={16}
           />
         ) : null}
         <Text
           selectable
+          numberOfLines={2}
           style={{
             color: active ? "#fff" : color,
-            fontSize: 11,
+            fontSize: typeScale.label,
             fontFamily: fontFamily.bold,
             textAlign: "center",
-            lineHeight: 14,
+            lineHeight: lineHeights.label,
           }}
         >
           {label}
@@ -254,13 +266,13 @@ function GuideActionButton({
     >
       <View
         style={{
-          minHeight: 34,
+          minHeight: 40,
           borderRadius: 13,
           borderWidth: 1,
           borderColor: primary ? palette.teal : danger ? "#FECACA" : palette.border,
           backgroundColor: primary ? palette.teal : danger ? palette.dangerSoft : "#fff",
-          paddingHorizontal: 11,
-          paddingVertical: 6,
+          paddingHorizontal: 12,
+          paddingVertical: 8,
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",
@@ -270,14 +282,14 @@ function GuideActionButton({
         <MaterialCommunityIcons
           name={icon}
           color={primary ? "#fff" : color}
-          size={14}
+          size={16}
         />
         <Text
           selectable={false}
           style={{
             color: primary ? "#fff" : color,
-            fontSize: 11,
-            lineHeight: 14,
+            fontSize: typeScale.label,
+            lineHeight: lineHeights.label,
             fontFamily: fontFamily.bold,
           }}
         >
@@ -417,61 +429,67 @@ export default function AiAssistantScreen() {
           <View
             style={{
               flexDirection: "column",
-              alignItems: "center",
+              alignItems: "stretch",
               gap: 14,
-              position: "relative",
             }}
           >
             <View
               style={{
-                position: "absolute",
-                top: -8,
-                right: -8,
                 flexDirection: "row",
+                justifyContent: "space-between",
                 alignItems: "center",
-                gap: 8,
-                backgroundColor: palette.softNavy,
-                borderRadius: 999,
-                paddingHorizontal: 12,
-                paddingVertical: 7,
-                borderWidth: 1,
-                borderColor: palette.border,
+                gap: 12,
+                flexWrap: "wrap",
               }}
             >
-              <MaterialCommunityIcons
-                name="star-four-points"
-                color={palette.navy}
-                size={14}
-              />
-              <Text
-                selectable
-                style={{
-                  color: palette.navy,
-                  fontSize: 12,
-                  fontFamily: fontFamily.bold,
-                }}
-              >
-                {creditState.aiCredits}/3
-              </Text>
-            </View>
-            <View style={{ width: "100%", gap: 6 }}>
               <Text
                 selectable
                 style={{
                   color: palette.teal,
-                  fontSize: 10,
+                  fontSize: typeScale.caption,
                   fontFamily: fontFamily.bold,
                   letterSpacing: 1.2,
                 }}
               >
                 AI CONSULTATION
               </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                  backgroundColor: palette.softNavy,
+                  borderRadius: 999,
+                  paddingHorizontal: 12,
+                  paddingVertical: 7,
+                  borderWidth: 1,
+                  borderColor: palette.border,
+                }}
+              >
+                <MaterialCommunityIcons
+                  name="star-four-points"
+                  color={palette.navy}
+                  size={14}
+                />
+                <Text
+                  selectable
+                  style={{
+                    color: palette.navy,
+                    fontSize: typeScale.caption,
+                    fontFamily: fontFamily.bold,
+                  }}
+                >
+                  {creditState.aiCredits}/3
+                </Text>
+              </View>
+            </View>
+            <View style={{ width: "100%", gap: 6 }}>
               <Text
                 selectable
                 style={{
                   color: palette.text,
-                  fontSize: 18,
-                  lineHeight: 24,
+                  fontSize: typeScale.title,
+                  lineHeight: lineHeights.title,
                   fontFamily: fontFamily.black,
                 }}
               >
@@ -482,23 +500,24 @@ export default function AiAssistantScreen() {
               onPress={startConsultation}
               style={({ pressed }) => ({
                 opacity: pressed ? 0.8 : 1,
-                alignSelf: "flex-start",
+                alignSelf: layout.shouldStack ? "stretch" : "flex-start",
               })}
             >
               <View
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  justifyContent: "flex-start",
+                  justifyContent: "space-between",
                   backgroundColor: palette.teal,
                   borderRadius: 16,
                   paddingHorizontal: 16,
                   paddingVertical: 12,
                   gap: 12,
+                  minWidth: 0,
                 }}
               >
                 <View
-                  style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}
                 >
                   <MaterialCommunityIcons
                     name="arrow-right"
@@ -507,6 +526,7 @@ export default function AiAssistantScreen() {
                   />
                   <Text
                     selectable
+                    numberOfLines={2}
                     style={{
                       color: "#fff",
                       fontSize: 16,
@@ -545,11 +565,18 @@ export default function AiAssistantScreen() {
             borderColor: "#FECACA",
           }}
         >
-          <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+          <View
+            style={{
+              flexDirection: layout.shouldStack ? "column" : "row",
+              gap: 12,
+              alignItems: layout.shouldStack ? "flex-start" : "center",
+            }}
+          >
             <IconBubble icon="alert-octagon-outline" tone="danger" size={48} />
-            <View style={{ flex: 1, gap: 4 }}>
+            <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
               <Text
                 selectable
+                numberOfLines={4}
                 style={{
                   color: palette.text,
                   fontSize: 16,
@@ -562,9 +589,9 @@ export default function AiAssistantScreen() {
                 selectable
                 style={{
                   color: palette.muted,
-                  lineHeight: 20,
+                  lineHeight: lineHeights.body,
                   fontFamily: fontFamily.medium,
-                  fontSize: 13,
+                  fontSize: typeScale.body,
                 }}
               >
                 Breathing trouble, seizures, poisoning, severe bleeding, or
@@ -587,7 +614,7 @@ export default function AiAssistantScreen() {
               style={{
                 color: "#fff",
                 fontFamily: fontFamily.bold,
-                fontSize: 13,
+                fontSize: typeScale.bodySmall,
               }}
             >
               Emergency care first
@@ -638,7 +665,7 @@ export default function AiAssistantScreen() {
                     selectable
                     style={{
                       color: palette.text,
-                      fontSize: 14,
+                      fontSize: typeScale.body,
                       fontFamily: fontFamily.bold,
                     }}
                   >
@@ -694,7 +721,7 @@ export default function AiAssistantScreen() {
                           selectable
                           style={{
                             color: palette.muted,
-                            fontSize: 12,
+                            fontSize: typeScale.bodySmall,
                             fontFamily: fontFamily.medium,
                           }}
                         >
@@ -720,7 +747,7 @@ export default function AiAssistantScreen() {
                     selectable
                     style={{
                       color: palette.text,
-                      fontSize: 14,
+                      fontSize: typeScale.body,
                       fontFamily: fontFamily.bold,
                     }}
                   >
@@ -760,9 +787,9 @@ export default function AiAssistantScreen() {
                     selectable
                     style={{
                       color: palette.muted,
-                      lineHeight: 18,
+                      lineHeight: lineHeights.bodySmall,
                       fontFamily: fontFamily.medium,
-                      fontSize: 12,
+                      fontSize: typeScale.bodySmall,
                     }}
                   >
                     The preset already tells us the symptom. These answers add
@@ -774,7 +801,7 @@ export default function AiAssistantScreen() {
                       style={{
                         color: palette.text,
                         fontFamily: fontFamily.bold,
-                        fontSize: 13,
+                        fontSize: typeScale.body,
                       }}
                     >
                       How long has this been happening?
@@ -802,7 +829,7 @@ export default function AiAssistantScreen() {
                       style={{
                         color: palette.text,
                         fontFamily: fontFamily.bold,
-                        fontSize: 13,
+                        fontSize: typeScale.body,
                       }}
                     >
                       How often is it happening?
@@ -830,7 +857,7 @@ export default function AiAssistantScreen() {
                       style={{
                         color: palette.text,
                         fontFamily: fontFamily.bold,
-                        fontSize: 13,
+                        fontSize: typeScale.body,
                       }}
                     >
                       Energy level
@@ -864,7 +891,7 @@ export default function AiAssistantScreen() {
                       style={{
                         color: palette.text,
                         fontFamily: fontFamily.bold,
-                        fontSize: 13,
+                        fontSize: typeScale.body,
                       }}
                     >
                       Breathing
@@ -895,7 +922,7 @@ export default function AiAssistantScreen() {
                       style={{
                         color: palette.text,
                         fontFamily: fontFamily.bold,
-                        fontSize: 13,
+                        fontSize: typeScale.body,
                       }}
                     >
                       Any injury, poisoning, collapse, or bleeding?
@@ -1020,7 +1047,7 @@ export default function AiAssistantScreen() {
                   color: palette.muted,
                   lineHeight: 20,
                   fontFamily: fontFamily.medium,
-                  fontSize: 12,
+                  fontSize: typeScale.bodySmall,
                 }}
               >
                 {AI_SAFETY_NOTICE}
@@ -1092,9 +1119,9 @@ export default function AiAssistantScreen() {
             >
               <View
                 style={{
-                  flexDirection: "row",
+                  flexDirection: layout.shouldStack ? "column" : "row",
                   gap: 12,
-                  alignItems: "flex-start",
+                  alignItems: layout.shouldStack ? "stretch" : "flex-start",
                 }}
               >
                 <IconBubble
@@ -1110,7 +1137,7 @@ export default function AiAssistantScreen() {
                   }
                   size={48}
                 />
-                <View style={{ flex: 1, gap: 8 }}>
+                <View style={{ flex: 1, minWidth: 0, gap: 8 }}>
                   <View
                     style={{
                       flexDirection: "row",
@@ -1121,6 +1148,7 @@ export default function AiAssistantScreen() {
                   >
                     <Text
                       selectable
+                      numberOfLines={2}
                       style={{
                         color: palette.text,
                         fontSize: 18,
@@ -1152,7 +1180,7 @@ export default function AiAssistantScreen() {
                             latestResult.consultation.riskLevel === "Emergency"
                               ? "#fff"
                               : palette.teal,
-                          fontSize: 11,
+                          fontSize: typeScale.caption,
                           fontFamily: fontFamily.bold,
                         }}
                       >
@@ -1162,9 +1190,10 @@ export default function AiAssistantScreen() {
                   </View>
                   <Text
                     selectable
+                    numberOfLines={6}
                     style={{
                       color: palette.text,
-                      fontSize: 14,
+                      fontSize: typeScale.body,
                       fontFamily: fontFamily.medium,
                       lineHeight: 22,
                     }}
@@ -1176,7 +1205,7 @@ export default function AiAssistantScreen() {
                       selectable
                       style={{
                         color: palette.muted,
-                        fontSize: 12,
+                        fontSize: typeScale.bodySmall,
                         fontFamily: fontFamily.medium,
                         lineHeight: 18,
                       }}
@@ -1218,8 +1247,8 @@ export default function AiAssistantScreen() {
               >
                 <View
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
+                    flexDirection: layout.shouldStack ? "column" : "row",
+                    alignItems: layout.shouldStack ? "stretch" : "center",
                     gap: 12,
                   }}
                 >
@@ -1228,9 +1257,10 @@ export default function AiAssistantScreen() {
                     tone={isEmergency ? "danger" : "teal"}
                     size={44}
                   />
-                  <View style={{ flex: 1, gap: 4 }}>
+                  <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
                     <Text
                       selectable
+                      numberOfLines={2}
                       style={{
                         color: palette.text,
                         fontSize: 15,
@@ -1248,9 +1278,10 @@ export default function AiAssistantScreen() {
                     </Text>
                     <Text
                       selectable
+                      numberOfLines={2}
                       style={{
                         color: palette.muted,
-                        fontSize: 12,
+                        fontSize: typeScale.bodySmall,
                         fontFamily: fontFamily.medium,
                       }}
                     >
@@ -1258,9 +1289,10 @@ export default function AiAssistantScreen() {
                     </Text>
                     <Text
                       selectable
+                      numberOfLines={4}
                       style={{
                         color: palette.muted,
-                        fontSize: 13,
+                        fontSize: typeScale.bodySmall,
                         fontFamily: fontFamily.medium,
                         lineHeight: 19,
                       }}

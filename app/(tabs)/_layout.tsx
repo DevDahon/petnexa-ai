@@ -5,13 +5,14 @@ import { useEffect } from "react";
 import { Platform, View, useWindowDimensions, type ColorValue } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
+  Easing,
   interpolate,
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from "react-native-reanimated";
-import { fontFamily, palette, radii } from "@/constants/theme";
+import { fontFamily, palette, radii, typeScale } from "@/constants/theme";
 
 type MaterialIconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
@@ -47,10 +48,9 @@ function TabIcon({
   const progress = useSharedValue(focused ? 1 : 0);
 
   useEffect(() => {
-    progress.value = withSpring(focused ? 1 : 0, {
-      damping: 16,
-      stiffness: 190,
-      mass: 0.8,
+    progress.value = withTiming(focused ? 1 : 0, {
+      duration: 190,
+      easing: Easing.out(Easing.cubic),
     });
   }, [focused, progress]);
 
@@ -65,18 +65,17 @@ function TabIcon({
       [0, 1],
       ["rgba(255,255,255,0)", palette.mintLight],
     ),
-    borderWidth: interpolate(progress.value, [0, 1], [0, 1]),
+    opacity: interpolate(progress.value, [0, 1], [0.82, 1]),
     transform: [
-      { translateY: interpolate(progress.value, [0, 1], [1, -3]) },
-      { scale: interpolate(progress.value, [0, 1], [0.98, 1.08]) },
+      { translateY: interpolate(progress.value, [0, 1], [1, -1]) },
     ],
   }));
 
   return (
     <View
       style={{
-        width: isCompact ? 52 : 56,
-        height: isCompact ? 36 : 38,
+        width: isCompact ? 48 : 52,
+        height: isCompact ? 30 : 32,
         alignItems: "center",
         justifyContent: "center",
       }}
@@ -84,9 +83,10 @@ function TabIcon({
       <Animated.View
         style={[
           {
-            width: isCompact ? 44 : 48,
-            height: isCompact ? 36 : 38,
+            width: isCompact ? 40 : 44,
+            height: isCompact ? 30 : 32,
             borderRadius: radii.pill,
+            borderWidth: 1,
             alignItems: "center",
             justifyContent: "center",
           },
@@ -96,10 +96,55 @@ function TabIcon({
         <MaterialCommunityIcons
           name={iconName}
           color={color}
-          size={isCompact ? (focused ? 21 : 20) : focused ? 23 : 22}
+          size={isCompact ? 20 : 21}
         />
       </Animated.View>
     </View>
+  );
+}
+
+function TabLabel({
+  focused,
+  isCompact,
+  label,
+}: {
+  focused: boolean;
+  isCompact: boolean;
+  label: string;
+}) {
+  const progress = useSharedValue(focused ? 1 : 0);
+
+  useEffect(() => {
+    progress.value = withTiming(focused ? 1 : 0, {
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [focused, progress]);
+
+  const labelStyle = useAnimatedStyle(() => ({
+    color: interpolateColor(progress.value, [0, 1], [palette.muted, palette.teal]),
+    opacity: interpolate(progress.value, [0, 1], [0.78, 1]),
+    transform: [{ translateY: interpolate(progress.value, [0, 1], [1, 0]) }],
+  }));
+
+  return (
+    <Animated.Text
+      numberOfLines={1}
+      style={[
+        {
+          fontSize: typeScale.caption,
+          fontFamily: fontFamily.semiBold,
+          letterSpacing: 0,
+          lineHeight: 14,
+          marginTop: 2,
+          includeFontPadding: false,
+          textAlign: "center",
+        },
+        labelStyle,
+      ]}
+    >
+      {label}
+    </Animated.Text>
   );
 }
 
@@ -108,7 +153,8 @@ export default function TabLayout() {
   const { width } = useWindowDimensions();
   const isCompact = width < 360;
   const isTablet = width >= 768;
-  const tabBarHeight = (isCompact ? 70 : 74) + (Platform.OS === "ios" ? insets.bottom : 10);
+  const safeBottom = Platform.OS === "ios" ? Math.max(insets.bottom, 6) : 4;
+  const tabBarHeight = (isCompact ? 62 : 66) + safeBottom;
 
   return (
     <Tabs
@@ -120,16 +166,22 @@ export default function TabLayout() {
           tabBarInactiveTintColor: palette.muted,
           tabBarHideOnKeyboard: true,
           tabBarShowLabel: true,
-          tabBarLabel: tabLabels[route.name] ?? route.name,
+          tabBarLabel: ({ focused }) => (
+            <TabLabel
+              focused={focused}
+              isCompact={isCompact}
+              label={tabLabels[route.name] ?? route.name}
+            />
+          ),
           tabBarAccessibilityLabel: tabLabels[route.name] ?? route.name,
-          tabBarAllowFontScaling: false,
+          tabBarAllowFontScaling: true,
           tabBarStyle: {
             backgroundColor: "#fff",
             borderTopColor: palette.borderLight,
             borderTopWidth: 1,
             height: tabBarHeight,
-            paddingBottom: Platform.OS === "ios" ? Math.max(insets.bottom, 8) : 10,
-            paddingTop: isCompact ? 8 : 10,
+            paddingBottom: safeBottom,
+            paddingTop: isCompact ? 7 : 8,
             paddingHorizontal: isTablet ? 96 : 0,
             boxShadow: "0 -4px 20px rgba(30, 58, 138, 0.08)",
           },
@@ -138,16 +190,17 @@ export default function TabLayout() {
             minWidth: 0,
             paddingHorizontal: 0,
             paddingVertical: 0,
+            height: isCompact ? 56 : 60,
           },
           tabBarIconStyle: {
             marginTop: 0,
-            marginBottom: 0,
+            marginBottom: -1,
           },
           tabBarLabelStyle: {
-            fontSize: isCompact ? 10 : 11,
+            fontSize: typeScale.caption,
             fontFamily: fontFamily.semiBold,
             letterSpacing: 0,
-            lineHeight: isCompact ? 12 : 13,
+            lineHeight: 14,
             marginTop: 2,
             marginBottom: 0,
             includeFontPadding: false,

@@ -161,13 +161,19 @@ export default function RemindersScreen() {
 
         {/* ── Status Banner ── */}
         <GradientCard variant={hasUrgent ? "danger" : "calm"}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+          <View
+            style={{
+              flexDirection: layout.shouldStack ? "column" : "row",
+              alignItems: layout.shouldStack ? "flex-start" : "center",
+              gap: 14,
+            }}
+          >
             <IconBubble
               icon={hasUrgent ? "alert-outline" : "calendar-heart"}
               tone={hasUrgent ? "danger" : "teal"}
               size={40}
             />
-            <View style={{ flex: 1, gap: 5 }}>
+            <View style={{ flex: 1, minWidth: 0, gap: 5 }}>
               <Text
                 selectable
                 style={{
@@ -248,7 +254,7 @@ export default function RemindersScreen() {
                 selectable
                 style={{
                   color: palette.muted,
-                  fontSize: 12,
+                  fontSize: 13,
                   fontFamily: fontFamily.bold,
                 }}
               >
@@ -275,7 +281,7 @@ export default function RemindersScreen() {
                 selectable
                 style={{
                   color: palette.muted,
-                  fontSize: 12,
+                  fontSize: 13,
                   fontFamily: fontFamily.bold,
                 }}
               >
@@ -419,16 +425,18 @@ export default function RemindersScreen() {
                 <View style={{ gap: 12 }}>
                   <View
                     style={{
-                      flexDirection: layout.isCompact ? "column" : "row",
+                      flexDirection: layout.shouldStack ? "column" : "row",
                       gap: 12,
-                      alignItems: layout.isCompact ? "flex-start" : "center",
+                      alignItems: layout.shouldStack ? "stretch" : "center",
+                      minWidth: 0,
                     }}
                   >
                     <StatusRail tone={tone} />
                     <PetAvatar pet={pet} size={layout.isCompact ? 50 : 56} />
-                    <View style={{ flex: 1, gap: 4 }}>
+                    <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
                       <Text
                         selectable
+                        numberOfLines={2}
                         style={{
                           color: palette.text,
                           fontSize: 17,
@@ -439,6 +447,7 @@ export default function RemindersScreen() {
                       </Text>
                       <Text
                         selectable
+                        numberOfLines={2}
                         style={{
                           color: palette.muted,
                           fontSize: 13,
@@ -451,9 +460,10 @@ export default function RemindersScreen() {
                       {reminder.notes ? (
                         <Text
                           selectable
+                          numberOfLines={3}
                           style={{
                             color: palette.muted,
-                            fontSize: 12,
+                            fontSize: 13,
                             fontFamily: fontFamily.medium,
                             lineHeight: 18,
                           }}
@@ -462,7 +472,9 @@ export default function RemindersScreen() {
                         </Text>
                       ) : null}
                     </View>
-                    <ReminderPill reminder={reminder} />
+                    <View style={{ alignSelf: layout.shouldStack ? "flex-start" : "auto" }}>
+                      <ReminderPill reminder={reminder} />
+                    </View>
                   </View>
                   <View
                     style={{
@@ -474,19 +486,22 @@ export default function RemindersScreen() {
                     }}
                   >
                     <Chip label={reminder.type} tone={tone} />
-                    <View style={{ flexDirection: "row", gap: 6 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "flex-end", flexWrap: "wrap", gap: 8, flex: 1, minWidth: 132 }}>
                       {!reminder.completedAt ? (
                         <RowAction
                           icon="check-circle-outline"
+                          label={`Complete ${reminder.type}`}
                           onPress={() => completeReminder(reminder)}
                         />
                       ) : null}
                       <RowAction
                         icon="pencil-outline"
+                        label={`Edit ${reminder.type}`}
                         onPress={() => startEdit(reminder)}
                       />
                       <RowAction
                         icon="trash-can-outline"
+                        label={`Delete ${reminder.type}`}
                         danger
                         onPress={() =>
                           Alert.alert(

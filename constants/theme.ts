@@ -127,6 +127,30 @@ export const fontFamily = {
   black: "Inter_900Black",
 };
 
+export const typeScale = {
+  micro: 12,
+  caption: 12,
+  label: 13,
+  bodySmall: 13,
+  body: 14,
+  action: 14,
+  titleSmall: 16,
+  title: 18,
+  headlineSmall: 20,
+  headline: 24,
+  screen: 30,
+};
+
+export const lineHeights = {
+  micro: 15,
+  caption: 16,
+  label: 18,
+  bodySmall: 20,
+  body: 22,
+  titleSmall: 22,
+  title: 24,
+};
+
 export const paperTheme = {
   ...MD3LightTheme,
   roundness: 20,

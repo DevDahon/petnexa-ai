@@ -59,15 +59,17 @@ function MenuRow({
   active?: boolean;
   onPress: () => void;
 }) {
+  const layout = useResponsiveLayout();
+
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.68 : 1 })}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, minWidth: 0 }}>
         <IconBubble icon={icon} tone={active ? "teal" : "navy"} size={42} />
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text selectable style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.black }}>
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+          <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.black }}>
             {title}
           </Text>
-          <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18, fontFamily: fontFamily.medium }}>
+          <Text selectable numberOfLines={layout.isTiny ? 3 : 2} style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
             {subtitle}
           </Text>
         </View>
@@ -90,20 +92,30 @@ function DetailRow({
   right?: ReactNode;
   danger?: boolean;
 }) {
+  const layout = useResponsiveLayout();
+
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 6 }}>
+    <View
+      style={{
+        flexDirection: layout.shouldStack && right ? "column" : "row",
+        alignItems: layout.shouldStack && right ? "stretch" : "center",
+        gap: 12,
+        paddingVertical: 6,
+        minWidth: 0,
+      }}
+    >
       <IconBubble icon={icon} tone={danger ? "danger" : "teal"} size={42} />
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text selectable style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.bold }}>
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.bold }}>
           {title}
         </Text>
         {subtitle ? (
-          <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18, fontFamily: fontFamily.medium }}>
+          <Text selectable numberOfLines={3} style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
             {subtitle}
           </Text>
         ) : null}
       </View>
-      {right}
+      {right ? <View style={{ alignSelf: layout.shouldStack ? "flex-start" : "auto" }}>{right}</View> : null}
     </View>
   );
 }
@@ -156,27 +168,35 @@ function callNumber(value?: string) {
 
 function VetCard({ vet, onEdit, onDelete }: { vet: Veterinarian; onEdit: () => void; onDelete: () => void }) {
   const emergency = Boolean(vet.emergencyHotline);
+  const layout = useResponsiveLayout();
 
   return (
     <Card style={{ backgroundColor: "#fff" }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+      <View
+        style={{
+          flexDirection: layout.shouldStack ? "column" : "row",
+          alignItems: layout.shouldStack ? "stretch" : "center",
+          gap: 12,
+          minWidth: 0,
+        }}
+      >
         <IconBubble icon={emergency ? "hospital-marker" : "hospital-building"} tone={emergency ? "danger" : vet.isPrimary ? "navy" : "teal"} size={42} />
-        <View style={{ flex: 1, gap: 4 }}>
+        <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <Text selectable style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.black }}>
+            <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.black, flexShrink: 1 }}>
               {vet.clinicName}
             </Text>
             {vet.isPrimary ? <Chip label="Primary" active tone="navy" /> : null}
             {emergency ? <Chip label="Emergency" active tone="danger" /> : null}
           </View>
-          <Text selectable style={{ color: palette.navy, fontSize: 12, fontFamily: fontFamily.medium }}>
+          <Text selectable numberOfLines={2} style={{ color: palette.navy, fontSize: 13, fontFamily: fontFamily.medium }}>
             {vet.phone || vet.emergencyHotline || "No phone saved"}
           </Text>
         </View>
-        <View style={{ flexDirection: "row", gap: 4 }}>
-          <RowAction icon="phone-outline" onPress={() => callNumber(vet.emergencyHotline || vet.phone)} />
-          <RowAction icon="pencil-outline" onPress={onEdit} />
-          <RowAction icon="trash-can-outline" danger onPress={onDelete} />
+        <View style={{ flexDirection: "row", justifyContent: "flex-end", flexWrap: "wrap", gap: 8, alignSelf: layout.shouldStack ? "stretch" : "auto" }}>
+          <RowAction icon="phone-outline" label={`Call ${vet.clinicName}`} onPress={() => callNumber(vet.emergencyHotline || vet.phone)} />
+          <RowAction icon="pencil-outline" label={`Edit ${vet.clinicName}`} onPress={onEdit} />
+          <RowAction icon="trash-can-outline" label={`Delete ${vet.clinicName}`} danger onPress={onDelete} />
         </View>
       </View>
     </Card>
@@ -306,7 +326,7 @@ export default function SettingsScreen() {
               <Text selectable style={{ color: palette.text, fontSize: 20, fontFamily: fontFamily.black }}>
                 {owner.fullName || "Pet Parent"}
               </Text>
-              <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18, fontFamily: fontFamily.medium }}>
+              <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
                 {careModeLabel} · {pets.length} pets · {activeCare} active care
               </Text>
             </View>
@@ -342,7 +362,7 @@ export default function SettingsScreen() {
             <SectionHeader title="Owner Profile" />
             <Field label="Owner Full Name" value={ownerForm.fullName} onChangeText={(fullName) => setOwnerForm((current) => ({ ...current, fullName }))} />
             <Field label="Birthday" value={ownerForm.birthday} placeholder="YYYY-MM-DD" onChangeText={(birthday) => setOwnerForm((current) => ({ ...current, birthday }))} />
-            <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18, fontFamily: fontFamily.medium }}>
+            <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
               Used for greetings and age eligibility.
             </Text>
             <FormActions submitLabel="Save" submitIcon="content-save-outline" onSubmit={submitOwner} onCancel={() => setActivePanel(null)} />

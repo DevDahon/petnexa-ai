@@ -20,6 +20,8 @@ function validateOwnerProfile(fullName: string, birthday: string) {
 }
 
 function Panel({ children }: { children: React.ReactNode }) {
+  const layout = useResponsiveLayout();
+
   return (
     <View
       style={{
@@ -30,7 +32,7 @@ function Panel({ children }: { children: React.ReactNode }) {
         borderRadius: radii.xl,
         borderWidth: 1,
         borderColor: palette.borderLight,
-        padding: 16,
+        padding: layout.isTiny ? 12 : layout.isCompact ? 14 : 16,
         gap: 12,
         boxShadow: "0 4px 16px rgba(30,58,138,0.08)",
       }}
@@ -74,10 +76,11 @@ function ActionButton({
         flexDirection: "row",
         gap: 8,
         paddingHorizontal: 16,
+        minWidth: 0,
       })}
     >
       <MaterialCommunityIcons name={icon} color={fg} size={18} />
-      <Text style={{ color: fg, fontSize: 14, fontFamily: fontFamily.black }}>
+      <Text numberOfLines={2} style={{ color: fg, fontSize: 14, fontFamily: fontFamily.black, flexShrink: 1 }}>
         {label}
       </Text>
     </Pressable>
@@ -134,6 +137,8 @@ function ModeButton({
   expanded?: boolean;
   disabled?: boolean;
 }) {
+  const layout = useResponsiveLayout();
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -148,9 +153,10 @@ function ModeButton({
         backgroundColor: primary ? palette.teal : "#fff",
         borderWidth: primary ? 0 : 1.5,
         borderColor: expanded ? palette.teal : palette.borderLight,
-        flexDirection: "row",
-        alignItems: "center",
+        flexDirection: layout.isTiny ? "column" : "row",
+        alignItems: layout.isTiny ? "flex-start" : "center",
         gap: 12,
+        minWidth: 0,
       })}
     >
       <View
@@ -165,11 +171,11 @@ function ModeButton({
       >
         <MaterialCommunityIcons name={icon} color={primary ? "#fff" : palette.teal} size={24} />
       </View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ color: primary ? "#fff" : palette.text, fontSize: 16, fontFamily: fontFamily.black }}>
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Text numberOfLines={2} style={{ color: primary ? "#fff" : palette.text, fontSize: 16, fontFamily: fontFamily.black }}>
           {title}
         </Text>
-        <Text style={{ color: primary ? "rgba(255,255,255,0.88)" : palette.muted, fontSize: 12, lineHeight: 18, fontFamily: fontFamily.medium }}>
+        <Text numberOfLines={3} style={{ color: primary ? "rgba(255,255,255,0.88)" : palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
           {subtitle}
         </Text>
       </View>
@@ -486,13 +492,13 @@ export function OwnerOnboarding() {
 
             {needsProfile ? (
               <Panel>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <View style={{ flexDirection: layout.isTiny ? "column" : "row", alignItems: layout.isTiny ? "flex-start" : "center", gap: 12 }}>
                   <View style={{ width: 46, height: 46, borderRadius: radii.pill, backgroundColor: palette.softTeal, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: palette.mintLight }}>
                     <MaterialCommunityIcons name="account-heart-outline" color={palette.teal} size={25} />
                   </View>
-                  <View style={{ flex: 1, gap: 2 }}>
+                  <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
                     <Text selectable style={{ color: palette.text, fontSize: 17, fontFamily: fontFamily.black }}>Owner Details</Text>
-                    <Text selectable style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.medium }}>Required before entering the app</Text>
+                    <Text selectable style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.medium }}>Required before entering the app</Text>
                   </View>
                 </View>
                 <Field label="Full Name" value={fullName} onChangeText={(text) => { setFullName(text); setMessage(""); }} />
@@ -531,13 +537,13 @@ export function OwnerOnboarding() {
 
                     {!verified ? (
                       <View style={{ gap: 12 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: palette.softTeal, borderRadius: radii.lg, borderWidth: 1, borderColor: palette.mintLight, padding: 14 }}>
+                        <View style={{ flexDirection: layout.isTiny ? "column" : "row", alignItems: layout.isTiny ? "flex-start" : "center", gap: 12, backgroundColor: palette.softTeal, borderRadius: radii.lg, borderWidth: 1, borderColor: palette.mintLight, padding: 14 }}>
                           <View style={{ width: 42, height: 42, borderRadius: radii.pill, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" }}>
                             <MaterialCommunityIcons name="google" color={palette.navy} size={22} />
                           </View>
-                          <View style={{ flex: 1, gap: 2 }}>
+                          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
                             <Text selectable style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.black }}>Google account</Text>
-                            <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18, fontFamily: fontFamily.medium }}>
+                            <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
                               Used only for shared Home sync.
                             </Text>
                           </View>
@@ -545,7 +551,7 @@ export function OwnerOnboarding() {
                         <PaperActionButton label={busy ? "Opening Google..." : "Continue with Google"} icon="google" disabled={busy} onPress={continueWithGoogle} />
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                           <View style={{ flex: 1, height: 1, backgroundColor: palette.borderLight }} />
-                          <Text selectable style={{ color: palette.muted, fontSize: 11, fontFamily: fontFamily.bold }}>or use email OTP</Text>
+                          <Text selectable style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.bold }}>or use email OTP</Text>
                           <View style={{ flex: 1, height: 1, backgroundColor: palette.borderLight }} />
                         </View>
                         <Field label="Email" value={otpEmail} placeholder="you@example.com" onChangeText={(text) => { setOtpEmail(text); setMessage(""); }} />
@@ -562,9 +568,9 @@ export function OwnerOnboarding() {
                       </View>
                     ) : (
                       <View style={{ gap: 12 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: palette.softTeal, borderRadius: radii.lg, borderWidth: 1, borderColor: palette.mintLight, padding: 12 }}>
+                        <View style={{ flexDirection: layout.isTiny ? "column" : "row", alignItems: layout.isTiny ? "flex-start" : "center", gap: 10, backgroundColor: palette.softTeal, borderRadius: radii.lg, borderWidth: 1, borderColor: palette.mintLight, padding: 12 }}>
                           <MaterialCommunityIcons name="check-circle-outline" color={palette.teal} size={22} />
-                          <Text selectable style={{ color: palette.teal, fontSize: 13, fontFamily: fontFamily.bold, flex: 1 }}>
+                          <Text selectable numberOfLines={2} style={{ color: palette.teal, fontSize: 13, fontFamily: fontFamily.bold, flex: 1, minWidth: 0 }}>
                             Account connected
                           </Text>
                           <Pressable
@@ -581,12 +587,12 @@ export function OwnerOnboarding() {
                               paddingVertical: 7,
                             })}
                           >
-                            <Text style={{ color: palette.navy, fontSize: 12, fontFamily: fontFamily.bold }}>Change</Text>
+                            <Text style={{ color: palette.navy, fontSize: 13, fontFamily: fontFamily.bold }}>Change</Text>
                           </Pressable>
                         </View>
                         {settings.homeName || createdHomeName ? (
                           <View style={{ backgroundColor: "#fff", borderRadius: radii.lg, borderWidth: 1, borderColor: palette.mintLight, padding: 12, gap: 3 }}>
-                            <Text selectable style={{ color: palette.muted, fontSize: 11, fontFamily: fontFamily.bold, textTransform: "uppercase" }}>
+                            <Text selectable style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.bold, textTransform: "uppercase" }}>
                               Current Home
                             </Text>
                             <Text selectable style={{ color: palette.text, fontSize: 17, fontFamily: fontFamily.black }}>
@@ -595,9 +601,9 @@ export function OwnerOnboarding() {
                           </View>
                         ) : null}
                         {loadingHomes ? (
-                          <View style={{ backgroundColor: palette.softTeal, borderRadius: radii.lg, borderWidth: 1, borderColor: palette.mintLight, padding: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
+                          <View style={{ backgroundColor: palette.softTeal, borderRadius: radii.lg, borderWidth: 1, borderColor: palette.mintLight, padding: 12, flexDirection: layout.isTiny ? "column" : "row", alignItems: layout.isTiny ? "flex-start" : "center", gap: 10 }}>
                             <MaterialCommunityIcons name="cloud-search-outline" color={palette.teal} size={20} />
-                            <Text selectable style={{ color: palette.teal, fontSize: 13, fontFamily: fontFamily.bold }}>
+                            <Text selectable numberOfLines={2} style={{ color: palette.teal, fontSize: 13, fontFamily: fontFamily.bold }}>
                               Loading Home accounts...
                             </Text>
                           </View>
@@ -618,15 +624,15 @@ export function OwnerOnboarding() {
                                     gap: 12,
                                   }}
                                 >
-                                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, minWidth: 0 }}>
                                     <View style={{ width: 42, height: 42, borderRadius: radii.pill, backgroundColor: palette.softTeal, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                                       <MaterialCommunityIcons name="home-heart" color={palette.teal} size={20} />
                                     </View>
                                     <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
-                                      <Text selectable style={{ color: palette.text, fontSize: 17, lineHeight: 22, fontFamily: fontFamily.black }}>
+                                      <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 17, lineHeight: 22, fontFamily: fontFamily.black }}>
                                         {home.homeName}
                                       </Text>
-                                      <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 17, fontFamily: fontFamily.medium }}>
+                                      <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
                                         {home.role === "owner" ? "Created by you" : "Shared with you"}
                                       </Text>
                                     </View>
@@ -634,7 +640,7 @@ export function OwnerOnboarding() {
 
                                   {home.role === "owner" && home.inviteCode ? (
                                     <View style={{ alignSelf: "flex-start", borderRadius: radii.pill, backgroundColor: palette.softTeal, borderWidth: 1, borderColor: palette.mintLight, paddingHorizontal: 11, paddingVertical: 6 }}>
-                                      <Text selectable style={{ color: palette.teal, fontSize: 12, fontFamily: fontFamily.black }}>
+                                      <Text selectable style={{ color: palette.teal, fontSize: 13, fontFamily: fontFamily.black }}>
                                         Invite: {home.inviteCode}
                                       </Text>
                                     </View>
@@ -659,7 +665,7 @@ export function OwnerOnboarding() {
                                       })}
                                     >
                                       <MaterialCommunityIcons name="login-variant" color="#fff" size={16} />
-                                      <Text style={{ color: "#fff", fontSize: 12, fontFamily: fontFamily.black }}>Open</Text>
+                                      <Text style={{ color: "#fff", fontSize: 13, fontFamily: fontFamily.black }}>Open</Text>
                                     </Pressable>
                                     {home.role === "owner" ? (
                                       <Pressable
@@ -682,7 +688,7 @@ export function OwnerOnboarding() {
                                         })}
                                       >
                                         <MaterialCommunityIcons name="share-variant-outline" color={palette.teal} size={16} />
-                                        <Text style={{ color: palette.teal, fontSize: 12, fontFamily: fontFamily.black }}>Invite</Text>
+                                        <Text style={{ color: palette.teal, fontSize: 13, fontFamily: fontFamily.black }}>Invite</Text>
                                       </Pressable>
                                     ) : null}
                                     {home.role === "owner" ? (
@@ -706,23 +712,23 @@ export function OwnerOnboarding() {
                                       })}
                                     >
                                       <MaterialCommunityIcons name="trash-can-outline" color={palette.danger} size={18} />
-                                      <Text style={{ color: palette.danger, fontSize: 12, fontFamily: fontFamily.black }}>Delete</Text>
+                                      <Text style={{ color: palette.danger, fontSize: 13, fontFamily: fontFamily.black }}>Delete</Text>
                                     </Pressable>
                                   ) : null}
                                   </View>
                                 </View>
                                 {pendingDeleteHomeId === home.homeId ? (
                                   <View style={{ borderRadius: radii.lg, backgroundColor: "#FFF7F7", borderWidth: 1.5, borderColor: "#FECACA", padding: 12, gap: 10 }}>
-                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0 }}>
                                       <MaterialCommunityIcons name="alert-circle-outline" color={palette.danger} size={18} />
-                                      <Text selectable style={{ color: palette.text, fontSize: 14, lineHeight: 18, fontFamily: fontFamily.black, flex: 1 }}>
+                                      <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 14, lineHeight: 18, fontFamily: fontFamily.black, flex: 1, minWidth: 0 }}>
                                         Delete Home?
                                       </Text>
                                     </View>
-                                    <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18, fontFamily: fontFamily.medium }}>
+                                    <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
                                       {home.homeName} and its synced care data will be removed for every device.
                                     </Text>
-                                    <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end" }}>
+                                    <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
                                       <Pressable
                                         accessibilityRole="button"
                                         disabled={busy}
@@ -740,7 +746,7 @@ export function OwnerOnboarding() {
                                           paddingVertical: 9,
                                         })}
                                       >
-                                        <Text style={{ color: palette.navy, fontSize: 12, fontFamily: fontFamily.bold }}>Cancel</Text>
+                                        <Text style={{ color: palette.navy, fontSize: 13, fontFamily: fontFamily.bold }}>Cancel</Text>
                                       </Pressable>
                                       <Pressable
                                         accessibilityRole="button"
@@ -754,7 +760,7 @@ export function OwnerOnboarding() {
                                           paddingVertical: 9,
                                         })}
                                       >
-                                        <Text style={{ color: "#fff", fontSize: 12, fontFamily: fontFamily.bold }}>
+                                        <Text style={{ color: "#fff", fontSize: 13, fontFamily: fontFamily.bold }}>
                                           {busy ? "Deleting" : "Delete"}
                                         </Text>
                                       </Pressable>
@@ -766,13 +772,13 @@ export function OwnerOnboarding() {
                           </View>
                         ) : null}
                         <View style={{ gap: 8, borderRadius: radii.lg, borderWidth: 1.5, borderColor: palette.mintLight, backgroundColor: palette.softTeal, padding: 12 }}>
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0 }}>
                             <MaterialCommunityIcons name="account-multiple-plus-outline" color={palette.teal} size={19} />
                             <Text selectable style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.black }}>
                               Join Fur Home
                             </Text>
                           </View>
-                          <Text selectable style={{ color: palette.muted, fontSize: 12, lineHeight: 18, fontFamily: fontFamily.medium }}>
+                          <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
                             Enter the invite code from the Fur Home creator.
                           </Text>
                           <Field label="Invite Code" value={inviteCode} placeholder="ABC12345" onChangeText={(text) => setInviteCode(text.toUpperCase())} />

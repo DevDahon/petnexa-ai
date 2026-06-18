@@ -1,8 +1,10 @@
 import {
     fontFamily,
     gradients,
+    lineHeights,
     palette,
-    radii
+    radii,
+    typeScale,
 } from "@/constants/theme";
 import { Pet, Reminder } from "@/types/domain";
 import { calculateAge, getLifeStage, getReminderStatus } from "@/utils/date";
@@ -47,22 +49,30 @@ type Tone = "teal" | "danger" | "warning" | "navy" | "success" | "peach";
 
 export function useResponsiveLayout() {
   const { width, height } = useWindowDimensions();
-  const isCompact = width < 360;
+  const isTiny = width < 340;
+  const isCompact = width < 390;
   const isWidePhone = width >= 430;
   const isTablet = width >= 768;
-  const horizontalPadding = isCompact ? 12 : isTablet ? 28 : 16;
-  const gap = isCompact ? 12 : 16;
-  const contentMaxWidth = isTablet ? 820 : undefined;
+  const isLandscape = width > height;
+  const shouldStack = width < 430;
+  const horizontalPadding = isTiny ? 10 : isCompact ? 12 : isTablet ? 32 : 16;
+  const gap = isTiny ? 10 : isCompact ? 12 : 16;
+  const cardPadding = isTiny ? 12 : isCompact ? 14 : 16;
+  const contentMaxWidth = isTablet ? (width >= 1024 ? 960 : 820) : undefined;
   const bottomPadding = isTablet ? 40 : 110;
 
   return {
     width,
     height,
+    isTiny,
     isCompact,
     isWidePhone,
     isTablet,
+    isLandscape,
+    shouldStack,
     horizontalPadding,
     gap,
+    cardPadding,
     contentMaxWidth,
     bottomPadding,
   };
@@ -91,6 +101,7 @@ export function ResponsiveScrollView({
           alignSelf: "center",
           width: "100%",
           maxWidth: layout.contentMaxWidth,
+          minWidth: 0,
           paddingHorizontal: layout.horizontalPadding,
           paddingTop: layout.gap,
           paddingBottom: bottomPadding ?? layout.bottomPadding,
@@ -169,16 +180,21 @@ export function ScreenHeader({
   subtitle?: string;
   right?: React.ReactNode;
 }) {
-  const { isCompact } = useResponsiveLayout();
+  const layout = useResponsiveLayout();
 
   return (
-    <View style={styles.screenHeader}>
-      <View style={{ flex: 1, gap: 2 }}>
+    <View
+      style={[
+        styles.screenHeader,
+        layout.shouldStack ? styles.screenHeaderStacked : null,
+      ]}
+    >
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
         <Text
           selectable
           style={[
             styles.screenTitle,
-            isCompact ? styles.screenTitleCompact : null,
+            layout.isCompact ? styles.screenTitleCompact : null,
           ]}
         >
           {title}
@@ -190,7 +206,15 @@ export function ScreenHeader({
         ) : null}
       </View>
       {right ? (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: layout.shouldStack ? "flex-start" : "flex-end",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
           {right}
         </View>
       ) : null}
@@ -203,23 +227,38 @@ export function ScreenHeader({
 export function Card({
   children,
   style,
+  contentStyle,
   noAnimation,
-}: PropsWithChildren<{ style?: ViewStyle; noAnimation?: boolean }>) {
+}: PropsWithChildren<{
+  style?: StyleProp<ViewStyle>;
+  contentStyle?: StyleProp<ViewStyle>;
+  noAnimation?: boolean;
+}>) {
+  const layout = useResponsiveLayout();
   const inner = (
     <PaperCard mode="elevated" style={[styles.card, style]}>
-      <PaperCard.Content style={styles.cardContent}>
+      <PaperCard.Content
+        style={[
+          styles.cardContent,
+          {
+            paddingHorizontal: layout.cardPadding,
+            paddingVertical: layout.cardPadding,
+          },
+          contentStyle,
+        ]}
+      >
         {children}
       </PaperCard.Content>
     </PaperCard>
   );
 
   if (noAnimation)
-    return <View style={{ borderRadius: radii.xl }}>{inner}</View>;
+    return <View style={{ width: "100%", minWidth: 0, borderRadius: radii.xl }}>{inner}</View>;
 
   return (
     <Animated.View
       entering={FadeInUp.duration(220)}
-      style={{ borderRadius: radii.xl }}
+      style={{ width: "100%", minWidth: 0, borderRadius: radii.xl }}
     >
       {inner}
     </Animated.View>
@@ -233,6 +272,7 @@ export function GradientCard({
   variant = "primary",
   style,
 }: PropsWithChildren<{ variant?: keyof typeof gradients; style?: ViewStyle }>) {
+  const layout = useResponsiveLayout();
   return (
     <Animated.View
       entering={FadeInUp.duration(260)}
@@ -242,7 +282,12 @@ export function GradientCard({
         colors={gradients[variant]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.gradientCardInner}
+        style={[
+          styles.gradientCardInner,
+          {
+            padding: layout.isTiny ? 14 : layout.isCompact ? 16 : 18,
+          },
+        ]}
       >
         {children}
       </LinearGradient>
@@ -275,10 +320,14 @@ export function SectionHeader({
   rightNode?: React.ReactNode;
 }) {
   const layout = useResponsiveLayout();
-  const hasRightNode = Boolean(rightNode);
 
   return (
-    <View style={[styles.sectionHeader]}>
+    <View
+      style={[
+        styles.sectionHeader,
+        layout.shouldStack && rightNode ? styles.sectionHeaderStacked : null,
+      ]}
+    >
       <View style={[styles.sectionHeaderLeft]}>
         <View style={styles.sectionHeaderAccent} />
         <Text selectable style={styles.sectionHeaderTitle}>
@@ -293,7 +342,14 @@ export function SectionHeader({
         ) : null}
       </View>
       {rightNode ? (
-        <View style={[styles.sectionHeaderRight]}>{rightNode}</View>
+        <View
+          style={[
+            styles.sectionHeaderRight,
+            layout.shouldStack ? styles.sectionHeaderRightStacked : null,
+          ]}
+        >
+          {rightNode}
+        </View>
       ) : null}
     </View>
   );
@@ -364,11 +420,18 @@ export function ScreenIntro({
   subtitle: string;
   icon: IconName;
 }) {
+  const layout = useResponsiveLayout();
   return (
     <GradientCard variant="calm">
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+      <View
+        style={{
+          flexDirection: layout.shouldStack ? "column" : "row",
+          alignItems: layout.shouldStack ? "flex-start" : "center",
+          gap: 14,
+        }}
+      >
         <IconBubble icon={icon} size={56} />
-        <View style={{ flex: 1, gap: 4 }}>
+        <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
           <Text selectable style={styles.screenIntroTitle}>
             {title}
           </Text>
@@ -459,25 +522,30 @@ export function RowAction({
   icon,
   onPress,
   danger,
+  label,
 }: {
   icon: IconName;
   onPress: () => void;
   danger?: boolean;
+  label?: string;
 }) {
+  const actionColor = danger ? palette.danger : palette.navy;
+
   return (
     <IconButton
       icon={icon}
-      size={18}
-      iconColor={danger ? palette.danger : palette.muted}
+      size={20}
+      iconColor={actionColor}
       onPress={onPress}
+      accessibilityLabel={label}
       style={{
         margin: 0,
-        backgroundColor: danger ? palette.dangerSoft : palette.backgroundAlt,
+        backgroundColor: danger ? palette.dangerSoft : "#fff",
         borderWidth: 1,
-        borderColor: danger ? "#FECACA" : palette.borderLight,
+        borderColor: danger ? "#FECACA" : palette.border,
         borderRadius: radii.md,
-        width: 36,
-        height: 36,
+        width: 44,
+        height: 44,
       }}
     />
   );
@@ -558,19 +626,26 @@ export function CompactButton({
   danger?: boolean;
   disabled?: boolean;
 }) {
+  const iconColor = danger ? palette.danger : primary ? "#fff" : palette.navy;
+  const buttonIcon = icon
+    ? ({ size }: { color: string; size: number }) => (
+        <MaterialCommunityIcons name={icon} color={iconColor} size={size} />
+      )
+    : undefined;
+
   return (
     <Button
       compact
-      icon={icon}
+      icon={buttonIcon}
       mode={primary ? "contained" : "text"}
       disabled={disabled}
       buttonColor={primary ? palette.teal : undefined}
-      textColor={danger ? palette.danger : primary ? "#fff" : palette.navy}
+      textColor={iconColor}
       onPress={onPress}
       style={{ borderRadius: radii.md }}
-      contentStyle={{ minHeight: 38, paddingHorizontal: primary ? 10 : 3 }}
+      contentStyle={{ minHeight: 40, paddingHorizontal: primary ? 10 : 4 }}
       labelStyle={{
-        fontSize: 12,
+        fontSize: typeScale.label,
         fontFamily: fontFamily.bold,
         letterSpacing: 0,
         marginHorizontal: 0,
@@ -655,7 +730,7 @@ export function PrimaryButton({
         labelStyle={{
           fontFamily: fontFamily.bold,
           letterSpacing: 0.3,
-          fontSize: 14,
+          fontSize: typeScale.action,
         }}
       >
         {label}
@@ -689,7 +764,7 @@ export function GhostButton({
       labelStyle={{
         fontFamily: fontFamily.bold,
         letterSpacing: 0.2,
-        fontSize: 13,
+        fontSize: typeScale.action,
       }}
     >
       {label}
@@ -747,10 +822,11 @@ export function Chip({
   icon?: IconName;
 }) {
   const color = toneColor(tone);
-  const chipIcon = icon
+  const visibleIcon = icon ?? (active ? "check-circle" : undefined);
+  const chipIcon = visibleIcon
     ? ({ size }: { color: string; size: number }) => (
         <MaterialCommunityIcons
-          name={icon}
+          name={visibleIcon}
           color={active ? "#fff" : color}
           size={size}
         />
@@ -763,10 +839,12 @@ export function Chip({
       onPress={onPress}
       mode={active ? "flat" : "outlined"}
       compact
+      selectedColor={active ? "#fff" : color}
+      showSelectedCheck={false}
       textStyle={{
         color: active ? "#fff" : color,
         fontFamily: fontFamily.bold,
-        fontSize: 11,
+        fontSize: typeScale.caption,
         letterSpacing: 0.2,
       }}
       style={{
@@ -840,7 +918,7 @@ export function PetCard({ pet }: { pet: Pet }) {
             selectable
             style={{
               color: palette.muted,
-              fontSize: 13,
+              fontSize: typeScale.bodySmall,
               fontFamily: fontFamily.semiBold,
             }}
           >
@@ -854,7 +932,7 @@ export function PetCard({ pet }: { pet: Pet }) {
               {getLifeStage(pet.birthday, pet.species)}
             </Badge>
           </View>
-          <Text selectable style={{ color: palette.text, fontSize: 13 }}>
+          <Text selectable style={{ color: palette.text, fontSize: typeScale.bodySmall }}>
             {calculateAge(pet.birthday)}
           </Text>
         </View>
@@ -902,7 +980,7 @@ export function ReminderPill({ reminder }: { reminder: Reminder }) {
       <MaterialCommunityIcons name={icon} color={color} size={13} />
       <Text
         selectable
-        style={{ color, fontSize: 11, fontFamily: fontFamily.bold }}
+        style={{ color, fontSize: typeScale.caption, fontFamily: fontFamily.bold }}
       >
         {status}
       </Text>
@@ -986,7 +1064,7 @@ export function BrandMark({ compact }: { compact?: boolean }) {
         selectable
         style={{
           color: compact ? "#fff" : palette.text,
-          fontSize: compact ? 18 : isCompact ? 28 : 34,
+          fontSize: compact ? typeScale.title : isCompact ? 28 : 34,
           fontFamily: fontFamily.black,
           letterSpacing: 0,
         }}
@@ -1001,7 +1079,7 @@ export function BrandMark({ compact }: { compact?: boolean }) {
           selectable
           style={{
             color: palette.muted,
-            fontSize: 14,
+            fontSize: typeScale.body,
             fontFamily: fontFamily.medium,
           }}
         >
@@ -1015,6 +1093,20 @@ export function BrandMark({ compact }: { compact?: boolean }) {
 // ─── StatusRail ───────────────────────────────────────────────────────────────
 
 export function StatusRail({ tone = "teal" }: { tone?: Tone }) {
+  const layout = useResponsiveLayout();
+  if (layout.shouldStack) {
+    return (
+      <View
+        style={{
+          height: 5,
+          alignSelf: "stretch",
+          borderRadius: 99,
+          backgroundColor: toneColor(tone),
+        }}
+      />
+    );
+  }
+
   return (
     <View
       style={{
@@ -1033,14 +1125,18 @@ export function StatusRail({ tone = "teal" }: { tone?: Tone }) {
 const styles = StyleSheet.create({
   screenHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     paddingBottom: 4,
     gap: 12,
   },
+  screenHeaderStacked: {
+    flexDirection: "column",
+    alignItems: "stretch",
+  },
   screenTitle: {
     color: palette.text,
-    fontSize: 30,
+    fontSize: typeScale.screen,
     fontFamily: fontFamily.black,
     letterSpacing: 0,
   },
@@ -1049,7 +1145,7 @@ const styles = StyleSheet.create({
   },
   screenSubtitle: {
     color: palette.muted,
-    fontSize: 13,
+    fontSize: typeScale.bodySmall,
     fontFamily: fontFamily.medium,
     marginTop: 1,
   },
@@ -1059,13 +1155,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: palette.borderLight,
     boxShadow: "0 2px 12px rgba(30, 58, 138, 0.06)",
+    width: "100%",
+    minWidth: 0,
   },
   cardContent: {
     gap: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
   },
   gradientCardWrapper: {
+    width: "100%",
+    minWidth: 0,
     borderRadius: radii.xl,
     overflow: "hidden",
     borderWidth: 1,
@@ -1088,8 +1186,8 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "nowrap",
+    alignItems: "flex-start",
+    flexWrap: "wrap",
     paddingTop: 6,
     paddingBottom: 2,
     gap: 10,
@@ -1099,16 +1197,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 9,
     flexShrink: 1,
-    flexWrap: "nowrap",
+    flexWrap: "wrap",
+    minWidth: 0,
   },
   sectionHeaderRight: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    flexShrink: 0,
+    flexShrink: 1,
+    flexWrap: "wrap",
     gap: 6,
   },
   sectionHeaderStacked: {
+    flexDirection: "column",
     alignItems: "stretch",
+  },
+  sectionHeaderRightStacked: {
+    justifyContent: "flex-start",
+    alignSelf: "stretch",
   },
   sectionHeaderAccent: {
     width: 4,
@@ -1118,7 +1223,7 @@ const styles = StyleSheet.create({
   },
   sectionHeaderTitle: {
     color: palette.text,
-    fontSize: 18,
+    fontSize: typeScale.title,
     fontFamily: fontFamily.black,
     letterSpacing: 0,
     flexShrink: 1,
@@ -1133,19 +1238,19 @@ const styles = StyleSheet.create({
   },
   sectionHeaderAction: {
     color: palette.teal,
-    fontSize: 11,
+    fontSize: typeScale.caption,
     fontFamily: fontFamily.bold,
   },
   screenIntroTitle: {
     color: palette.text,
-    fontSize: 24,
+    fontSize: typeScale.headline,
     fontFamily: fontFamily.black,
     letterSpacing: 0,
   },
   screenIntroSubtitle: {
     color: palette.muted,
-    lineHeight: 21,
-    fontSize: 14,
+    lineHeight: lineHeights.body,
+    fontSize: typeScale.body,
     fontFamily: fontFamily.medium,
   },
   statCardWrapper: {
@@ -1174,7 +1279,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     color: palette.text,
-    fontSize: 11,
+    fontSize: typeScale.caption,
     fontFamily: fontFamily.bold,
     textAlign: "center",
     letterSpacing: 0.2,
@@ -1211,22 +1316,23 @@ const styles = StyleSheet.create({
   },
   emptyStateTitle: {
     color: palette.text,
-    fontSize: 18,
+    fontSize: typeScale.title,
     fontFamily: fontFamily.black,
     textAlign: "center",
   },
   emptyStateMessage: {
     color: palette.muted,
     textAlign: "center",
-    lineHeight: 21,
+    lineHeight: lineHeights.body,
     maxWidth: 280,
     fontFamily: fontFamily.medium,
-    fontSize: 14,
+    fontSize: typeScale.body,
   },
   formActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
+    flexWrap: "wrap",
     gap: 6,
     paddingTop: 4,
   },

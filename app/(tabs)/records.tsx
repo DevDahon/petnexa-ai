@@ -148,7 +148,7 @@ export default function RecordsScreen() {
             <SectionHeader title={editingId ? "Edit Record" : "Add Record"} />
             <Card>
               {/* Pet selector */}
-              <Text selectable style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.bold }}>Select pet</Text>
+              <Text selectable style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.bold }}>Select pet</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                 {pets.map((pet) => (
                   <Chip
@@ -161,7 +161,7 @@ export default function RecordsScreen() {
               </ScrollView>
 
               {/* Type selector */}
-              <Text selectable style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.bold }}>Record type</Text>
+              <Text selectable style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.bold }}>Record type</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                 {recordTypes.map((type) => (
                   <Chip
@@ -203,7 +203,7 @@ export default function RecordsScreen() {
                 <IconBubble icon={form.attachmentUri ? "image-check-outline" : "image-plus"} size={44} />
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text selectable style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.bold }}>Attachment</Text>
-                  <Text selectable style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.medium }}>
+                  <Text selectable style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.medium }}>
                     {form.attachmentUri ? "Image attached to this record." : "Optional photo or document image."}
                   </Text>
                 </View>
@@ -232,21 +232,28 @@ export default function RecordsScreen() {
             const visual = recordVisual(record.type);
             return (
               <Card key={record.id}>
-              <View style={{ flexDirection: layout.isCompact ? "column" : "row", alignItems: layout.isCompact ? "flex-start" : "center", gap: 12 }}>
+                <View
+                  style={{
+                    flexDirection: layout.shouldStack ? "column" : "row",
+                    alignItems: layout.shouldStack ? "stretch" : "center",
+                    gap: 12,
+                    minWidth: 0,
+                  }}
+                >
                   <StatusRail tone={visual.tone} />
                   <IconBubble icon={visual.icon} tone={visual.tone} size={52} />
-                  <View style={{ flex: 1, gap: 4 }}>
-                    <Text selectable style={{ color: palette.text, fontSize: 16, fontFamily: fontFamily.bold }}>
+                  <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+                    <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 16, fontFamily: fontFamily.bold }}>
                       {record.type}
                     </Text>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, minWidth: 0 }}>
                       <PetAvatar pet={pet} size={18} />
-                      <Text selectable style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.medium }}>
+                      <Text selectable numberOfLines={2} style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.medium, flex: 1, minWidth: 0 }}>
                         {pet?.name ?? "Pet"} • {formatFriendlyDate(record.date)}
                       </Text>
                     </View>
                     {record.clinic ? (
-                      <Text selectable style={{ color: palette.navy, fontSize: 12, fontFamily: fontFamily.semiBold }}>
+                      <Text selectable numberOfLines={2} style={{ color: palette.navy, fontSize: 13, fontFamily: fontFamily.semiBold }}>
                         {record.clinic}
                       </Text>
                     ) : null}
@@ -258,10 +265,20 @@ export default function RecordsScreen() {
                       ) : null}
                     </View>
                   </View>
-                  <View style={{ flexDirection: layout.isCompact ? "row" : "column", alignItems: "center", gap: 6, alignSelf: layout.isCompact ? "flex-end" : "auto" }}>
-                    <RowAction icon="pencil-outline" onPress={() => startEdit(record)} />
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: layout.shouldStack ? "flex-end" : "center",
+                      gap: 8,
+                      alignSelf: layout.shouldStack ? "stretch" : "auto",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <RowAction icon="pencil-outline" label={`Edit ${record.type} record`} onPress={() => startEdit(record)} />
                     <RowAction
                       icon="trash-can-outline"
+                      label={`Delete ${record.type} record`}
                       danger
                       onPress={() =>
                         Alert.alert("Delete record?", "Linked care task will also be removed.", [

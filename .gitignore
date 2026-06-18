@@ -5,6 +5,7 @@ node_modules/
 
 # Expo
 .expo/
+.expo-*-check/
 supabase/.temp/
 dist/
 web-build/
