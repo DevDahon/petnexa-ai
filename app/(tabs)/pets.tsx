@@ -357,11 +357,6 @@ export default function PetsScreen() {
                         gap: 8,
                         alignSelf: "flex-end",
                         flexShrink: 0,
-                        padding: 4,
-                        borderRadius: radii.lg,
-                        backgroundColor: "rgba(255,255,255,0.82)",
-                        borderWidth: 1,
-                        borderColor: isCat ? "#FFE1CC" : palette.borderLight,
                       }}
                     >
                       <RowAction icon="pencil-outline" label={`Edit ${pet.name}`} onPress={() => startEdit(pet)} />
