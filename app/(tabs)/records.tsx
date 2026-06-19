@@ -232,36 +232,31 @@ export default function RecordsScreen() {
             const visual = recordVisual(record.type);
             return (
               <Card key={record.id}>
-                <View
-                  style={{
-                    flexDirection: layout.shouldStack ? "column" : "row",
-                    alignItems: layout.shouldStack ? "stretch" : "center",
-                    gap: 12,
-                    minWidth: 0,
-                  }}
-                >
-                  <StatusRail tone={visual.tone} />
-                  <IconBubble icon={visual.icon} tone={visual.tone} size={52} />
-                  <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-                    <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 16, fontFamily: fontFamily.bold }}>
-                      {record.type}
-                    </Text>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, minWidth: 0 }}>
-                      <PetAvatar pet={pet} size={18} />
-                      <Text selectable numberOfLines={2} style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.medium, flex: 1, minWidth: 0 }}>
-                        {pet?.name ?? "Pet"} • {formatFriendlyDate(record.date)}
+                <View style={{ gap: 12 }}>
+                  <View
+                    style={{
+                      flexDirection: layout.shouldStack ? "column" : "row",
+                      alignItems: layout.shouldStack ? "stretch" : "center",
+                      gap: 12,
+                      minWidth: 0,
+                    }}
+                  >
+                    <StatusRail tone={visual.tone} />
+                    <IconBubble icon={visual.icon} tone={visual.tone} size={52} />
+                    <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+                      <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 16, fontFamily: fontFamily.bold }}>
+                        {record.type}
                       </Text>
-                    </View>
-                    {record.clinic ? (
-                      <Text selectable numberOfLines={2} style={{ color: palette.navy, fontSize: 13, fontFamily: fontFamily.semiBold }}>
-                        {record.clinic}
-                      </Text>
-                    ) : null}
-                    <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
-                      <Chip label={record.type} tone={visual.tone} />
-                      {record.attachmentUri ? <Chip label="Image" icon="image-outline" active tone="teal" /> : null}
-                      {record.nextScheduleDate ? (
-                        <Chip label={`Next: ${record.nextScheduleDate}`} tone="navy" />
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, minWidth: 0 }}>
+                        <PetAvatar pet={pet} size={18} />
+                        <Text selectable numberOfLines={2} style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.medium, flex: 1, minWidth: 0 }}>
+                          {pet?.name ?? "Pet"} • {formatFriendlyDate(record.date)}
+                        </Text>
+                      </View>
+                      {record.clinic ? (
+                        <Text selectable numberOfLines={2} style={{ color: palette.navy, fontSize: 13, fontFamily: fontFamily.semiBold }}>
+                          {record.clinic}
+                        </Text>
                       ) : null}
                     </View>
                   </View>
@@ -269,24 +264,32 @@ export default function RecordsScreen() {
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
-                      justifyContent: layout.shouldStack ? "flex-end" : "center",
-                      gap: 8,
-                      alignSelf: layout.shouldStack ? "stretch" : "auto",
-                      flexShrink: 0,
+                      justifyContent: "space-between",
+                      gap: 10,
+                      flexWrap: "wrap",
                     }}
                   >
-                    <RowAction icon="pencil-outline" label={`Edit ${record.type} record`} onPress={() => startEdit(record)} />
-                    <RowAction
-                      icon="trash-can-outline"
-                      label={`Delete ${record.type} record`}
-                      danger
-                      onPress={() =>
-                        Alert.alert("Delete record?", "Linked care task will also be removed.", [
-                          { text: "Cancel" },
-                          { text: "Delete", style: "destructive", onPress: () => removeRecord(record.id) },
-                        ])
-                      }
-                    />
+                    <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", flex: 1 }}>
+                      <Chip label={record.type} tone={visual.tone} />
+                      {record.attachmentUri ? <Chip label="Image" icon="image-outline" active tone="teal" /> : null}
+                      {record.nextScheduleDate ? (
+                        <Chip label={`Next: ${record.nextScheduleDate}`} tone="navy" />
+                      ) : null}
+                    </View>
+                    <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 8, flexShrink: 0 }}>
+                      <RowAction icon="pencil-outline" label={`Edit ${record.type} record`} onPress={() => startEdit(record)} />
+                      <RowAction
+                        icon="trash-can-outline"
+                        label={`Delete ${record.type} record`}
+                        danger
+                        onPress={() =>
+                          Alert.alert("Delete record?", "Linked care task will also be removed.", [
+                            { text: "Cancel" },
+                            { text: "Delete", style: "destructive", onPress: () => removeRecord(record.id) },
+                          ])
+                        }
+                      />
+                    </View>
                   </View>
                 </View>
               </Card>
