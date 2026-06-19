@@ -253,12 +253,12 @@ export function Card({
   );
 
   if (noAnimation)
-    return <View style={{ width: "100%", minWidth: 0, borderRadius: radii.xl }}>{inner}</View>;
+    return <View style={{ minWidth: 0, borderRadius: radii.xl }}>{inner}</View>;
 
   return (
     <Animated.View
       entering={FadeInUp.duration(220)}
-      style={{ width: "100%", minWidth: 0, borderRadius: radii.xl }}
+      style={{ minWidth: 0, borderRadius: radii.xl }}
     >
       {inner}
     </Animated.View>

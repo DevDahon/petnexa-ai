@@ -243,7 +243,7 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ gap: 10, paddingBottom: 4 }}
           >
-            {pets.slice(0, 5).map((pet) => (
+            {pets.map((pet) => (
               <Card
                 key={pet.id}
                 style={{
