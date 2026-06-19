@@ -540,12 +540,13 @@ export function RowAction({
       accessibilityLabel={label}
       style={{
         margin: 0,
-        backgroundColor: danger ? palette.dangerSoft : "#fff",
-        borderWidth: 1,
-        borderColor: danger ? "#FECACA" : palette.border,
+        backgroundColor: "#fff",
+        borderWidth: danger ? 1.5 : 1,
+        borderColor: danger ? palette.danger : palette.border,
         borderRadius: radii.md,
         width: 44,
         height: 44,
+        boxShadow: danger ? "0 2px 8px rgba(220, 38, 38, 0.16)" : undefined,
       }}
     />
   );
