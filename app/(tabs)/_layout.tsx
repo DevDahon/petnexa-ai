@@ -66,9 +66,6 @@ function TabIcon({
       ["rgba(255,255,255,0)", palette.mintLight],
     ),
     opacity: interpolate(progress.value, [0, 1], [0.82, 1]),
-    transform: [
-      { translateY: interpolate(progress.value, [0, 1], [1, -1]) },
-    ],
   }));
 
   return (
@@ -206,7 +203,7 @@ export default function TabLayout() {
             includeFontPadding: false,
           },
           tabBarIcon: ({ color, focused }) => {
-            const iconName = focused ? iconSet.active : iconSet.default;
+            const iconName = iconSet.default;
             return (
               <TabIcon
                 color={color}
