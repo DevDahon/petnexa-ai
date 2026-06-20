@@ -32,6 +32,13 @@ function normalizeSettings(value: Partial<Settings> | null | undefined): Setting
     homeInviteCode: value?.homeInviteCode,
     syncEnabled: value?.syncEnabled ?? sampleData.settings.syncEnabled,
     lastSyncAt: value?.lastSyncAt,
+    lastSyncAttemptAt: value?.lastSyncAttemptAt,
+    lastSyncError: value?.lastSyncError,
+    privacyAcknowledgedAt: value?.privacyAcknowledgedAt,
+    aiDisclaimerAcceptedAt: value?.aiDisclaimerAcceptedAt,
+    analyticsEnabled: value?.analyticsEnabled ?? sampleData.settings.analyticsEnabled,
+    diagnosticsEnabled: value?.diagnosticsEnabled ?? sampleData.settings.diagnosticsEnabled,
+    adsPersonalizationConsent: value?.adsPersonalizationConsent ?? sampleData.settings.adsPersonalizationConsent,
   };
 }
 

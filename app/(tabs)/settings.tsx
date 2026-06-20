@@ -20,6 +20,7 @@ import {
   SectionHeader,
   useResponsiveLayout,
 } from "@/components/ui";
+import { aiSafetySections, LegalSection, privacyPolicySections, termsSections } from "@/constants/legal";
 import { fontFamily, palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Veterinarian } from "@/types/domain";
@@ -40,7 +41,7 @@ const emptyVet = {
   isPrimary: false,
 };
 
-type Panel = "profile" | "vets" | "data" | "preferences" | "about";
+type Panel = "profile" | "vets" | "data" | "preferences" | "legal" | "about";
 
 function Divider() {
   return <View style={{ height: 1, backgroundColor: palette.borderLight, marginVertical: 6 }} />;
@@ -158,6 +159,29 @@ function LogoutAction({
   );
 }
 
+function LegalBlock({ section }: { section: LegalSection }) {
+  return (
+    <Card noAnimation>
+      <View style={{ gap: 7 }}>
+        <Text selectable style={{ color: palette.text, fontSize: 16, fontFamily: fontFamily.black }}>
+          {section.title}
+        </Text>
+        <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 20, fontFamily: fontFamily.medium }}>
+          {section.body}
+        </Text>
+        {section.bullets?.map((bullet) => (
+          <View key={bullet} style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
+            <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: palette.teal, marginTop: 8 }} />
+            <Text selectable style={{ flex: 1, color: palette.textSecondary, fontSize: 13, lineHeight: 20, fontFamily: fontFamily.medium }}>
+              {bullet}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </Card>
+  );
+}
+
 function callNumber(value?: string) {
   if (!value) {
     Alert.alert("No phone number", "Add a phone number for this clinic first.");
@@ -208,7 +232,9 @@ export default function SettingsScreen() {
     owner,
     pets,
     veterinarians,
+    records,
     reminders,
+    consultations,
     settings,
     saveOwner,
     saveVet,
@@ -218,6 +244,9 @@ export default function SettingsScreen() {
     logoutHomeAccount,
     exportData,
     restoreDataReplaceMode,
+    exportDiagnostics,
+    clearDiagnostics,
+    resetLocalData,
   } = useAppData();
   const layout = useResponsiveLayout();
 
@@ -230,6 +259,7 @@ export default function SettingsScreen() {
   const [loggingOut, setLoggingOut] = useState(false);
 
   const activeCare = reminders.filter((item) => ["Due Today", "Overdue"].includes(getReminderStatus(item))).length;
+  const pendingChanges = [...pets, ...veterinarians, ...records, ...reminders].filter((item) => item.syncStatus === "pending" || item.syncStatus === "error").length;
   const primaryVet = veterinarians.find((vet) => vet.isPrimary);
   const emergencyVet = veterinarians.find((vet) => vet.emergencyHotline);
   const careModeLabel = settings.careMode === "home" ? "Home Furparent" : settings.careMode === "solo" ? "Solo Furparent" : "Choose mode";
@@ -291,6 +321,51 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleExportData = async () => {
+    try {
+      await exportData();
+    } catch {
+      Alert.alert("Export failed", "PetNexa AI could not create a backup on this device.");
+    }
+  };
+
+  const handleImportData = async () => {
+    try {
+      await restoreDataReplaceMode();
+    } catch (error) {
+      if (error instanceof Error && error.message === "Restore cancelled.") return;
+      Alert.alert("Import failed", error instanceof Error ? error.message : "PetNexa AI could not import this backup.");
+    }
+  };
+
+  const handleExportDiagnostics = async () => {
+    try {
+      await exportDiagnostics();
+    } catch {
+      Alert.alert("Export failed", "Diagnostics could not be exported on this device.");
+    }
+  };
+
+  const handleClearDiagnostics = async () => {
+    await clearDiagnostics();
+    Alert.alert("Diagnostics cleared", "Local diagnostic events were removed from this device.");
+  };
+
+  const handleResetLocalData = () => {
+    Alert.alert(
+      "Delete local data?",
+      "This removes local pets, records, reminders, vets, consultations, and diagnostics from this device. It does not delete a Home account or cloud data.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => resetLocalData().catch(() => Alert.alert("Delete failed", "Could not clear local data right now.")),
+        },
+      ],
+    );
+  };
+
   const handleLogout = async () => {
     if (loggingOut) return;
     console.log("[PetNexa] logout pressed", settings.careMode);
@@ -326,8 +401,8 @@ export default function SettingsScreen() {
               <Text selectable style={{ color: palette.text, fontSize: 20, fontFamily: fontFamily.black }}>
                 {owner.fullName || "Pet Parent"}
               </Text>
-              <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
-                {careModeLabel} · {pets.length} pets · {activeCare} active care
+          <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
+                {careModeLabel} · {pets.length} pets · {records.length} records · {activeCare} active care
               </Text>
             </View>
           </View>
@@ -354,7 +429,9 @@ export default function SettingsScreen() {
           <Divider />
           <MenuRow icon="bell-outline" title="Preferences" subtitle="Notifications and daily summary" active={activePanel === "preferences"} onPress={() => setActivePanel(activePanel === "preferences" ? null : "preferences")} />
           <Divider />
-          <MenuRow icon="information-outline" title="About" subtitle="Version, developer, and privacy" active={activePanel === "about"} onPress={() => setActivePanel(activePanel === "about" ? null : "about")} />
+          <MenuRow icon="shield-check-outline" title="Legal & Privacy" subtitle="Policy, consent, and AI safety" active={activePanel === "legal"} onPress={() => setActivePanel(activePanel === "legal" ? null : "legal")} />
+          <Divider />
+          <MenuRow icon="information-outline" title="About" subtitle="Version and developer" active={activePanel === "about"} onPress={() => setActivePanel(activePanel === "about" ? null : "about")} />
         </Card>
 
         {activePanel === "profile" ? (
@@ -423,15 +500,41 @@ export default function SettingsScreen() {
         {activePanel === "data" ? (
           <Card>
             <SectionHeader title="Data" />
-            <DetailRow icon="backup-restore" title="Backup & Restore" subtitle="Export or replace local data. Image files are not bundled." />
+            <DetailRow icon="backup-restore" title="Backup & Restore" subtitle="Portable JSON backups include local images when the device can read them." />
             <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", paddingTop: 4 }}>
-              <CompactButton label="Export" icon="export" onPress={exportData} />
-              <CompactButton label="Import" icon="import" danger onPress={restoreDataReplaceMode} />
+              <CompactButton label="Export" icon="export" onPress={handleExportData} />
+              <CompactButton label="Import" icon="import" danger onPress={handleImportData} />
             </View>
             <Divider />
-            <DetailRow icon="cloud-sync-outline" title="Home Sync" subtitle={`${syncState} · Last synced: ${settings.lastSyncAt || "Not yet"}`} />
+            <DetailRow
+              icon="cloud-sync-outline"
+              title="Home Sync"
+              subtitle={`${syncState} · Pending: ${pendingChanges} · Last synced: ${settings.lastSyncAt || "Not yet"}`}
+            />
+            {settings.lastSyncError ? (
+              <>
+                <Divider />
+                <DetailRow icon="alert-circle-outline" title="Sync Issue" subtitle={settings.lastSyncError} danger />
+              </>
+            ) : null}
             <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", paddingTop: 4 }}>
               <CompactButton label="Sync Now" icon="sync" disabled={settings.careMode !== "home" || syncing} onPress={handleSyncNow} />
+            </View>
+            <Divider />
+            <DetailRow
+              icon="bug-check-outline"
+              title="Local Diagnostics"
+              subtitle="Off by default. When enabled, failed sync/import events are stored locally until exported or cleared."
+              right={<Switch value={Boolean(settings.diagnosticsEnabled)} onValueChange={(diagnosticsEnabled) => updateSettings({ ...settings, diagnosticsEnabled })} color={palette.teal} />}
+            />
+            <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", paddingTop: 4 }}>
+              <CompactButton label="Export Logs" icon="file-export-outline" onPress={handleExportDiagnostics} />
+              <CompactButton label="Clear Logs" icon="delete-outline" danger onPress={handleClearDiagnostics} />
+            </View>
+            <Divider />
+            <DetailRow icon="database-remove-outline" title="Delete Local Device Data" subtitle="Clears this device without deleting Home cloud data." danger />
+            <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", paddingTop: 4 }}>
+              <CompactButton label="Delete Local Data" icon="trash-can-outline" danger onPress={handleResetLocalData} />
             </View>
           </Card>
         ) : null}
@@ -447,7 +550,65 @@ export default function SettingsScreen() {
             />
             <Divider />
             <DetailRow icon="clock-outline" title="Daily Summary" subtitle={`Preferred time: ${settings.dailySummaryTime}`} />
+            <Divider />
+            <DetailRow
+              icon="chart-line"
+              title="Analytics"
+              subtitle="Product analytics are disabled unless you explicitly opt in."
+              right={<Switch value={Boolean(settings.analyticsEnabled)} onValueChange={(analyticsEnabled) => updateSettings({ ...settings, analyticsEnabled })} color={palette.teal} />}
+            />
+            <Divider />
+            <DetailRow
+              icon="advertisements"
+              title="Personalized Ads"
+              subtitle="Controls consent for ad personalization separately from app use."
+              right={<Switch value={Boolean(settings.adsPersonalizationConsent)} onValueChange={(adsPersonalizationConsent) => updateSettings({ ...settings, adsPersonalizationConsent })} color={palette.teal} />}
+            />
           </Card>
+        ) : null}
+
+        {activePanel === "legal" ? (
+          <>
+            <Card>
+              <SectionHeader title="Legal & Privacy" />
+              <DetailRow
+                icon="shield-check-outline"
+                title="Privacy Policy"
+                subtitle={settings.privacyAcknowledgedAt ? `Acknowledged: ${settings.privacyAcknowledgedAt.slice(0, 10)}` : "Review and acknowledge before using online features."}
+                right={
+                  <CompactButton
+                    label={settings.privacyAcknowledgedAt ? "Acknowledged" : "Acknowledge"}
+                    icon="check-circle-outline"
+                    primary={!settings.privacyAcknowledgedAt}
+                    onPress={() => updateSettings({ ...settings, privacyAcknowledgedAt: new Date().toISOString() })}
+                  />
+                }
+              />
+              <Divider />
+              <DetailRow
+                icon="robot-outline"
+                title="AI Safety Notice"
+                subtitle={settings.aiDisclaimerAcceptedAt ? `Accepted: ${settings.aiDisclaimerAcceptedAt.slice(0, 10)}` : "AI guidance is informational and not a veterinary diagnosis."}
+                right={
+                  <CompactButton
+                    label={settings.aiDisclaimerAcceptedAt ? "Accepted" : "Accept"}
+                    icon="check-circle-outline"
+                    primary={!settings.aiDisclaimerAcceptedAt}
+                    onPress={() => updateSettings({ ...settings, aiDisclaimerAcceptedAt: new Date().toISOString() })}
+                  />
+                }
+              />
+            </Card>
+
+            <SectionHeader title="Privacy Policy" />
+            {privacyPolicySections.map((section) => <LegalBlock key={section.title} section={section} />)}
+
+            <SectionHeader title="Terms" />
+            {termsSections.map((section) => <LegalBlock key={section.title} section={section} />)}
+
+            <SectionHeader title="AI Safety" />
+            {aiSafetySections.map((section) => <LegalBlock key={section.title} section={section} />)}
+          </>
         ) : null}
 
         {activePanel === "about" ? (
@@ -468,9 +629,9 @@ export default function SettingsScreen() {
               </View>
             </View>
             <Divider />
-            <DetailRow icon="shield-check-outline" title="Privacy" subtitle="All data stays local by default. Data is only sent online when AI consultation or optional cloud sync is enabled." />
+            <DetailRow icon="shield-check-outline" title="Privacy" subtitle="Data stays local by default. Online use is limited to AI consultation, optional Home sync, sharing, and ads." />
             <Divider />
-            <DetailRow icon="information-outline" title="AI Safety" subtitle="The AI provides informational guidance only and does not replace veterinary care." />
+            <DetailRow icon="database-outline" title="Local Records" subtitle={`${pets.length} pets · ${records.length} records · ${consultations.length} AI consultations`} />
           </Card>
         ) : null}
       </ResponsiveScrollView>

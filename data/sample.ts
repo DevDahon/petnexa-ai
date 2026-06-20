@@ -190,5 +190,8 @@ export const sampleData: AppSnapshot = {
     dailySummaryTime: "08:00",
     careMode: null,
     syncEnabled: false,
+    analyticsEnabled: false,
+    diagnosticsEnabled: false,
+    adsPersonalizationConsent: false,
   },
 };

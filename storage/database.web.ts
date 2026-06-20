@@ -26,6 +26,13 @@ function normalizeSnapshot(snapshot: AppSnapshot): AppSnapshot {
       homeInviteCode: snapshot.settings?.homeInviteCode,
       syncEnabled: snapshot.settings?.syncEnabled ?? sampleData.settings.syncEnabled,
       lastSyncAt: snapshot.settings?.lastSyncAt,
+      lastSyncAttemptAt: snapshot.settings?.lastSyncAttemptAt,
+      lastSyncError: snapshot.settings?.lastSyncError,
+      privacyAcknowledgedAt: snapshot.settings?.privacyAcknowledgedAt,
+      aiDisclaimerAcceptedAt: snapshot.settings?.aiDisclaimerAcceptedAt,
+      analyticsEnabled: snapshot.settings?.analyticsEnabled ?? sampleData.settings.analyticsEnabled,
+      diagnosticsEnabled: snapshot.settings?.diagnosticsEnabled ?? sampleData.settings.diagnosticsEnabled,
+      adsPersonalizationConsent: snapshot.settings?.adsPersonalizationConsent ?? sampleData.settings.adsPersonalizationConsent,
     },
   };
 }

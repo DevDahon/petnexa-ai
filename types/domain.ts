@@ -127,6 +127,13 @@ export type Settings = {
   homeInviteCode?: string;
   syncEnabled: boolean;
   lastSyncAt?: string;
+  lastSyncAttemptAt?: string;
+  lastSyncError?: string;
+  privacyAcknowledgedAt?: string;
+  aiDisclaimerAcceptedAt?: string;
+  analyticsEnabled?: boolean;
+  diagnosticsEnabled?: boolean;
+  adsPersonalizationConsent?: boolean;
 };
 
 export type AppSnapshot = {

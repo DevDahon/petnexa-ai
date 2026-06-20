@@ -7,6 +7,7 @@ import { AppSnapshot, Consultation, HealthRecord, Owner, Pet, Reminder, Settings
 import { initDatabase, getSnapshot, replaceSnapshot, upsertConsultation, upsertCreditState, upsertOwner, upsertPet, upsertRecord, upsertReminder, upsertSettings, upsertVet, deletePet, deleteRecord, deleteReminder, deleteVet } from "@/storage/database";
 import { createId, currentWeekKey, todayIso } from "@/utils/date";
 import { exportBackup, pickBackupFile } from "@/services/backup";
+import { clearDiagnosticEvents, exportDiagnosticEvents, recordDiagnosticEvent } from "@/services/diagnostics";
 import { cancelReminderNotification, scheduleReminderNotification, syncReminderNotifications } from "@/services/notifications";
 import { createHome, deleteHome, handleAuthCallbackUrl, hasHomeAuthSession, joinHome, listUserHomes, signInWithEmailOtp, signInWithGoogle, signOutHome, softDeleteCloudEntity, syncNow, verifyOtp } from "@/services/home-sync";
 import type { HomeAccount } from "@/services/home-sync";
@@ -45,20 +46,41 @@ type AppContextValue = AppSnapshot & {
   syncHomeNow: () => Promise<void>;
   exportData: () => Promise<string>;
   restoreDataReplaceMode: () => Promise<void>;
+  exportDiagnostics: () => Promise<string>;
+  clearDiagnostics: () => Promise<void>;
+  resetLocalData: () => Promise<void>;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-const emptySnapshot: AppSnapshot = {
-  owner: { id: "owner_1", fullName: "", birthday: "" },
-  pets: [],
-  veterinarians: [],
-  records: [],
-  reminders: [],
-  consultations: [],
-  creditState: { aiCredits: 3, starterCreditsGranted: true, weeklyAdWatchCount: 0, lastWeeklyResetDate: todayIso(), totalConsultationsUsed: 0 },
-  settings: { notificationsEnabled: true, dailySummaryTime: "08:00", careMode: null, syncEnabled: false },
-};
+function createEmptySnapshot(settings?: Partial<Settings>): AppSnapshot {
+  return {
+    owner: { id: "owner_1", fullName: "", birthday: "" },
+    pets: [],
+    veterinarians: [],
+    records: [],
+    reminders: [],
+    consultations: [],
+    creditState: { aiCredits: 3, starterCreditsGranted: true, weeklyAdWatchCount: 0, lastWeeklyResetDate: todayIso(), totalConsultationsUsed: 0 },
+    settings: {
+      notificationsEnabled: settings?.notificationsEnabled ?? true,
+      dailySummaryTime: settings?.dailySummaryTime ?? "08:00",
+      careMode: null,
+      syncEnabled: false,
+      privacyAcknowledgedAt: settings?.privacyAcknowledgedAt,
+      aiDisclaimerAcceptedAt: settings?.aiDisclaimerAcceptedAt,
+      analyticsEnabled: settings?.analyticsEnabled ?? false,
+      diagnosticsEnabled: settings?.diagnosticsEnabled ?? false,
+      adsPersonalizationConsent: settings?.adsPersonalizationConsent ?? false,
+    },
+  };
+}
+
+const emptySnapshot: AppSnapshot = createEmptySnapshot();
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Unknown error";
+}
 
 async function getInstallationId() {
   const key = "petnexa_installation_id";
@@ -94,10 +116,33 @@ export function AppProvider({ children }: PropsWithChildren) {
   const syncIfEnabled = useCallback(async (base?: AppSnapshot) => {
     const current = base ?? await getSnapshot();
     if (current.settings.careMode !== "home" || !current.settings.syncEnabled || !current.settings.homeId) return current;
-    const synced = await syncNow(current);
-    await replaceSnapshot(synced);
-    setSnapshot(synced);
-    return synced;
+    const lastSyncAttemptAt = new Date().toISOString();
+    try {
+      const synced = await syncNow({
+        ...current,
+        settings: { ...current.settings, lastSyncAttemptAt, lastSyncError: undefined },
+      });
+      const next = {
+        ...synced,
+        settings: { ...synced.settings, lastSyncAttemptAt, lastSyncError: undefined },
+      };
+      await replaceSnapshot(next);
+      setSnapshot(next);
+      return next;
+    } catch (error) {
+      const nextSettings = {
+        ...current.settings,
+        lastSyncAttemptAt,
+        lastSyncError: errorMessage(error),
+      };
+      await upsertSettings(nextSettings);
+      setSnapshot((value) => ({ ...value, settings: nextSettings }));
+      await recordDiagnosticEvent(
+        { type: "sync_error", message: "Home sync failed", details: errorMessage(error) },
+        current.settings.diagnosticsEnabled,
+      );
+      throw error;
+    }
   }, []);
 
   const markPending = useCallback(<T extends SyncMetadata>(value: T): T => {
@@ -126,7 +171,11 @@ export function AppProvider({ children }: PropsWithChildren) {
       if (current.settings.notificationsEnabled) await syncReminderNotifications(current.reminders);
       try {
         await syncIfEnabled(current);
-      } catch {
+      } catch (error) {
+        await recordDiagnosticEvent(
+          { type: "sync_error", message: "Startup sync failed", details: errorMessage(error) },
+          current.settings.diagnosticsEnabled,
+        );
         // Home sync should never block local app startup.
       }
       setReady(true);
@@ -378,7 +427,16 @@ export function AppProvider({ children }: PropsWithChildren) {
     },
     exportData: async () => exportBackup(await getSnapshot()),
     restoreDataReplaceMode: async () => {
-      const backup = await pickBackupFile();
+      let backup: AppSnapshot | null = null;
+      try {
+        backup = await pickBackupFile();
+      } catch (error) {
+        await recordDiagnosticEvent(
+          { type: "restore_error", message: "Backup import failed", details: errorMessage(error) },
+          snapshot.settings.diagnosticsEnabled,
+        );
+        throw error;
+      }
       if (!backup) return;
       await new Promise<void>((resolve, reject) => {
         Alert.alert(
@@ -393,6 +451,15 @@ export function AppProvider({ children }: PropsWithChildren) {
       await replaceSnapshot(backup);
       await syncReminderNotifications(backup.settings.notificationsEnabled ? backup.reminders : []);
       await refresh();
+    },
+    exportDiagnostics: async () => exportDiagnosticEvents(),
+    clearDiagnostics: async () => clearDiagnosticEvents(),
+    resetLocalData: async () => {
+      const next = createEmptySnapshot(snapshot.settings);
+      await replaceSnapshot(next);
+      await syncReminderNotifications([]);
+      await clearDiagnosticEvents();
+      setSnapshot(next);
     },
   }), [authSessionVersion, markPending, ready, refresh, snapshot, syncIfEnabled]);
 
