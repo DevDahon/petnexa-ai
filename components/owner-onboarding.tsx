@@ -197,6 +197,7 @@ export function OwnerOnboarding() {
     listHomeAccounts,
     selectHomeAccount,
     deleteHomeAccount,
+    leaveHomeAccount,
     logoutHomeAccount,
     createHomeAccount,
     joinHomeAccount,
@@ -214,6 +215,7 @@ export function OwnerOnboarding() {
   const [inviteCode, setInviteCode] = useState("");
   const [loadingHomes, setLoadingHomes] = useState(false);
   const [pendingDeleteHomeId, setPendingDeleteHomeId] = useState<string | null>(null);
+  const [pendingLeaveHomeId, setPendingLeaveHomeId] = useState<string | null>(null);
   const [verified, setVerified] = useState(false);
   const [showHomeSetup, setShowHomeSetup] = useState(false);
   const [message, setMessage] = useState("");
@@ -436,8 +438,19 @@ export function OwnerOnboarding() {
       setMessage("Only the Home owner can delete this Home.");
       return;
     }
+    setPendingLeaveHomeId(null);
     setPendingDeleteHomeId(home.homeId);
     setMessage(`Confirm deletion of ${home.homeName}.`);
+  };
+
+  const requestLeaveHome = (home: HomeAccount) => {
+    if (home.role === "owner") {
+      setMessage("Home owners must delete the Home instead of leaving it.");
+      return;
+    }
+    setPendingDeleteHomeId(null);
+    setPendingLeaveHomeId(home.homeId);
+    setMessage(`Confirm leaving ${home.homeName}.`);
   };
 
   const confirmDeleteHome = async (home: HomeAccount) => {
@@ -448,12 +461,33 @@ export function OwnerOnboarding() {
       await deleteHomeAccount(home);
       setHomeAccounts((current) => current.filter((item) => item.homeId !== home.homeId));
       setPendingDeleteHomeId(null);
+      setPendingLeaveHomeId(null);
       if (createdHomeName === home.homeName || settings.homeName === home.homeName) setCreatedHomeName("");
       setMessage(`${home.homeName} deleted.`);
     } catch (error) {
       const nextMessage = error instanceof Error ? error.message : "Could not delete Home account.";
       setMessage(nextMessage);
       Alert.alert("Delete Home failed", nextMessage);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmLeaveHome = async (home: HomeAccount) => {
+    if (busy) return;
+    setBusy(true);
+    setMessage(`Leaving ${home.homeName}...`);
+    try {
+      await leaveHomeAccount(home);
+      setHomeAccounts((current) => current.filter((item) => item.homeId !== home.homeId));
+      setPendingLeaveHomeId(null);
+      setPendingDeleteHomeId(null);
+      if (createdHomeName === home.homeName || settings.homeName === home.homeName) setCreatedHomeName("");
+      setMessage(`You left ${home.homeName}.`);
+    } catch (error) {
+      const nextMessage = error instanceof Error ? error.message : "Could not leave Fur Home.";
+      setMessage(nextMessage);
+      Alert.alert("Leave Fur Home failed", nextMessage);
     } finally {
       setBusy(false);
     }
@@ -619,32 +653,33 @@ export function OwnerOnboarding() {
                                     backgroundColor: "#fff",
                                     borderRadius: radii.lg,
                                     borderWidth: 1.5,
-                                    borderColor: pendingDeleteHomeId === home.homeId ? "#FECACA" : palette.borderLight,
+                                    borderColor: pendingDeleteHomeId === home.homeId || pendingLeaveHomeId === home.homeId ? "#FECACA" : palette.borderLight,
                                     padding: 12,
                                     gap: 12,
                                   }}
                                 >
-                                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, minWidth: 0 }}>
-                                    <View style={{ width: 42, height: 42, borderRadius: radii.pill, backgroundColor: palette.softTeal, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                      <MaterialCommunityIcons name="home-heart" color={palette.teal} size={20} />
+                                  <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 10, minWidth: 0 }}>
+                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+                                      <View style={{ width: 42, height: 42, borderRadius: radii.pill, backgroundColor: palette.softTeal, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                        <MaterialCommunityIcons name="home-heart" color={palette.teal} size={20} />
+                                      </View>
+                                      <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+                                        <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 17, lineHeight: 22, fontFamily: fontFamily.black, flexShrink: 1 }}>
+                                          {home.homeName}
+                                        </Text>
+                                        <Text selectable numberOfLines={1} style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
+                                          {home.role === "owner" ? "Created by you" : "Shared with you"}
+                                        </Text>
+                                      </View>
                                     </View>
-                                    <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
-                                      <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 17, lineHeight: 22, fontFamily: fontFamily.black }}>
-                                        {home.homeName}
-                                      </Text>
-                                      <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
-                                        {home.role === "owner" ? "Created by you" : "Shared with you"}
-                                      </Text>
-                                    </View>
+                                    {home.role === "owner" && home.inviteCode ? (
+                                      <View style={{ flexShrink: 0, maxWidth: layout.isTiny ? 112 : 132, borderRadius: radii.pill, backgroundColor: palette.softTeal, borderWidth: 1, borderColor: palette.mintLight, paddingHorizontal: 10, paddingVertical: 6 }}>
+                                        <Text selectable numberOfLines={1} style={{ color: palette.teal, fontSize: 12, fontFamily: fontFamily.black }}>
+                                          Invite: {home.inviteCode}
+                                        </Text>
+                                      </View>
+                                    ) : null}
                                   </View>
-
-                                  {home.role === "owner" && home.inviteCode ? (
-                                    <View style={{ alignSelf: "flex-start", borderRadius: radii.pill, backgroundColor: palette.softTeal, borderWidth: 1, borderColor: palette.mintLight, paddingHorizontal: 11, paddingVertical: 6 }}>
-                                      <Text selectable style={{ color: palette.teal, fontSize: 13, fontFamily: fontFamily.black }}>
-                                        Invite: {home.inviteCode}
-                                      </Text>
-                                    </View>
-                                  ) : null}
 
                                   <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                                     <Pressable
@@ -654,7 +689,7 @@ export function OwnerOnboarding() {
                                       onPress={() => enterHome(home)}
                                       style={({ pressed }) => ({
                                         opacity: busy ? 0.55 : pressed ? 0.75 : 1,
-                                        minHeight: 40,
+                                        minHeight: 44,
                                         borderRadius: radii.pill,
                                         backgroundColor: palette.teal,
                                         flexDirection: "row",
@@ -675,7 +710,7 @@ export function OwnerOnboarding() {
                                         onPress={() => shareInvite(home)}
                                         style={({ pressed }) => ({
                                           opacity: busy ? 0.55 : pressed ? 0.75 : 1,
-                                          minHeight: 40,
+                                          minHeight: 44,
                                           borderRadius: radii.pill,
                                           backgroundColor: palette.softTeal,
                                           borderWidth: 1,
@@ -690,7 +725,30 @@ export function OwnerOnboarding() {
                                         <MaterialCommunityIcons name="share-variant-outline" color={palette.teal} size={16} />
                                         <Text style={{ color: palette.teal, fontSize: 13, fontFamily: fontFamily.black }}>Invite</Text>
                                       </Pressable>
-                                    ) : null}
+                                    ) : (
+                                      <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`Leave ${home.homeName}`}
+                                        disabled={busy}
+                                        onPress={() => requestLeaveHome(home)}
+                                        style={({ pressed }) => ({
+                                          opacity: busy ? 0.55 : pressed ? 0.75 : 1,
+                                          minHeight: 44,
+                                          borderRadius: radii.pill,
+                                          backgroundColor: palette.dangerSoft,
+                                          borderWidth: 1,
+                                          borderColor: "#FECACA",
+                                          flexDirection: "row",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          gap: 6,
+                                          paddingHorizontal: 12,
+                                        })}
+                                      >
+                                        <MaterialCommunityIcons name="logout-variant" color={palette.danger} size={18} />
+                                        <Text style={{ color: palette.danger, fontSize: 13, fontFamily: fontFamily.black }}>Leave</Text>
+                                      </Pressable>
+                                    )}
                                     {home.role === "owner" ? (
                                       <Pressable
                                         accessibilityRole="button"
@@ -699,7 +757,7 @@ export function OwnerOnboarding() {
                                       onPress={() => requestDeleteHome(home)}
                                       style={({ pressed }) => ({
                                         opacity: busy ? 0.55 : pressed ? 0.75 : 1,
-                                        minHeight: 40,
+                                        minHeight: 44,
                                         borderRadius: radii.pill,
                                         backgroundColor: palette.dangerSoft,
                                         borderWidth: 1,
@@ -717,6 +775,62 @@ export function OwnerOnboarding() {
                                   ) : null}
                                   </View>
                                 </View>
+                                {pendingLeaveHomeId === home.homeId ? (
+                                  <View style={{ borderRadius: radii.lg, backgroundColor: "#FFF7F7", borderWidth: 1.5, borderColor: "#FECACA", padding: 12, gap: 10 }}>
+                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0 }}>
+                                      <MaterialCommunityIcons name="alert-circle-outline" color={palette.danger} size={18} />
+                                      <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 14, lineHeight: 18, fontFamily: fontFamily.black, flex: 1, minWidth: 0 }}>
+                                        Leave this shared Fur Home?
+                                      </Text>
+                                    </View>
+                                    <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
+                                      You will lose access to its synced care data on this device. The Home and other members will remain.
+                                    </Text>
+                                    <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                                      <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`Cancel leaving ${home.homeName}`}
+                                        disabled={busy}
+                                        onPress={() => {
+                                          setPendingLeaveHomeId(null);
+                                          setMessage("Choose an existing Home or create a new one.");
+                                        }}
+                                        style={({ pressed }) => ({
+                                          opacity: busy ? 0.55 : pressed ? 0.75 : 1,
+                                          minHeight: 44,
+                                          borderRadius: radii.pill,
+                                          borderWidth: 1,
+                                          borderColor: palette.border,
+                                          backgroundColor: "#fff",
+                                          paddingHorizontal: 16,
+                                          paddingVertical: 9,
+                                          justifyContent: "center",
+                                        })}
+                                      >
+                                        <Text style={{ color: palette.navy, fontSize: 13, fontFamily: fontFamily.bold }}>Cancel</Text>
+                                      </Pressable>
+                                      <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`Confirm leaving ${home.homeName}`}
+                                        disabled={busy}
+                                        onPress={() => confirmLeaveHome(home)}
+                                        style={({ pressed }) => ({
+                                          opacity: busy ? 0.55 : pressed ? 0.75 : 1,
+                                          minHeight: 44,
+                                          borderRadius: radii.pill,
+                                          backgroundColor: palette.danger,
+                                          paddingHorizontal: 16,
+                                          paddingVertical: 9,
+                                          justifyContent: "center",
+                                        })}
+                                      >
+                                        <Text style={{ color: "#fff", fontSize: 13, fontFamily: fontFamily.bold }}>
+                                          {busy ? "Leaving" : "Leave Home"}
+                                        </Text>
+                                      </Pressable>
+                                    </View>
+                                  </View>
+                                ) : null}
                                 {pendingDeleteHomeId === home.homeId ? (
                                   <View style={{ borderRadius: radii.lg, backgroundColor: "#FFF7F7", borderWidth: 1.5, borderColor: "#FECACA", padding: 12, gap: 10 }}>
                                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0 }}>
@@ -731,6 +845,7 @@ export function OwnerOnboarding() {
                                     <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
                                       <Pressable
                                         accessibilityRole="button"
+                                        accessibilityLabel={`Cancel deleting ${home.homeName}`}
                                         disabled={busy}
                                         onPress={() => {
                                           setPendingDeleteHomeId(null);
@@ -738,26 +853,31 @@ export function OwnerOnboarding() {
                                         }}
                                         style={({ pressed }) => ({
                                           opacity: busy ? 0.55 : pressed ? 0.75 : 1,
+                                          minHeight: 44,
                                           borderRadius: radii.pill,
                                           borderWidth: 1,
                                           borderColor: palette.border,
                                           backgroundColor: "#fff",
                                           paddingHorizontal: 16,
                                           paddingVertical: 9,
+                                          justifyContent: "center",
                                         })}
                                       >
                                         <Text style={{ color: palette.navy, fontSize: 13, fontFamily: fontFamily.bold }}>Cancel</Text>
                                       </Pressable>
                                       <Pressable
                                         accessibilityRole="button"
+                                        accessibilityLabel={`Confirm deleting ${home.homeName}`}
                                         disabled={busy}
                                         onPress={() => confirmDeleteHome(home)}
                                         style={({ pressed }) => ({
                                           opacity: busy ? 0.55 : pressed ? 0.75 : 1,
+                                          minHeight: 44,
                                           borderRadius: radii.pill,
                                           backgroundColor: palette.danger,
                                           paddingHorizontal: 16,
                                           paddingVertical: 9,
+                                          justifyContent: "center",
                                         })}
                                       >
                                         <Text style={{ color: "#fff", fontSize: 13, fontFamily: fontFamily.bold }}>

@@ -9,7 +9,7 @@ import { createId, currentWeekKey, todayIso } from "@/utils/date";
 import { exportBackup, pickBackupFile } from "@/services/backup";
 import { clearDiagnosticEvents, exportDiagnosticEvents, recordDiagnosticEvent } from "@/services/diagnostics";
 import { cancelReminderNotification, scheduleReminderNotification, syncReminderNotifications } from "@/services/notifications";
-import { createHome, deleteHome, handleAuthCallbackUrl, hasHomeAuthSession, joinHome, listUserHomes, signInWithEmailOtp, signInWithGoogle, signOutHome, softDeleteCloudEntity, syncNow, verifyOtp } from "@/services/home-sync";
+import { createHome, deleteHome, handleAuthCallbackUrl, hasHomeAuthSession, joinHome, leaveHome, listUserHomes, signInWithEmailOtp, signInWithGoogle, signOutHome, softDeleteCloudEntity, syncNow, verifyOtp } from "@/services/home-sync";
 import type { HomeAccount } from "@/services/home-sync";
 import { showRewardedAd } from "@/services/rewarded-ads";
 import { supabase } from "@/utils/supabase";
@@ -40,6 +40,7 @@ type AppContextValue = AppSnapshot & {
   listHomeAccounts: () => Promise<HomeAccount[]>;
   selectHomeAccount: (home: HomeAccount) => Promise<void>;
   deleteHomeAccount: (home: HomeAccount) => Promise<void>;
+  leaveHomeAccount: (home: HomeAccount) => Promise<void>;
   createHomeAccount: (name: string) => Promise<string>;
   joinHomeAccount: (inviteCode: string) => Promise<void>;
   logoutHomeAccount: () => Promise<void>;
@@ -80,6 +81,20 @@ const emptySnapshot: AppSnapshot = createEmptySnapshot();
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Unknown error";
+}
+
+function clearHomeSettings(settings: Settings): Settings {
+  return {
+    ...settings,
+    careMode: null,
+    syncEnabled: false,
+    homeId: undefined,
+    homeName: undefined,
+    homeInviteCode: undefined,
+    lastSyncAt: undefined,
+    lastSyncAttemptAt: undefined,
+    lastSyncError: undefined,
+  };
 }
 
 async function getInstallationId() {
@@ -335,15 +350,19 @@ export function AppProvider({ children }: PropsWithChildren) {
       if (current.settings.homeId !== home.homeId) return;
       const next: AppSnapshot = {
         ...current,
-        settings: {
-          ...current.settings,
-          careMode: null,
-          syncEnabled: false,
-          homeId: undefined,
-          homeName: undefined,
-          homeInviteCode: undefined,
-          lastSyncAt: undefined,
-        },
+        settings: clearHomeSettings(current.settings),
+      };
+      await replaceSnapshot(next);
+      setSnapshot(next);
+      await refresh();
+    },
+    leaveHomeAccount: async (home) => {
+      await leaveHome(home.homeId);
+      const current = await getSnapshot();
+      if (current.settings.homeId !== home.homeId) return;
+      const next: AppSnapshot = {
+        ...current,
+        settings: clearHomeSettings(current.settings),
       };
       await replaceSnapshot(next);
       setSnapshot(next);
@@ -406,15 +425,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       const current = await getSnapshot();
       const next: AppSnapshot = {
         ...current,
-        settings: {
-          ...current.settings,
-          careMode: null,
-          syncEnabled: false,
-          homeId: undefined,
-          homeName: undefined,
-          homeInviteCode: undefined,
-          lastSyncAt: undefined,
-        },
+        settings: clearHomeSettings(current.settings),
       };
       await replaceSnapshot(next);
       setSnapshot(next);

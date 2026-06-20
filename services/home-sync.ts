@@ -414,6 +414,14 @@ export async function deleteHome(homeId: string) {
   if (error) throw new Error(error.message || "Could not delete Home account.");
 }
 
+export async function leaveHome(homeId: string) {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error("Sign in with Google before leaving a shared Fur Home.");
+
+  const { error } = await supabase.rpc("leave_home", { target_home_id: homeId });
+  if (error) throw new Error(error.message || "Could not leave Fur Home.");
+}
+
 export async function joinHome(inviteCode: string, displayName: string): Promise<HomeResult> {
   const userId = await getCurrentUserId();
   if (!userId) throw new Error("Sign in with Google before joining a Home account.");
