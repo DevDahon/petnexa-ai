@@ -19,6 +19,7 @@ import {
   Screen,
   ScreenHeader,
   SectionHeader,
+  UndoBanner,
   useResponsiveLayout,
 } from "@/components/ui";
 import { fontFamily, palette, radii } from "@/constants/theme";
@@ -47,12 +48,13 @@ const breedSuggestions: Record<PetSpecies, string[]> = {
 };
 
 export default function PetsScreen() {
-  const { pets, records, reminders, savePet, removePet } = useAppData();
+  const { pets, veterinarians, records, reminders, consultations, savePet, removePet, restorePetDeletion } = useAppData();
   const layout = useResponsiveLayout();
   const [form, setForm] = useState(emptyPet);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [query, setQuery] = useState("");
+  const [undo, setUndo] = useState<{ message: string; onUndo: () => Promise<void> } | null>(null);
   const editing = useMemo(() => pets.find((pet) => pet.id === editingId), [editingId, pets]);
   const filteredPets = useMemo(
     () => pets.filter((pet) => `${pet.name} ${pet.breed} ${pet.species}`.toLowerCase().includes(query.toLowerCase())),
@@ -109,6 +111,36 @@ export default function PetsScreen() {
     weightKg: Number(form.weightKg) || 0,
   };
 
+  const profileGaps = (pet: Pet, recordCount: number) => {
+    const gaps = [];
+    if (!pet.photoUri) gaps.push("photo");
+    if (!pet.birthday) gaps.push("birthday");
+    if (!pet.weightKg) gaps.push("weight");
+    if (!pet.assignedVetId) gaps.push("vet");
+    if (recordCount === 0) gaps.push("records");
+    return gaps;
+  };
+
+  const deletePetWithUndo = (pet: Pet) => {
+    const linkedRecords = records.filter((record) => record.petId === pet.id);
+    const linkedReminders = reminders.filter((reminder) => reminder.petId === pet.id);
+    const linkedConsultations = consultations.filter((consultation) => consultation.petId === pet.id);
+    Alert.alert("Delete pet?", "This also removes linked records, care tasks, and consultations.", [
+      { text: "Cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          await removePet(pet.id);
+          setUndo({
+            message: `${pet.name} deleted.`,
+            onUndo: async () => restorePetDeletion({ pet, records: linkedRecords, reminders: linkedReminders, consultations: linkedConsultations }),
+          });
+        },
+      },
+    ]);
+  };
+
   return (
     <Screen>
       <ResponsiveScrollView>
@@ -125,6 +157,17 @@ export default function PetsScreen() {
             />
           }
         />
+
+        {undo ? (
+          <UndoBanner
+            message={undo.message}
+            onDismiss={() => setUndo(null)}
+            onUndo={() => {
+              undo.onUndo().catch(() => Alert.alert("Restore failed", "Could not restore this pet right now."));
+              setUndo(null);
+            }}
+          />
+        ) : null}
 
         {/* ── Summary Banner ── */}
         <GradientCard variant="calm">
@@ -218,6 +261,35 @@ export default function PetsScreen() {
               <Field label="Name" value={form.name} onChangeText={(name) => setForm((current) => ({ ...current, name }))} />
               <Field label="Breed" value={form.breed} onChangeText={(breed) => setForm((current) => ({ ...current, breed }))} />
 
+              <View style={{ gap: 8 }}>
+                <Text selectable style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.bold }}>
+                  Veterinarian
+                </Text>
+                {veterinarians.length ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                    <Chip
+                      label="No vet"
+                      active={!form.assignedVetId}
+                      onPress={() => setForm((current) => ({ ...current, assignedVetId: "" }))}
+                      tone="navy"
+                    />
+                    {veterinarians.map((vet) => (
+                      <Chip
+                        key={vet.id}
+                        label={vet.clinicName}
+                        active={form.assignedVetId === vet.id}
+                        onPress={() => setForm((current) => ({ ...current, assignedVetId: vet.id }))}
+                        tone={vet.isPrimary ? "teal" : "navy"}
+                      />
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
+                    Add a clinic in Settings to link this pet with a veterinarian.
+                  </Text>
+                )}
+              </View>
+
               {/* Breed suggestions */}
               <View style={{ gap: 8 }}>
                 <Text selectable style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.bold }}>
@@ -281,6 +353,7 @@ export default function PetsScreen() {
           filteredPets.map((pet) => {
             const petRecords = records.filter((record) => record.petId === pet.id);
             const petReminders = reminders.filter((reminder) => reminder.petId === pet.id);
+            const gaps = profileGaps(pet, petRecords.length);
             const isCat = pet.species === "Cat";
             return (
               <Card
@@ -350,6 +423,7 @@ export default function PetsScreen() {
                     <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", flex: 1 }}>
                       <Chip label={getLifeStage(pet.birthday, pet.species)} active tone="teal" />
                       <Chip label={`${petReminders.length} care`} tone="warning" />
+                      <Chip label={gaps.length ? `Missing: ${gaps.slice(0, 2).join(", ")}${gaps.length > 2 ? ` +${gaps.length - 2}` : ""}` : "Profile complete"} tone={gaps.length ? "navy" : "success"} active={!gaps.length} />
                     </View>
                     <View
                       style={{
@@ -364,12 +438,7 @@ export default function PetsScreen() {
                         icon="trash-can-outline"
                         label={`Delete ${pet.name}`}
                         danger
-                        onPress={() =>
-                          Alert.alert("Delete pet?", "This also removes linked records, care tasks, and consultations.", [
-                            { text: "Cancel" },
-                            { text: "Delete", style: "destructive", onPress: () => removePet(pet.id) },
-                          ])
-                        }
+                        onPress={() => deletePetWithUndo(pet)}
                       />
                     </View>
                   </View>

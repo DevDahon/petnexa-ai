@@ -15,6 +15,7 @@ import {
   ScreenHeader,
   SectionHeader,
   StatCard,
+  StatusNotice,
   StatusRail,
   useResponsiveLayout,
 } from "@/components/ui";
@@ -84,7 +85,7 @@ function greeting() {
 }
 
 export default function HomeScreen() {
-  const { owner, pets, reminders, records } = useAppData();
+  const { owner, pets, reminders, records, settings } = useAppData();
   const layout = useResponsiveLayout();
   const due = reminders.filter((item) => getReminderStatus(item) === "Due Today");
   const overdue = reminders.filter((item) => getReminderStatus(item) === "Overdue");
@@ -93,6 +94,48 @@ export default function HomeScreen() {
   const featuredPet = pets[0];
   const ownerName = owner.fullName.split(" ")[0] || "Pet Parent";
   const urgentCount = due.length + overdue.length;
+  const nextBestAction =
+    pets.length === 0
+      ? {
+          title: "Add your first pet",
+          message: "Create a profile so care tasks, records, and AI guidance have the right context.",
+          icon: "paw" as const,
+          tone: "teal" as const,
+        }
+      : overdue.length > 0
+        ? {
+            title: `${overdue.length} overdue care item${overdue.length === 1 ? "" : "s"}`,
+            message: "Open Care and update the overdue tasks before adding new follow-ups.",
+            icon: "alert-outline" as const,
+            tone: "danger" as const,
+          }
+        : due.length > 0
+          ? {
+              title: `${due.length} care item${due.length === 1 ? "" : "s"} due today`,
+              message: "Complete today's task or adjust the due date if the schedule has changed.",
+              icon: "calendar-alert" as const,
+              tone: "warning" as const,
+            }
+          : records.length === 0
+            ? {
+                title: "Add a first health record",
+                message: "Record vaccinations, checkups, medications, or lab results for better history.",
+                icon: "clipboard-plus-outline" as const,
+                tone: "navy" as const,
+              }
+            : !settings.privacyAcknowledgedAt || !settings.aiDisclaimerAcceptedAt
+              ? {
+                  title: "Review trust settings",
+                  message: "Acknowledge the privacy policy and AI safety notice in Settings when ready.",
+                  icon: "shield-check-outline" as const,
+                  tone: "warning" as const,
+                }
+              : {
+                  title: "Care is on track",
+                  message: "No urgent action right now. Keep profiles and records current after vet visits.",
+                  icon: "check-circle-outline" as const,
+                  tone: "success" as const,
+                };
 
   return (
     <Screen>
@@ -204,6 +247,14 @@ export default function HomeScreen() {
           <StatCard label="Overdue" value={overdue.length} icon="alert-outline" tone="danger" />
           <StatCard label="Upcoming" value={upcoming.length} icon="calendar-check-outline" tone="teal" />
         </View>
+
+        <SectionHeader title="Next Best Action" />
+        <StatusNotice
+          title={nextBestAction.title}
+          message={nextBestAction.message}
+          icon={nextBestAction.icon}
+          tone={nextBestAction.tone}
+        />
 
         {/* ── Featured Pet ── */}
         {featuredPet ? (

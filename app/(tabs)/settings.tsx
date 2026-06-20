@@ -18,9 +18,11 @@ import {
   Screen,
   ScreenHeader,
   SectionHeader,
+  StatusNotice,
+  UndoBanner,
   useResponsiveLayout,
 } from "@/components/ui";
-import { aiSafetySections, LegalSection, PRIVACY_POLICY_URL, privacyPolicySections, termsSections } from "@/constants/legal";
+import { aiSafetySections, LegalSection, PRIVACY_POLICY_URL, privacyPolicySections, SUPPORT_EMAIL, termsSections } from "@/constants/legal";
 import { fontFamily, palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Veterinarian } from "@/types/domain";
@@ -41,7 +43,12 @@ const emptyVet = {
   isPrimary: false,
 };
 
-type Panel = "profile" | "vets" | "data" | "preferences" | "legal" | "about";
+type Panel = "profile" | "vets" | "data" | "preferences" | "legal" | "help" | "about";
+
+type UndoState = {
+  message: string;
+  onUndo: () => Promise<void>;
+};
 
 function Divider() {
   return <View style={{ height: 1, backgroundColor: palette.borderLight, marginVertical: 6 }} />;
@@ -194,6 +201,11 @@ function openPrivacyPolicy() {
   Linking.openURL(PRIVACY_POLICY_URL).catch(() => Alert.alert("Privacy policy unavailable", "This device cannot open the privacy policy right now."));
 }
 
+function contactSupport() {
+  const subject = encodeURIComponent("PetNexa AI support");
+  Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}`).catch(() => Alert.alert("Email unavailable", `Contact support at ${SUPPORT_EMAIL}.`));
+}
+
 function VetCard({ vet, onEdit, onDelete }: { vet: Veterinarian; onEdit: () => void; onDelete: () => void }) {
   const emergency = Boolean(vet.emergencyHotline);
   const layout = useResponsiveLayout();
@@ -243,6 +255,7 @@ export default function SettingsScreen() {
     saveOwner,
     saveVet,
     removeVet,
+    restoreVetDeletion,
     updateSettings,
     syncHomeNow,
     logoutHomeAccount,
@@ -261,9 +274,13 @@ export default function SettingsScreen() {
   const [vetForm, setVetForm] = useState(emptyVet);
   const [syncing, setSyncing] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [undo, setUndo] = useState<UndoState | null>(null);
 
   const activeCare = reminders.filter((item) => ["Due Today", "Overdue"].includes(getReminderStatus(item))).length;
   const pendingChanges = [...pets, ...veterinarians, ...records, ...reminders].filter((item) => item.syncStatus === "pending" || item.syncStatus === "error").length;
+  const dueToday = reminders.filter((item) => getReminderStatus(item) === "Due Today").length;
+  const overdue = reminders.filter((item) => getReminderStatus(item) === "Overdue").length;
+  const upcoming = reminders.filter((item) => getReminderStatus(item) === "Upcoming").length;
   const primaryVet = veterinarians.find((vet) => vet.isPrimary);
   const emergencyVet = veterinarians.find((vet) => vet.emergencyHotline);
   const careModeLabel = settings.careMode === "home" ? "Home Furparent" : settings.careMode === "solo" ? "Solo Furparent" : "Choose mode";
@@ -275,6 +292,16 @@ export default function SettingsScreen() {
         : settings.syncEnabled
           ? "Ready"
           : "Off";
+  const syncTone = settings.lastSyncError ? "danger" : pendingChanges > 0 ? "warning" : settings.careMode === "home" ? "success" : "navy";
+  const syncTitle = settings.careMode === "home" ? (settings.lastSyncError ? "Home sync needs attention" : pendingChanges > 0 ? "Home sync has pending changes" : "Home sync ready") : "Solo mode is local-only";
+  const syncMessage =
+    settings.careMode === "home"
+      ? settings.lastSyncError || `${pendingChanges} pending · Last synced: ${settings.lastSyncAt || "Not yet"}`
+      : "Your pet data stays on this device unless you export a backup or switch to Home.";
+  const notificationTitle = settings.notificationsEnabled ? "Care reminders enabled" : "Care reminders off";
+  const notificationMessage = settings.notificationsEnabled
+    ? `${dueToday} due today · ${overdue} overdue · ${upcoming} upcoming`
+    : "Turn notifications on to receive local care reminders on supported devices.";
 
   const submitOwner = async () => {
     const fullName = ownerForm.fullName.trim();
@@ -355,6 +382,23 @@ export default function SettingsScreen() {
     Alert.alert("Diagnostics cleared", "Local diagnostic events were removed from this device.");
   };
 
+  const handleDeleteVet = (vet: Veterinarian) => {
+    Alert.alert("Delete clinic?", "This removes the local veterinarian contact.", [
+      { text: "Cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          await removeVet(vet.id);
+          setUndo({
+            message: `${vet.clinicName} deleted.`,
+            onUndo: async () => restoreVetDeletion(vet),
+          });
+        },
+      },
+    ]);
+  };
+
   const handleResetLocalData = () => {
     Alert.alert(
       "Delete local data?",
@@ -424,6 +468,16 @@ export default function SettingsScreen() {
         ) : null}
 
         <SectionHeader title="Settings" />
+        {undo ? (
+          <UndoBanner
+            message={undo.message}
+            onDismiss={() => setUndo(null)}
+            onUndo={() => {
+              undo.onUndo().catch(() => Alert.alert("Restore failed", "Could not restore this item right now."));
+              setUndo(null);
+            }}
+          />
+        ) : null}
         <Card style={{ gap: 0 }}>
           <MenuRow icon="account-outline" title="Owner Profile" subtitle="Name and birthday" active={activePanel === "profile"} onPress={() => setActivePanel(activePanel === "profile" ? null : "profile")} />
           <Divider />
@@ -434,6 +488,8 @@ export default function SettingsScreen() {
           <MenuRow icon="bell-outline" title="Preferences" subtitle="Notifications and daily summary" active={activePanel === "preferences"} onPress={() => setActivePanel(activePanel === "preferences" ? null : "preferences")} />
           <Divider />
           <MenuRow icon="shield-check-outline" title="Legal & Privacy" subtitle="Policy, consent, and AI safety" active={activePanel === "legal"} onPress={() => setActivePanel(activePanel === "legal" ? null : "legal")} />
+          <Divider />
+          <MenuRow icon="help-circle-outline" title="Help & Support" subtitle="Contact, diagnostics, and urgent care guidance" active={activePanel === "help"} onPress={() => setActivePanel(activePanel === "help" ? null : "help")} />
           <Divider />
           <MenuRow icon="information-outline" title="About" subtitle="Version and developer" active={activePanel === "about"} onPress={() => setActivePanel(activePanel === "about" ? null : "about")} />
         </Card>
@@ -491,10 +547,7 @@ export default function SettingsScreen() {
                 vet={vet}
                 onEdit={() => startEditVet(vet)}
                 onDelete={() =>
-                  Alert.alert("Delete clinic?", "This removes the local veterinarian contact.", [
-                    { text: "Cancel" },
-                    { text: "Delete", style: "destructive", onPress: () => removeVet(vet.id) },
-                  ])
+                  handleDeleteVet(vet)
                 }
               />
             ))}
@@ -504,6 +557,7 @@ export default function SettingsScreen() {
         {activePanel === "data" ? (
           <Card>
             <SectionHeader title="Data" />
+            <StatusNotice title={syncTitle} message={syncMessage} icon={settings.careMode === "home" ? "cloud-sync-outline" : "cellphone-lock"} tone={syncTone} />
             <DetailRow icon="backup-restore" title="Backup & Restore" subtitle="Portable JSON backups include local images when the device can read them." />
             <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", paddingTop: 4 }}>
               <CompactButton label="Export" icon="export" onPress={handleExportData} />
@@ -546,6 +600,7 @@ export default function SettingsScreen() {
         {activePanel === "preferences" ? (
           <Card>
             <SectionHeader title="Preferences" />
+            <StatusNotice title={notificationTitle} message={notificationMessage} icon={settings.notificationsEnabled ? "bell-check-outline" : "bell-off-outline"} tone={settings.notificationsEnabled ? "success" : "warning"} />
             <DetailRow
               icon="bell-outline"
               title="Notifications"
@@ -620,6 +675,38 @@ export default function SettingsScreen() {
             <SectionHeader title="AI Safety" />
             {aiSafetySections.map((section) => <LegalBlock key={section.title} section={section} />)}
           </>
+        ) : null}
+
+        {activePanel === "help" ? (
+          <Card>
+            <SectionHeader title="Help & Support" />
+            <StatusNotice
+              title="Emergency symptoms need a veterinarian"
+              message="Breathing trouble, poisoning, seizures, severe injury, collapse, or rapidly worsening symptoms should go to urgent veterinary care."
+              icon="hospital-box-outline"
+              tone="danger"
+            />
+            <DetailRow
+              icon="email-outline"
+              title="Contact Support"
+              subtitle={SUPPORT_EMAIL}
+              right={<CompactButton label="Email" icon="email-outline" onPress={contactSupport} />}
+            />
+            <Divider />
+            <DetailRow
+              icon="shield-check-outline"
+              title="Privacy Center"
+              subtitle="Open the standalone PetNexa AI privacy policy website."
+              right={<CompactButton label="Open" icon="open-in-new" onPress={openPrivacyPolicy} />}
+            />
+            <Divider />
+            <DetailRow
+              icon="file-export-outline"
+              title="Diagnostics"
+              subtitle="Export local diagnostic logs only when support asks for them."
+              right={<CompactButton label="Export" icon="file-export-outline" onPress={handleExportDiagnostics} />}
+            />
+          </Card>
         ) : null}
 
         {activePanel === "about" ? (

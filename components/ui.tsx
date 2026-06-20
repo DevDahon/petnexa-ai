@@ -516,6 +516,106 @@ export function EmptyState({
   );
 }
 
+// ─── StatusNotice ────────────────────────────────────────────────────────────
+
+export function StatusNotice({
+  title,
+  message,
+  icon,
+  tone = "teal",
+  right,
+}: {
+  title: string;
+  message: string;
+  icon: IconName;
+  tone?: Tone;
+  right?: React.ReactNode;
+}) {
+  const color = toneColor(tone);
+
+  return (
+    <View
+      style={{
+        backgroundColor: toneSoft(tone),
+        borderColor: `${color}35`,
+        borderRadius: radii.lg,
+        borderWidth: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        minWidth: 0,
+        padding: 12,
+      }}
+    >
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 14,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#fff",
+          borderWidth: 1,
+          borderColor: `${color}35`,
+        }}
+      >
+        <MaterialCommunityIcons name={icon} color={color} size={21} />
+      </View>
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: typeScale.body, fontFamily: fontFamily.black }}>
+          {title}
+        </Text>
+        <Text selectable numberOfLines={3} style={{ color: palette.muted, fontSize: typeScale.bodySmall, lineHeight: lineHeights.bodySmall, fontFamily: fontFamily.medium }}>
+          {message}
+        </Text>
+      </View>
+      {right ? <View style={{ flexShrink: 0 }}>{right}</View> : null}
+    </View>
+  );
+}
+
+// ─── UndoBanner ──────────────────────────────────────────────────────────────
+
+export function UndoBanner({
+  message,
+  onUndo,
+  onDismiss,
+}: {
+  message: string;
+  onUndo: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <View
+      style={{
+        backgroundColor: palette.softNavy,
+        borderColor: "#C9D7F7",
+        borderRadius: radii.lg,
+        borderWidth: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        minWidth: 0,
+        padding: 12,
+      }}
+    >
+      <MaterialCommunityIcons name="restore" color={palette.navy} size={22} />
+      <Text selectable numberOfLines={2} style={{ flex: 1, minWidth: 0, color: palette.text, fontSize: typeScale.bodySmall, lineHeight: lineHeights.bodySmall, fontFamily: fontFamily.bold }}>
+        {message}
+      </Text>
+      <CompactButton label="Undo" icon="undo" onPress={onUndo} />
+      <IconButton
+        accessibilityLabel="Dismiss undo"
+        icon="close"
+        iconColor={palette.muted}
+        size={18}
+        onPress={onDismiss}
+        style={{ margin: 0, width: 36, height: 36 }}
+      />
+    </View>
+  );
+}
+
 // ─── RowAction ────────────────────────────────────────────────────────────────
 
 export function RowAction({

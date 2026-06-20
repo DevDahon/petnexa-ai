@@ -20,13 +20,17 @@ type AppContextValue = AppSnapshot & {
   saveOwner: (owner: Owner) => Promise<void>;
   savePet: (pet: Omit<Pet, "id" | "createdAt"> & Partial<Pick<Pet, "id" | "createdAt">>) => Promise<void>;
   removePet: (id: string) => Promise<void>;
+  restorePetDeletion: (payload: { pet: Pet; records: HealthRecord[]; reminders: Reminder[]; consultations: Consultation[] }) => Promise<void>;
   saveVet: (vet: Omit<Veterinarian, "id" | "createdAt"> & Partial<Pick<Veterinarian, "id" | "createdAt">>) => Promise<void>;
   removeVet: (id: string) => Promise<void>;
+  restoreVetDeletion: (vet: Veterinarian) => Promise<void>;
   saveRecord: (record: Omit<HealthRecord, "id" | "createdAt"> & Partial<Pick<HealthRecord, "id" | "createdAt">>) => Promise<void>;
   removeRecord: (id: string) => Promise<void>;
+  restoreRecordDeletion: (payload: { record: HealthRecord; reminders: Reminder[] }) => Promise<void>;
   saveReminder: (reminder: Omit<Reminder, "id" | "createdAt"> & Partial<Pick<Reminder, "id" | "createdAt">>) => Promise<void>;
   completeReminder: (reminder: Reminder) => Promise<void>;
   removeReminder: (id: string) => Promise<void>;
+  restoreReminderDeletion: (reminder: Reminder) => Promise<void>;
   saveConsultation: (consultation: Consultation) => Promise<void>;
   canUseAi: () => boolean;
   deductAiCredit: () => Promise<void>;
@@ -241,6 +245,14 @@ export function AppProvider({ children }: PropsWithChildren) {
       await deletePet(id);
       await refresh();
     },
+    restorePetDeletion: async ({ pet, records, reminders, consultations }) => {
+      await upsertPet(markPending({ ...pet, deletedAt: undefined }));
+      for (const record of records) await upsertRecord(markPending({ ...record, deletedAt: undefined }));
+      for (const reminder of reminders) await upsertReminder(markPending({ ...reminder, deletedAt: undefined }));
+      for (const consultation of consultations) await upsertConsultation(consultation);
+      await refresh();
+      await syncIfEnabled().catch(() => undefined);
+    },
     saveVet: async (vet) => {
       await upsertVet(markPending(vet));
       await refresh();
@@ -250,6 +262,11 @@ export function AppProvider({ children }: PropsWithChildren) {
       if (snapshot.settings.careMode === "home") await softDeleteCloudEntity("veterinarians", snapshot.settings.homeId, id).catch(() => undefined);
       await deleteVet(id);
       await refresh();
+    },
+    restoreVetDeletion: async (vet) => {
+      await upsertVet(markPending({ ...vet, deletedAt: undefined }));
+      await refresh();
+      await syncIfEnabled().catch(() => undefined);
     },
     saveRecord: async (record) => {
       const recordId = record.id;
@@ -272,6 +289,13 @@ export function AppProvider({ children }: PropsWithChildren) {
       if (snapshot.settings.notificationsEnabled) await Promise.all(linkedReminders.map((item) => cancelReminderNotification(item.id)));
       await refresh();
     },
+    restoreRecordDeletion: async ({ record, reminders }) => {
+      await upsertRecord(markPending({ ...record, deletedAt: undefined }));
+      for (const reminder of reminders) await upsertReminder(markPending({ ...reminder, deletedAt: undefined }));
+      if (snapshot.settings.notificationsEnabled) await Promise.all(reminders.map((item) => scheduleReminderNotification(item)));
+      await refresh();
+      await syncIfEnabled().catch(() => undefined);
+    },
     saveReminder: async (reminder) => {
       const saved = markPending({ ...reminder, id: reminder.id ?? createId("reminder"), createdAt: reminder.createdAt ?? todayIso() });
       await upsertReminder(saved);
@@ -290,6 +314,13 @@ export function AppProvider({ children }: PropsWithChildren) {
       await deleteReminder(id);
       if (snapshot.settings.notificationsEnabled) await cancelReminderNotification(id);
       await refresh();
+    },
+    restoreReminderDeletion: async (reminder) => {
+      const restored = markPending({ ...reminder, deletedAt: undefined });
+      await upsertReminder(restored);
+      if (snapshot.settings.notificationsEnabled) await scheduleReminderNotification(restored);
+      await refresh();
+      await syncIfEnabled().catch(() => undefined);
     },
     saveConsultation: async (consultation) => {
       await upsertConsultation(consultation);

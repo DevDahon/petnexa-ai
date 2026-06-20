@@ -16,7 +16,9 @@ import {
     ScreenHeader,
     SectionHeader,
     StatCard,
+    StatusNotice,
     StatusRail,
+    UndoBanner,
     useResponsiveLayout,
 } from "@/components/ui";
 import { fontFamily, palette } from "@/constants/theme";
@@ -53,7 +55,7 @@ function statusTone(reminder: Reminder) {
 }
 
 export default function RemindersScreen() {
-  const { pets, reminders, saveReminder, completeReminder, removeReminder } =
+  const { pets, reminders, settings, saveReminder, completeReminder, removeReminder, restoreReminderDeletion } =
     useAppData();
   const layout = useResponsiveLayout();
   const [status, setStatus] = useState("All");
@@ -61,6 +63,7 @@ export default function RemindersScreen() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [undo, setUndo] = useState<{ message: string; onUndo: () => Promise<void> } | null>(null);
 
   const filtered = useMemo(
     () =>
@@ -141,6 +144,39 @@ export default function RemindersScreen() {
   };
 
   const hasUrgent = overdue.length > 0;
+  const notificationStatus = settings.notificationsEnabled ? "enabled" : "disabled";
+  const notificationMessage = settings.notificationsEnabled
+    ? nextReminder
+      ? `Next reminder: ${nextReminder.title} on ${formatFriendlyDate(nextReminder.dueDate)}. ${overdue.length} overdue.`
+      : "Notifications are ready. Add a care task to schedule the next reminder."
+    : "Notifications are off. Care tasks stay visible here, but device alerts will not be sent.";
+  const emptyCareMessage =
+    status === "All"
+      ? "Add a care task to start tracking schedules and follow-ups."
+      : status === "Completed"
+        ? "Completed care tasks will appear here after you mark them done."
+        : status === "Overdue"
+          ? "No overdue care tasks. Keep upcoming tasks on schedule."
+          : status === "Due Today"
+            ? "No care tasks are due today."
+            : "No upcoming care tasks match this filter.";
+
+  const deleteReminderWithUndo = (reminder: Reminder) => {
+    Alert.alert("Delete care task?", "This removes the local care task.", [
+      { text: "Cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          await removeReminder(reminder.id);
+          setUndo({
+            message: `${reminder.title} deleted.`,
+            onUndo: () => restoreReminderDeletion(reminder),
+          });
+        },
+      },
+    ]);
+  };
 
   return (
     <Screen>
@@ -158,6 +194,16 @@ export default function RemindersScreen() {
             />
           }
         />
+        {undo ? (
+          <UndoBanner
+            message={undo.message}
+            onUndo={() => {
+              undo.onUndo().catch(() => Alert.alert("Restore failed", "This care task could not be restored."));
+              setUndo(null);
+            }}
+            onDismiss={() => setUndo(null)}
+          />
+        ) : null}
 
         {/* ── Status Banner ── */}
         <GradientCard variant={hasUrgent ? "danger" : "calm"}>
@@ -223,6 +269,13 @@ export default function RemindersScreen() {
             icon="bell-outline"
           />
         </View>
+
+        <StatusNotice
+          title={`Notifications ${notificationStatus}`}
+          message={notificationMessage}
+          icon={settings.notificationsEnabled ? "bell-check-outline" : "bell-off-outline"}
+          tone={settings.notificationsEnabled ? "success" : "warning"}
+        />
 
         {/* ── Calendar ── */}
         {showCalendar ? (
@@ -397,7 +450,7 @@ export default function RemindersScreen() {
         {filtered.length === 0 ? (
           <EmptyState
             title="No care tasks found"
-            message="Add a care task or change the current filter."
+            message={emptyCareMessage}
             icon="bell-off-outline"
           />
         ) : (
@@ -503,20 +556,7 @@ export default function RemindersScreen() {
                         icon="trash-can-outline"
                         label={`Delete ${reminder.type}`}
                         danger
-                        onPress={() =>
-                          Alert.alert(
-                            "Delete care task?",
-                            "This removes the local care task.",
-                            [
-                              { text: "Cancel" },
-                              {
-                                text: "Delete",
-                                style: "destructive",
-                                onPress: () => removeReminder(reminder.id),
-                              },
-                            ],
-                          )
-                        }
+                        onPress={() => deleteReminderWithUndo(reminder)}
                       />
                     </View>
                   </View>

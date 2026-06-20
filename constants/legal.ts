@@ -5,6 +5,7 @@ export type LegalSection = {
 };
 
 export const PRIVACY_POLICY_URL = "https://dahon19.github.io/petnexa-ai-privacy/";
+export const SUPPORT_EMAIL = "leaves0819@gmail.com";
 
 export const privacyPolicySections: LegalSection[] = [
   {

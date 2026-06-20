@@ -1,9 +1,10 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
-import { Alert, Keyboard, KeyboardAvoidingView, Pressable, ScrollView, Share, Text, View } from "react-native";
+import { Alert, Keyboard, KeyboardAvoidingView, Linking, Pressable, ScrollView, Share, Text, View } from "react-native";
 import { Button } from "react-native-paper";
 import { BrandMark, Field, useResponsiveLayout } from "@/components/ui";
+import { PRIVACY_POLICY_URL } from "@/constants/legal";
 import { MIN_OWNER_AGE } from "@/constants/owner";
 import { fontFamily, gradients, palette, radii } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
@@ -184,6 +185,40 @@ function ModeButton({
   );
 }
 
+function ModeTrustPanel({ onOpenPrivacy }: { onOpenPrivacy: () => void }) {
+  const layout = useResponsiveLayout();
+  const items = [
+    { icon: "cellphone-lock" as const, title: "Solo stays local", text: "Pet profiles, records, reminders, and backups stay on this device unless you export them." },
+    { icon: "cloud-sync-outline" as const, title: "Home sync is optional", text: "Shared household care uses your signed-in Home account and can be left anytime." },
+    { icon: "robot-outline" as const, title: "AI is informational", text: "AI guidance supports care decisions but does not diagnose or replace a veterinarian." },
+  ];
+
+  return (
+    <Panel>
+      <View style={{ gap: 4 }}>
+        <Text selectable style={{ color: palette.text, fontSize: 17, fontFamily: fontFamily.black }}>Before you choose</Text>
+        <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 20, fontFamily: fontFamily.medium }}>
+          Pick the mode that matches how you want PetNexa AI to handle care data.
+        </Text>
+      </View>
+      <View style={{ gap: 8 }}>
+        {items.map((item) => (
+          <View key={item.title} style={{ flexDirection: layout.isTiny ? "column" : "row", alignItems: layout.isTiny ? "flex-start" : "center", gap: 10, minWidth: 0 }}>
+            <View style={{ width: 38, height: 38, borderRadius: 14, backgroundColor: palette.softTeal, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: palette.mintLight }}>
+              <MaterialCommunityIcons name={item.icon} color={palette.teal} size={20} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
+              <Text selectable style={{ color: palette.text, fontSize: 14, fontFamily: fontFamily.black }}>{item.title}</Text>
+              <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>{item.text}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+      <PaperActionButton label="Read Privacy Policy" icon="open-in-new" secondary onPress={onOpenPrivacy} />
+    </Panel>
+  );
+}
+
 export function OwnerOnboarding() {
   const {
     owner,
@@ -283,6 +318,10 @@ export function OwnerOnboarding() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const openPrivacyPolicy = () => {
+    Linking.openURL(PRIVACY_POLICY_URL).catch(() => setMessage("Privacy policy could not be opened on this device."));
   };
 
   const continueWithGoogle = async () => {
@@ -544,6 +583,7 @@ export function OwnerOnboarding() {
 
             {!needsProfile ? (
               <View style={{ width: "100%", maxWidth: 560, gap: 12 }}>
+                <ModeTrustPanel onOpenPrivacy={openPrivacyPolicy} />
                 <ModeButton
                   title="Continue Solo"
                   subtitle="Private local care on this device."

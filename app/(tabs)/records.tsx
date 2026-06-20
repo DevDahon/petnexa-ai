@@ -18,6 +18,7 @@ import {
   ScreenHeader,
   SectionHeader,
   StatusRail,
+  UndoBanner,
   useResponsiveLayout,
 } from "@/components/ui";
 import { fontFamily, palette, radii } from "@/constants/theme";
@@ -52,13 +53,14 @@ function recordVisual(type: RecordType) {
 }
 
 export default function RecordsScreen() {
-  const { pets, records, saveRecord, removeRecord } = useAppData();
+  const { pets, records, reminders, saveRecord, removeRecord, restoreRecordDeletion } = useAppData();
   const layout = useResponsiveLayout();
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<RecordType | "All">("All");
   const [form, setForm] = useState(emptyRecord);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [undo, setUndo] = useState<{ message: string; onUndo: () => Promise<void> } | null>(null);
 
   const filtered = useMemo(
     () =>
@@ -111,6 +113,24 @@ export default function RecordsScreen() {
     setForm(emptyRecord);
   };
 
+  const deleteRecordWithUndo = (record: HealthRecord) => {
+    const linkedReminders = reminders.filter((item) => item.linkedRecordId === record.id);
+    Alert.alert("Delete record?", "Linked care task will also be removed.", [
+      { text: "Cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          await removeRecord(record.id);
+          setUndo({
+            message: `${record.type} record deleted.`,
+            onUndo: () => restoreRecordDeletion({ record, reminders: linkedReminders }),
+          });
+        },
+      },
+    ]);
+  };
+
   return (
     <Screen>
       <ResponsiveScrollView>
@@ -127,6 +147,16 @@ export default function RecordsScreen() {
             />
           }
         />
+        {undo ? (
+          <UndoBanner
+            message={undo.message}
+            onUndo={() => {
+              undo.onUndo().catch(() => Alert.alert("Restore failed", "This record could not be restored."));
+              setUndo(null);
+            }}
+            onDismiss={() => setUndo(null)}
+          />
+        ) : null}
 
         {/* ── Search & Filters ── */}
         <Field label="Search records..." value={query} onChangeText={setQuery} />
@@ -282,12 +312,7 @@ export default function RecordsScreen() {
                         icon="trash-can-outline"
                         label={`Delete ${record.type} record`}
                         danger
-                        onPress={() =>
-                          Alert.alert("Delete record?", "Linked care task will also be removed.", [
-                            { text: "Cancel" },
-                            { text: "Delete", style: "destructive", onPress: () => removeRecord(record.id) },
-                          ])
-                        }
+                        onPress={() => deleteRecordWithUndo(record)}
                       />
                     </View>
                   </View>
