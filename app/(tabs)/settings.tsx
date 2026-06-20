@@ -694,13 +694,6 @@ export default function SettingsScreen() {
             />
             <Divider />
             <DetailRow
-              icon="shield-check-outline"
-              title="Privacy Center"
-              subtitle="Open the standalone PetNexa AI privacy policy website."
-              right={<CompactButton label="Open" icon="open-in-new" onPress={openPrivacyPolicy} />}
-            />
-            <Divider />
-            <DetailRow
               icon="file-export-outline"
               title="Diagnostics"
               subtitle="Export local diagnostic logs only when support asks for them."
