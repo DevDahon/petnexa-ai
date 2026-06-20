@@ -6,7 +6,7 @@
     <title>PetNexa AI Privacy Policy</title>
     <meta
       name="description"
-      content="Privacy Policy for PetNexa AI, the smart pet health and connected care companion."
+      content="Privacy Policy for PetNexa AI, including local-first storage, Home sync, AI guidance, ads, diagnostics, backups, and user controls."
     />
     <link rel="icon" type="image/png" href="./image.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <a href="#main-content" class="skip-link">Skip to privacy policy</a>
     <div class="app-container">
       <aside class="sidebar">
         <div class="brand">
@@ -62,10 +63,31 @@
           <p class="eyebrow">Smart Pet Health, Connected Care.</p>
           <h1>Privacy Policy</h1>
           <div class="meta-info">
-            <span>[EFFECTIVE_DATE]: <strong data-effective-date>June 17, 2026</strong></span>
+            <span>[EFFECTIVE_DATE]: <strong data-effective-date>June 20, 2026</strong></span>
             <span>[DEVELOPER]: <strong data-developer-name>Dahon</strong></span>
           </div>
         </header>
+
+        <section id="main-content" class="policy-summary" aria-labelledby="summary-title">
+          <div class="summary-header">
+            <p class="eyebrow">Policy summary</p>
+            <h2 id="summary-title">Local-first by default, online features by choice.</h2>
+          </div>
+          <div class="summary-grid">
+            <article class="summary-card">
+              <h3>Default privacy posture</h3>
+              <p>PetNexa AI stores care data locally unless you use Home Furparent sync, AI consultation, sharing, or ads.</p>
+            </article>
+            <article class="summary-card">
+              <h3>User controls</h3>
+              <p>Settings includes export, import, sync status, diagnostics export, local data deletion, and legal acknowledgements.</p>
+            </article>
+            <article class="summary-card">
+              <h3>Opt-in signals</h3>
+              <p>Analytics, local diagnostics, and personalized ads are separate controls and are off unless enabled.</p>
+            </article>
+          </div>
+        </section>
 
         <section id="who-we-are" class="doc-section">
           <h2>1. Who we are</h2>
@@ -91,7 +113,9 @@
               <p>
                 The app stores owner name, birthday, care mode, notification settings,
                 daily summary time, Home account identifiers, sync status, and app
-                preference details.
+                preference details such as privacy acknowledgement, AI disclaimer
+                acknowledgement, analytics preference, diagnostics preference, and ad
+                personalization consent.
               </p>
             </div>
             <div class="data-card">
@@ -133,8 +157,8 @@
               <p>
                 PetNexa AI and integrated services may process install identifiers,
                 app-open timestamps, Supabase authentication session data, Google OAuth
-                profile basics when sign-in is used, ad interaction signals, diagnostics,
-                and service request metadata.
+                profile basics when sign-in is used, ad interaction signals, optional
+                local diagnostics, and service request metadata.
               </p>
             </div>
           </div>
@@ -169,9 +193,10 @@
             Storage bucket and accessed through short-lived signed URLs.
           </p>
           <p>
-            JSON backup and restore features are local file flows. Current backups can
-            include the app snapshot data, but image files are not bundled into the
-            backup file.
+            Backup and restore features are local file flows. Current portable JSON
+            backups can include the app snapshot and readable local pet or record
+            images when the device allows access. Backup files remain under the user's
+            control and should be shared only with trusted people.
           </p>
         </section>
 
@@ -207,9 +232,18 @@
               <h3>Google Mobile Ads</h3>
               <p>
                 PetNexa AI uses Google Mobile Ads for rewarded ads that can grant
-                weekly AI credits. Ad requests are configured for non-personalized ads
-                where supported. Google's SDK and systems may process ad interaction
-                data, identifiers, diagnostics, and approximate technical context.
+                weekly AI credits. Personalized ads are controlled separately from app
+                usage. Google's SDK and systems may process ad interaction data,
+                identifiers, diagnostics, and approximate technical context according to
+                Google's advertising policies and the user's platform settings.
+              </p>
+            </div>
+            <div class="service-item">
+              <h3>Local diagnostics</h3>
+              <p>
+                Diagnostics are off by default. When enabled, failed sync or import
+                events are stored locally on the device until the user exports or clears
+                them. PetNexa AI does not automatically upload these diagnostic logs.
               </p>
             </div>
           </div>
@@ -222,6 +256,7 @@
             <li>Photo library access is used when selecting an existing profile photo or record attachment.</li>
             <li>Notification permission is used to schedule local care reminders when supported by the platform.</li>
             <li>Network access is used for Home sync, authentication, AI requests, and rewarded ads.</li>
+            <li>Ad tracking or ad personalization prompts may appear only when required by the platform or advertising setup.</li>
           </ul>
         </section>
 
@@ -232,6 +267,7 @@
             <li>Home Furparent cloud records remain in Supabase until removed through app flows or backend administration. Deleted synced items may be marked with deletion metadata before being removed or ignored by sync.</li>
             <li>Synced images in Supabase Storage may remain until the related Home data or storage path is removed.</li>
             <li>AI request content and ad-related data may be retained by backend providers according to their operational, security, and legal requirements.</li>
+            <li>Local diagnostic events remain on the device until the user exports, clears, deletes local data, or uninstalls the app.</li>
             <li>Backup files exported by the user remain wherever the user saves or shares them.</li>
           </ul>
         </section>
@@ -250,6 +286,12 @@
             device.
           </p>
           <p>
+            The Settings screen includes separate controls for notifications,
+            analytics, personalized ads, local diagnostics, privacy acknowledgement, AI
+            safety acknowledgement, and deleting local device data. Deleting local
+            device data does not automatically delete a Home cloud account.
+          </p>
+          <p>
             AI credits, rewarded-ad state, authentication records, provider logs, and
             abuse-prevention or service-reliability records may not be fully removable
             through local delete actions.
@@ -263,6 +305,11 @@
             authentication, and ad-related requests. Home sync uses Supabase access
             controls so Home data is limited to authenticated members of that Home.
             Private image assets are accessed with signed URLs.
+          </p>
+          <p>
+            Diagnostics stay local unless exported by the user. Portable backups may
+            contain sensitive records and images, so users should store and share backup
+            files carefully.
           </p>
           <p>
             No digital system can guarantee absolute security, but reasonable technical
