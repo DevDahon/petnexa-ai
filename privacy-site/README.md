@@ -1,6 +1,6 @@
 # PetNexa AI Privacy Policy Site
 
-Plain static privacy-policy website for PetNexa AI, modeled after the Interna privacy site and maintained independently from the Expo app runtime.
+Plain static privacy-policy website for PetNexa AI, with a commercial app-showcase front section and a full legal privacy policy maintained independently from the Expo app runtime.
 
 ## Files
 

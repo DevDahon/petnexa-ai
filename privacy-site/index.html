@@ -19,194 +19,260 @@
   </head>
   <body>
     <a href="#main-content" class="skip-link">Skip to privacy policy</a>
-    <div class="app-container">
-      <aside class="sidebar">
-        <div class="brand">
-          <div class="brand-logo-frame" aria-hidden="true">
-            <img src="./image.png" alt="PetNexa AI logo" class="brand-logo" />
+    <header class="site-header">
+      <a class="brand" href="#main-content" aria-label="PetNexa AI privacy home">
+        <span class="brand-logo-frame" aria-hidden="true">
+          <img src="./image.png" alt="" class="brand-logo" />
+        </span>
+        <span class="brand-copy">
+          <span class="brand-name">PetNexa AI</span>
+          <span class="brand-sub">Privacy Center</span>
+        </span>
+      </a>
+
+      <nav class="nav-menu" aria-label="Primary">
+        <a href="#app-preview" class="nav-link">App Preview</a>
+        <a href="#who-we-are" class="nav-link">Policy</a>
+        <a href="#data-we-handle" class="nav-link">Data</a>
+        <a href="#ai-ads-third-parties" class="nav-link">Services</a>
+        <a href="#your-choices" class="nav-link">Controls</a>
+        <a href="#contact" class="nav-link">Contact</a>
+      </nav>
+    </header>
+
+    <main>
+      <section id="main-content" class="hero-section" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Smart pet health, connected care</p>
+          <h1 id="hero-title">PetNexa AI</h1>
+          <p class="hero-lede">
+            A mobile care companion for pet profiles, health records, reminders,
+            Home sync, and safety-first AI guidance, backed by a clear privacy
+            policy and user-controlled data choices.
+          </p>
+          <div class="hero-actions" aria-label="Page shortcuts">
+            <a class="button button-primary" href="#app-preview">View App Screens</a>
+            <a class="button button-secondary" href="#who-we-are">Read Privacy Policy</a>
           </div>
-          <div class="brand-copy">
-            <span class="brand-name">&gt; PetNexa_AI</span>
-            <span class="brand-sub">Privacy Policy</span>
+          <div class="meta-info" aria-label="Policy metadata">
+            <span>Effective <strong data-effective-date>June 20, 2026</strong></span>
+            <span>Developer <strong data-developer-name>Dahon</strong></span>
           </div>
         </div>
 
-        <nav class="nav-menu" aria-label="Table of Contents">
-          <div class="nav-group">
-            <span class="nav-group-title">Overview</span>
-            <a href="#app-preview" class="nav-link">App preview</a>
-            <a href="#who-we-are" class="nav-link">1. Who we are</a>
-            <a href="#data-we-handle" class="nav-link">2. Data we handle</a>
-            <a href="#how-we-use-data" class="nav-link">3. How we use data</a>
+        <div class="hero-visual" aria-label="PetNexa AI app screenshots">
+          <figure class="phone-frame phone-frame-primary">
+            <img
+              src="./screenshots/02-dashboard.png"
+              width="430"
+              height="932"
+              loading="eager"
+              decoding="async"
+              alt="PetNexa AI dashboard showing demo pet care reminders and featured pet details."
+            />
+          </figure>
+          <figure class="phone-frame phone-frame-secondary">
+            <img
+              src="./screenshots/05-ai-assistant.png"
+              width="430"
+              height="932"
+              loading="eager"
+              decoding="async"
+              alt="PetNexa AI assistant screen with demo symptom guidance controls."
+            />
+          </figure>
+          <div class="hero-badge">
+            <strong>Demo data only</strong>
+            <span>All screenshots are captured from sample app content.</span>
           </div>
-          <div class="nav-group">
-            <span class="nav-group-title">Services</span>
-            <a href="#local-cloud" class="nav-link">4. Local & cloud storage</a>
-            <a href="#ai-ads-third-parties" class="nav-link">5. AI, ads & 3rd parties</a>
-            <a href="#permissions" class="nav-link">6. Device permissions</a>
-          </div>
-          <div class="nav-group">
-            <span class="nav-group-title">Data Policies</span>
-            <a href="#retention" class="nav-link">7. Retention</a>
-            <a href="#your-choices" class="nav-link">8. Your choices</a>
-            <a href="#security" class="nav-link">9. Security</a>
-            <a href="#audience" class="nav-link">10. Audience</a>
-          </div>
-          <div class="nav-group">
-            <span class="nav-group-title">Support</span>
-            <a href="#contact" class="nav-link">11. Contact</a>
-          </div>
-        </nav>
-      </aside>
+        </div>
+      </section>
 
-      <main class="content-area">
-        <header class="page-header">
-          <p class="eyebrow">Smart Pet Health, Connected Care.</p>
-          <h1>Privacy Policy</h1>
-          <div class="meta-info">
-            <span>[EFFECTIVE_DATE]: <strong data-effective-date>June 20, 2026</strong></span>
-            <span>[DEVELOPER]: <strong data-developer-name>Dahon</strong></span>
-          </div>
-        </header>
+      <section class="trust-strip" aria-label="PetNexa AI privacy highlights">
+        <article>
+          <strong>Local-first</strong>
+          <span>Solo care data stays on the device by default.</span>
+        </article>
+        <article>
+          <strong>Home sync</strong>
+          <span>Cloud sync is used only for shared Home workflows.</span>
+        </article>
+        <article>
+          <strong>AI safety</strong>
+          <span>AI guidance is informational and not a veterinarian replacement.</span>
+        </article>
+        <article>
+          <strong>Data controls</strong>
+          <span>Export, restore, diagnostics, and deletion tools stay visible.</span>
+        </article>
+      </section>
 
-        <section id="main-content" class="policy-summary" aria-labelledby="summary-title">
-          <div class="summary-header">
-            <p class="eyebrow">Policy summary</p>
-            <h2 id="summary-title">Local-first by default, online features by choice.</h2>
-          </div>
-          <div class="summary-grid">
-            <article class="summary-card">
-              <h3>Default privacy posture</h3>
-              <p>PetNexa AI stores care data locally unless you use Home Furparent sync, AI consultation, sharing, or ads.</p>
+      <section class="policy-summary" aria-labelledby="summary-title">
+        <div class="summary-header">
+          <p class="eyebrow">Policy summary</p>
+          <h2 id="summary-title">Designed to show the app and explain the data clearly.</h2>
+          <p>
+            PetNexa AI is built around practical pet-care workflows. This privacy
+            center explains what stays local, what can be synced, and which optional
+            online services are used when features need them.
+          </p>
+        </div>
+        <div class="summary-grid">
+          <article class="summary-card">
+            <span class="summary-kicker">01</span>
+            <h3>Default privacy posture</h3>
+            <p>PetNexa AI stores care data locally unless Home sync, AI consultation, sharing, or ads are used.</p>
+          </article>
+          <article class="summary-card">
+            <span class="summary-kicker">02</span>
+            <h3>User controls</h3>
+            <p>Settings includes export, import, sync status, diagnostics export, local data deletion, and legal acknowledgements.</p>
+          </article>
+          <article class="summary-card">
+            <span class="summary-kicker">03</span>
+            <h3>Opt-in signals</h3>
+            <p>Analytics, local diagnostics, and personalized ads are separate controls and are off unless enabled.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="app-preview" class="app-preview" aria-labelledby="app-preview-title">
+        <div class="section-heading">
+          <p class="eyebrow">Product preview</p>
+          <h2 id="app-preview-title">A polished mobile experience for daily pet care.</h2>
+          <p>
+            Screenshots are captured from the current Expo web app using sample data,
+            so families can understand the product without exposing private pet records.
+          </p>
+        </div>
+
+        <div class="showcase-grid">
+          <figure class="showcase-feature">
+            <div class="phone-frame">
+              <img
+                src="./screenshots/03-my-pets.png"
+                width="430"
+                height="932"
+                loading="lazy"
+                decoding="async"
+                alt="PetNexa AI My Pets screen with demo profile cards and care badges."
+              />
+            </div>
+            <figcaption>
+              <strong>Pet profiles stay organized</strong>
+              <span>Readable cards, care badges, age, weight, gender, records, and quick actions are structured for mobile use.</span>
+            </figcaption>
+          </figure>
+
+          <div class="feature-panel">
+            <article>
+              <h3>Care dashboard</h3>
+              <p>See featured pets, reminders, saved profiles, and care status from the first tab.</p>
             </article>
-            <article class="summary-card">
-              <h3>User controls</h3>
-              <p>Settings includes export, import, sync status, diagnostics export, local data deletion, and legal acknowledgements.</p>
+            <article>
+              <h3>Record timeline</h3>
+              <p>Track checkups, vaccinations, deworming, schedules, notes, and clinic details.</p>
             </article>
-            <article class="summary-card">
-              <h3>Opt-in signals</h3>
-              <p>Analytics, local diagnostics, and personalized ads are separate controls and are off unless enabled.</p>
+            <article>
+              <h3>AI assistant</h3>
+              <p>Use structured symptom prompts with safety reminders before seeking professional care.</p>
+            </article>
+            <article>
+              <h3>Privacy controls</h3>
+              <p>Review policy status, AI safety consent, data tools, and local privacy choices in Settings.</p>
             </article>
           </div>
-        </section>
+        </div>
 
-        <section id="app-preview" class="app-preview" aria-labelledby="app-preview-title">
-          <div class="preview-header">
-            <p class="eyebrow">App preview</p>
-            <h2 id="app-preview-title">Demo screenshots from PetNexa AI</h2>
-            <p>
-              These images use demo-only app data and show the onboarding flow,
-              care dashboard, pet profiles, health records, AI assistant, and
-              privacy controls available in the current mobile experience.
-            </p>
-          </div>
+        <div class="screenshot-grid" aria-label="PetNexa AI app screenshots">
+          <figure class="screenshot-card">
+            <div class="phone-frame">
+              <img
+                src="./screenshots/01-onboarding-login.png"
+                width="430"
+                height="932"
+                loading="lazy"
+                decoding="async"
+                alt="PetNexa AI onboarding screen for creating a demo owner profile."
+              />
+            </div>
+            <figcaption>
+              <strong>Onboarding</strong>
+              <span>Owner setup before choosing local or Home care mode.</span>
+            </figcaption>
+          </figure>
 
-          <div class="screenshot-grid" aria-label="PetNexa AI app screenshots">
-            <figure class="screenshot-card">
-              <div class="phone-frame">
-                <img
-                  src="./screenshots/01-onboarding-login.png"
-                  width="430"
-                  height="932"
-                  loading="lazy"
-                  decoding="async"
-                  alt="PetNexa AI onboarding screen for creating a demo owner profile."
-                />
-              </div>
-              <figcaption>
-                <strong>Onboarding</strong>
-                <span>Owner setup before choosing local or Home care mode.</span>
-              </figcaption>
-            </figure>
+          <figure class="screenshot-card">
+            <div class="phone-frame">
+              <img
+                src="./screenshots/02-dashboard.png"
+                width="430"
+                height="932"
+                loading="lazy"
+                decoding="async"
+                alt="PetNexa AI dashboard showing a featured demo pet, care alerts, and tab navigation."
+              />
+            </div>
+            <figcaption>
+              <strong>Dashboard</strong>
+              <span>Care summary, featured pet, and key reminders.</span>
+            </figcaption>
+          </figure>
 
-            <figure class="screenshot-card">
-              <div class="phone-frame">
-                <img
-                  src="./screenshots/02-dashboard.png"
-                  width="430"
-                  height="932"
-                  loading="lazy"
-                  decoding="async"
-                  alt="PetNexa AI dashboard showing a featured demo pet, care alerts, and tab navigation."
-                />
-              </div>
-              <figcaption>
-                <strong>Dashboard</strong>
-                <span>Care summary, featured pet, and key reminders.</span>
-              </figcaption>
-            </figure>
+          <figure class="screenshot-card">
+            <div class="phone-frame">
+              <img
+                src="./screenshots/04-records.png"
+                width="430"
+                height="932"
+                loading="lazy"
+                decoding="async"
+                alt="PetNexa AI records screen showing demo veterinary history cards."
+              />
+            </div>
+            <figcaption>
+              <strong>Records</strong>
+              <span>Health history, schedules, and related care notes.</span>
+            </figcaption>
+          </figure>
 
-            <figure class="screenshot-card">
-              <div class="phone-frame">
-                <img
-                  src="./screenshots/03-my-pets.png"
-                  width="430"
-                  height="932"
-                  loading="lazy"
-                  decoding="async"
-                  alt="PetNexa AI My Pets screen with demo pet profile cards."
-                />
-              </div>
-              <figcaption>
-                <strong>My Pets</strong>
-                <span>Equal-profile cards with pet details and care badges.</span>
-              </figcaption>
-            </figure>
+          <figure class="screenshot-card">
+            <div class="phone-frame">
+              <img
+                src="./screenshots/05-ai-assistant.png"
+                width="430"
+                height="932"
+                loading="lazy"
+                decoding="async"
+                alt="PetNexa AI assistant screen for demo symptom guidance."
+              />
+            </div>
+            <figcaption>
+              <strong>AI Assistant</strong>
+              <span>Structured symptom entry with safety-focused guidance.</span>
+            </figcaption>
+          </figure>
 
-            <figure class="screenshot-card">
-              <div class="phone-frame">
-                <img
-                  src="./screenshots/04-records.png"
-                  width="430"
-                  height="932"
-                  loading="lazy"
-                  decoding="async"
-                  alt="PetNexa AI records screen showing demo veterinary history cards."
-                />
-              </div>
-              <figcaption>
-                <strong>Records</strong>
-                <span>Health history, schedules, and related care notes.</span>
-              </figcaption>
-            </figure>
+          <figure class="screenshot-card">
+            <div class="phone-frame">
+              <img
+                src="./screenshots/06-settings-privacy-controls.png"
+                width="430"
+                height="932"
+                loading="lazy"
+                decoding="async"
+                alt="PetNexa AI settings screen with legal, privacy, and data control options."
+              />
+            </div>
+            <figcaption>
+              <strong>Privacy Controls</strong>
+              <span>Legal acknowledgements, data export, and deletion tools.</span>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
 
-            <figure class="screenshot-card">
-              <div class="phone-frame">
-                <img
-                  src="./screenshots/05-ai-assistant.png"
-                  width="430"
-                  height="932"
-                  loading="lazy"
-                  decoding="async"
-                  alt="PetNexa AI assistant screen for demo symptom guidance."
-                />
-              </div>
-              <figcaption>
-                <strong>AI Assistant</strong>
-                <span>Structured symptom entry with safety-focused guidance.</span>
-              </figcaption>
-            </figure>
-
-            <figure class="screenshot-card">
-              <div class="phone-frame">
-                <img
-                  src="./screenshots/06-settings-privacy-controls.png"
-                  width="430"
-                  height="932"
-                  loading="lazy"
-                  decoding="async"
-                  alt="PetNexa AI settings screen with legal, privacy, and data control options."
-                />
-              </div>
-              <figcaption>
-                <strong>Privacy Controls</strong>
-                <span>Legal acknowledgements, data export, and deletion tools.</span>
-              </figcaption>
-            </figure>
-          </div>
-        </section>
-
-        <section id="who-we-are" class="doc-section">
+      <section id="who-we-are" class="doc-section">
           <h2>1. Who we are</h2>
           <p>
             PetNexa AI is a pet health and care companion for tracking pet profiles,
@@ -461,8 +527,7 @@
             </p>
           </div>
         </section>
-      </main>
-    </div>
+    </main>
 
     <script src="./script.js"></script>
   </body>
