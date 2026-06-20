@@ -7,6 +7,36 @@ export type LegalSection = {
 export const PRIVACY_POLICY_URL = "https://dahon19.github.io/petnexa-ai-privacy/";
 export const SUPPORT_EMAIL = "leaves0819@gmail.com";
 
+export const supportFaqSections: LegalSection[] = [
+  {
+    title: "Before contacting support",
+    body: "Export diagnostics only when support asks for them. Diagnostic logs are stored locally and are not uploaded automatically.",
+    bullets: [
+      "Include your app version, device platform, and whether you use Solo or Home mode.",
+      "Do not send backup files unless support specifically requests them, because backups can contain pet health data and images.",
+      "For urgent symptoms, contact a veterinarian or emergency clinic before waiting for app support.",
+    ],
+  },
+  {
+    title: "Data requests",
+    body: "For privacy or data questions, email support with the subject PetNexa AI data request.",
+    bullets: [
+      "Local-only Solo data stays on your device and can be exported, deleted locally, or removed by uninstalling the app.",
+      "Home Furparent cloud data may require Home account details so the request can be reviewed accurately.",
+      "AI provider, ad, authentication, and abuse-prevention logs may follow provider retention rules outside local device controls.",
+    ],
+  },
+  {
+    title: "Common troubleshooting",
+    body: "Most issues can be narrowed down from Settings before sending support details.",
+    bullets: [
+      "Use Data > Sync Now when Home sync shows pending or failed changes.",
+      "Check Preferences when care reminders are visible in the app but device notifications are not appearing.",
+      "Use Backup & Restore before major device changes so local records are not lost.",
+    ],
+  },
+];
+
 export const privacyPolicySections: LegalSection[] = [
   {
     title: "Data Storage",

@@ -22,7 +22,8 @@ import {
   UndoBanner,
   useResponsiveLayout,
 } from "@/components/ui";
-import { aiSafetySections, LegalSection, PRIVACY_POLICY_URL, privacyPolicySections, SUPPORT_EMAIL, termsSections } from "@/constants/legal";
+import { appInfo, releaseNotes } from "@/constants/app";
+import { aiSafetySections, LegalSection, PRIVACY_POLICY_URL, privacyPolicySections, SUPPORT_EMAIL, supportFaqSections, termsSections } from "@/constants/legal";
 import { fontFamily, palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Veterinarian } from "@/types/domain";
@@ -204,6 +205,12 @@ function openPrivacyPolicy() {
 function contactSupport() {
   const subject = encodeURIComponent("PetNexa AI support");
   Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}`).catch(() => Alert.alert("Email unavailable", `Contact support at ${SUPPORT_EMAIL}.`));
+}
+
+function contactDataRequest() {
+  const subject = encodeURIComponent("PetNexa AI data request");
+  const body = encodeURIComponent("Please include your app version, device platform, care mode, and whether you use Home Furparent sync. Do not attach backups unless requested.");
+  Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`).catch(() => Alert.alert("Email unavailable", `Contact support at ${SUPPORT_EMAIL}.`));
 }
 
 function VetCard({ vet, onEdit, onDelete }: { vet: Veterinarian; onEdit: () => void; onDelete: () => void }) {
@@ -678,28 +685,40 @@ export default function SettingsScreen() {
         ) : null}
 
         {activePanel === "help" ? (
-          <Card>
-            <SectionHeader title="Help & Support" />
-            <StatusNotice
-              title="Emergency symptoms need a veterinarian"
-              message="Breathing trouble, poisoning, seizures, severe injury, collapse, or rapidly worsening symptoms should go to urgent veterinary care."
-              icon="hospital-box-outline"
-              tone="danger"
-            />
-            <DetailRow
-              icon="email-outline"
-              title="Contact Support"
-              subtitle={SUPPORT_EMAIL}
-              right={<CompactButton label="Email" icon="email-outline" onPress={contactSupport} />}
-            />
-            <Divider />
-            <DetailRow
-              icon="file-export-outline"
-              title="Diagnostics"
-              subtitle="Export local diagnostic logs only when support asks for them."
-              right={<CompactButton label="Export" icon="file-export-outline" onPress={handleExportDiagnostics} />}
-            />
-          </Card>
+          <>
+            <Card>
+              <SectionHeader title="Help & Support" />
+              <StatusNotice
+                title="Emergency symptoms need a veterinarian"
+                message="Breathing trouble, poisoning, seizures, severe injury, collapse, or rapidly worsening symptoms should go to urgent veterinary care."
+                icon="hospital-box-outline"
+                tone="danger"
+              />
+              <DetailRow
+                icon="email-outline"
+                title="Contact Support"
+                subtitle={SUPPORT_EMAIL}
+                right={<CompactButton label="Email" icon="email-outline" onPress={contactSupport} />}
+              />
+              <Divider />
+              <DetailRow
+                icon="database-search-outline"
+                title="Data Request"
+                subtitle="Use this for privacy questions, Home data requests, or provider-retention questions."
+                right={<CompactButton label="Request" icon="email-fast-outline" onPress={contactDataRequest} />}
+              />
+              <Divider />
+              <DetailRow
+                icon="file-export-outline"
+                title="Diagnostics"
+                subtitle="Export local diagnostic logs only when support asks for them."
+                right={<CompactButton label="Export" icon="file-export-outline" onPress={handleExportDiagnostics} />}
+              />
+            </Card>
+
+            <SectionHeader title="Support FAQ" />
+            {supportFaqSections.map((section) => <LegalBlock key={section.title} section={section} />)}
+          </>
         ) : null}
 
         {activePanel === "about" ? (
@@ -708,21 +727,30 @@ export default function SettingsScreen() {
               <HeaderAppIcon size={72} />
               <View style={{ alignItems: "center", gap: 2 }}>
                 <Text selectable style={{ color: palette.text, fontSize: 21, fontFamily: fontFamily.black }}>
-                  PetNexa AI
+                  {appInfo.name}
                 </Text>
                 <Text selectable style={{ color: palette.teal, fontSize: 13, fontFamily: fontFamily.bold }}>
-                  Smart Pet Health, Connected Care.
+                  {appInfo.tagline}
                 </Text>
               </View>
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "center", maxWidth: layout.isCompact ? 250 : undefined }}>
-                <Chip label="Version 1.0.0" active />
-                <Chip label="Developer: Dahon" tone="navy" />
+                <Chip label={`Version ${appInfo.version}`} active />
+                <Chip label={`Developer: ${appInfo.developer}`} tone="navy" />
               </View>
             </View>
             <Divider />
             <DetailRow icon="shield-check-outline" title="Privacy" subtitle="Data stays local by default. Online use is limited to AI consultation, optional Home sync, sharing, and ads." />
             <Divider />
             <DetailRow icon="database-outline" title="Local Records" subtitle={`${pets.length} pets · ${records.length} records · ${consultations.length} AI consultations`} />
+            <Divider />
+            {releaseNotes.map((note) => (
+              <DetailRow
+                key={`${note.version}-${note.date}`}
+                icon="history"
+                title={`${note.version} · ${note.title}`}
+                subtitle={`${note.date} · ${note.changes.join(" ")}`}
+              />
+            ))}
           </Card>
         ) : null}
       </ResponsiveScrollView>
