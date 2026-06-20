@@ -20,7 +20,7 @@ import {
   SectionHeader,
   useResponsiveLayout,
 } from "@/components/ui";
-import { aiSafetySections, LegalSection, privacyPolicySections, termsSections } from "@/constants/legal";
+import { aiSafetySections, LegalSection, PRIVACY_POLICY_URL, privacyPolicySections, termsSections } from "@/constants/legal";
 import { fontFamily, palette } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Veterinarian } from "@/types/domain";
@@ -188,6 +188,10 @@ function callNumber(value?: string) {
     return;
   }
   Linking.openURL(`tel:${value}`).catch(() => Alert.alert("Call unavailable", "This device cannot open phone calls right now."));
+}
+
+function openPrivacyPolicy() {
+  Linking.openURL(PRIVACY_POLICY_URL).catch(() => Alert.alert("Privacy policy unavailable", "This device cannot open the privacy policy right now."));
 }
 
 function VetCard({ vet, onEdit, onDelete }: { vet: Veterinarian; onEdit: () => void; onDelete: () => void }) {
@@ -571,6 +575,13 @@ export default function SettingsScreen() {
           <>
             <Card>
               <SectionHeader title="Legal & Privacy" />
+              <DetailRow
+                icon="open-in-new"
+                title="Full Privacy Policy"
+                subtitle="Opens the standalone PetNexa AI Privacy Center website."
+                right={<CompactButton label="Open" icon="open-in-new" onPress={openPrivacyPolicy} />}
+              />
+              <Divider />
               <DetailRow
                 icon="shield-check-outline"
                 title="Privacy Policy"

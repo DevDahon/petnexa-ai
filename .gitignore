@@ -26,7 +26,6 @@ expo-env.d.ts
 
 # Browser/test artifacts
 .tmp-chrome-*/
-privacy-site/screenshots-test.png
 
 # Release outputs
 release-artifacts/
