@@ -24,42 +24,86 @@ function applyPolicyConfig() {
 
 function setupActiveNavState() {
   const links = [...document.querySelectorAll(".nav-link")];
-  const sectionMap = new Map(
+  const sectionEntries =
     links
       .map((link) => {
         const id = link.getAttribute("href");
         if (!id?.startsWith("#")) return null;
         const section = document.querySelector(id);
-        return section ? [id, section] : null;
+        return section ? { id, link, section } : null;
       })
-      .filter(Boolean),
-  );
+      .filter(Boolean);
 
-  if (!sectionMap.size || !("IntersectionObserver" in window)) return;
+  if (!sectionEntries.length) return;
 
   const syncActive = (activeId) => {
     links.forEach((link) => {
       const isActive = link.getAttribute("href") === activeId;
       link.classList.toggle("is-active", isActive);
+      if (isActive) link.setAttribute("aria-current", "true");
+      else link.removeAttribute("aria-current");
     });
   };
 
-  const observer = new IntersectionObserver(
-    (entries) => {
-      const visible = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+  let forcedActiveId = null;
+  let forcedActiveUntil = 0;
 
-      if (!visible?.target?.id) return;
-      syncActive(`#${visible.target.id}`);
-    },
-    {
-      rootMargin: "-20% 0px -60% 0px",
-      threshold: [0.1, 0.5, 0.9],
-    },
-  );
+  const getActiveId = () => {
+    if (forcedActiveId && Date.now() < forcedActiveUntil) return forcedActiveId;
+    forcedActiveId = null;
 
-  for (const [id, section] of sectionMap.entries()) {
+    const hashEntry = sectionEntries.find((entry) => entry.id === window.location.hash);
+    if (hashEntry) {
+      const rect = hashEntry.section.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) return hashEntry.id;
+    }
+
+    const offset = Math.min(window.innerHeight * 0.65, 520);
+    const viewportBottom = window.scrollY + window.innerHeight;
+    const documentBottom = document.documentElement.scrollHeight - 12;
+
+    if (viewportBottom >= documentBottom) {
+      return `#${sectionEntries[sectionEntries.length - 1].section.id}`;
+    }
+
+    let active = sectionEntries[0];
+    for (const entry of sectionEntries) {
+      if (entry.section.getBoundingClientRect().top <= offset) active = entry;
+      else break;
+    }
+    return `#${active.section.id}`;
+  };
+
+  let ticking = false;
+  const updateActiveFromScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(() => {
+      syncActive(getActiveId());
+      ticking = false;
+    });
+  };
+
+  for (const { id, link } of sectionEntries) {
+    link.addEventListener("click", () => {
+      forcedActiveId = id;
+      forcedActiveUntil = Date.now() + 2200;
+      syncActive(id);
+    });
+  }
+
+  syncActive(getActiveId());
+  window.addEventListener("scroll", updateActiveFromScroll, { passive: true });
+  window.addEventListener("resize", updateActiveFromScroll);
+
+  if (!("IntersectionObserver" in window)) return;
+
+  const observer = new IntersectionObserver(() => updateActiveFromScroll(), {
+    rootMargin: "-10% 0px -70% 0px",
+    threshold: [0, 0.25, 0.5, 1],
+  });
+
+  for (const { section } of sectionEntries) {
     observer.observe(section);
   }
 }
