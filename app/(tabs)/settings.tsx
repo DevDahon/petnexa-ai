@@ -31,20 +31,7 @@ import { getAgeYears, getReminderStatus, isValidIsoDate } from "@/utils/date";
 
 const MIN_OWNER_AGE = 13;
 
-const emptyVet = {
-  clinicName: "",
-  veterinarianName: "",
-  phone: "",
-  email: "",
-  address: "",
-  website: "",
-  emergencyHotline: "",
-  hours: "",
-  notes: "",
-  isPrimary: false,
-};
-
-type Panel = "profile" | "vets" | "data" | "preferences" | "legal" | "help" | "about";
+type Panel = "profile" | "data" | "preferences" | "legal" | "help" | "about";
 
 type UndoState = {
   message: string;
@@ -213,42 +200,7 @@ function contactDataRequest() {
   Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`).catch(() => Alert.alert("Email unavailable", `Contact support at ${SUPPORT_EMAIL}.`));
 }
 
-function VetCard({ vet, onEdit, onDelete }: { vet: Veterinarian; onEdit: () => void; onDelete: () => void }) {
-  const emergency = Boolean(vet.emergencyHotline);
-  const layout = useResponsiveLayout();
 
-  return (
-    <Card style={{ backgroundColor: "#fff" }}>
-      <View
-        style={{
-          flexDirection: layout.shouldStack ? "column" : "row",
-          alignItems: layout.shouldStack ? "stretch" : "center",
-          gap: 12,
-          minWidth: 0,
-        }}
-      >
-        <IconBubble icon={emergency ? "hospital-marker" : "hospital-building"} tone={emergency ? "danger" : vet.isPrimary ? "navy" : "teal"} size={42} />
-        <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.black, flexShrink: 1 }}>
-              {vet.clinicName}
-            </Text>
-            {vet.isPrimary ? <Chip label="Primary" active tone="navy" /> : null}
-            {emergency ? <Chip label="Emergency" active tone="danger" /> : null}
-          </View>
-          <Text selectable numberOfLines={2} style={{ color: palette.navy, fontSize: 13, fontFamily: fontFamily.medium }}>
-            {vet.phone || vet.emergencyHotline || "No phone saved"}
-          </Text>
-        </View>
-        <View style={{ flexDirection: "row", justifyContent: "flex-end", flexWrap: "wrap", gap: 8, alignSelf: layout.shouldStack ? "stretch" : "auto" }}>
-          <RowAction icon="phone-outline" label={`Call ${vet.clinicName}`} onPress={() => callNumber(vet.emergencyHotline || vet.phone)} />
-          <RowAction icon="pencil-outline" label={`Edit ${vet.clinicName}`} onPress={onEdit} />
-          <RowAction icon="trash-can-outline" label={`Delete ${vet.clinicName}`} danger onPress={onDelete} />
-        </View>
-      </View>
-    </Card>
-  );
-}
 
 export default function SettingsScreen() {
   const {
@@ -275,21 +227,15 @@ export default function SettingsScreen() {
   const layout = useResponsiveLayout();
 
   const [activePanel, setActivePanel] = useState<Panel | null>(null);
-  const [ownerForm, setOwnerForm] = useState({ fullName: owner.fullName, birthday: owner.birthday });
-  const [showVetForm, setShowVetForm] = useState(false);
-  const [editingVetId, setEditingVetId] = useState<string | null>(null);
-  const [vetForm, setVetForm] = useState(emptyVet);
   const [syncing, setSyncing] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [undo, setUndo] = useState<UndoState | null>(null);
 
   const activeCare = reminders.filter((item) => ["Due Today", "Overdue"].includes(getReminderStatus(item))).length;
-  const pendingChanges = [...pets, ...veterinarians, ...records, ...reminders].filter((item) => item.syncStatus === "pending" || item.syncStatus === "error").length;
+  const pendingChanges = [...pets, ...records, ...reminders].filter((item) => item.syncStatus === "pending" || item.syncStatus === "error").length;
   const dueToday = reminders.filter((item) => getReminderStatus(item) === "Due Today").length;
   const overdue = reminders.filter((item) => getReminderStatus(item) === "Overdue").length;
   const upcoming = reminders.filter((item) => getReminderStatus(item) === "Upcoming").length;
-  const primaryVet = veterinarians.find((vet) => vet.isPrimary);
-  const emergencyVet = veterinarians.find((vet) => vet.emergencyHotline);
   const careModeLabel = settings.careMode === "home" ? "Home Furparent" : settings.careMode === "solo" ? "Solo Furparent" : "Choose mode";
   const syncState =
     settings.careMode !== "home"
@@ -319,32 +265,6 @@ export default function SettingsScreen() {
     if (getAgeYears(birthday) < MIN_OWNER_AGE) return Alert.alert("Age requirement", `Owner must be at least ${MIN_OWNER_AGE} years old.`);
 
     await saveOwner({ id: owner.id, fullName, birthday });
-  };
-
-  const submitVet = async () => {
-    if (!vetForm.clinicName.trim()) return Alert.alert("Clinic name required", "Please enter a clinic name.");
-
-    await saveVet({ ...vetForm, id: editingVetId ?? undefined });
-    setVetForm(emptyVet);
-    setEditingVetId(null);
-    setShowVetForm(false);
-  };
-
-  const startEditVet = (vet: Veterinarian) => {
-    setEditingVetId(vet.id);
-    setShowVetForm(true);
-    setVetForm({
-      clinicName: vet.clinicName,
-      veterinarianName: vet.veterinarianName || "",
-      phone: vet.phone || "",
-      email: vet.email || "",
-      address: vet.address || "",
-      website: vet.website || "",
-      emergencyHotline: vet.emergencyHotline || "",
-      hours: vet.hours || "",
-      notes: vet.notes || "",
-      isPrimary: vet.isPrimary,
-    });
   };
 
   const handleSyncNow = async () => {
@@ -387,23 +307,6 @@ export default function SettingsScreen() {
   const handleClearDiagnostics = async () => {
     await clearDiagnostics();
     Alert.alert("Diagnostics cleared", "Local diagnostic events were removed from this device.");
-  };
-
-  const handleDeleteVet = (vet: Veterinarian) => {
-    Alert.alert("Delete clinic?", "This removes the local veterinarian contact.", [
-      { text: "Cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          await removeVet(vet.id);
-          setUndo({
-            message: `${vet.clinicName} deleted.`,
-            onUndo: async () => restoreVetDeletion(vet),
-          });
-        },
-      },
-    ]);
   };
 
   const handleResetLocalData = () => {
@@ -488,8 +391,6 @@ export default function SettingsScreen() {
         <Card style={{ gap: 0 }}>
           <MenuRow icon="account-outline" title="Owner Profile" subtitle="Name and birthday" active={activePanel === "profile"} onPress={() => setActivePanel(activePanel === "profile" ? null : "profile")} />
           <Divider />
-          <MenuRow icon="hospital-building" title="Veterinarians" subtitle={`${veterinarians.length} saved clinics`} active={activePanel === "vets"} onPress={() => setActivePanel(activePanel === "vets" ? null : "vets")} />
-          <Divider />
           <MenuRow icon="database-sync-outline" title="Data" subtitle="Backup, restore, and Home sync" active={activePanel === "data"} onPress={() => setActivePanel(activePanel === "data" ? null : "data")} />
           <Divider />
           <MenuRow icon="bell-outline" title="Preferences" subtitle="Notifications and daily summary" active={activePanel === "preferences"} onPress={() => setActivePanel(activePanel === "preferences" ? null : "preferences")} />
@@ -513,53 +414,7 @@ export default function SettingsScreen() {
           </Card>
         ) : null}
 
-        {activePanel === "vets" ? (
-          <>
-            <Card>
-              <SectionHeader title="Veterinarians" rightNode={!showVetForm ? <CompactButton label="Add" icon="plus" primary onPress={() => setShowVetForm(true)} /> : undefined} />
-              <DetailRow icon="hospital-building" title="Primary Vet" subtitle={primaryVet?.clinicName || "No primary clinic selected"} />
-              <Divider />
-              <DetailRow icon="alert-octagon-outline" title="Emergency Vet" subtitle={emergencyVet?.clinicName || "No emergency hotline saved"} danger={Boolean(emergencyVet)} />
-            </Card>
 
-            {showVetForm ? (
-              <Card style={{ borderColor: palette.mintLight }}>
-                <Text selectable style={{ color: palette.text, fontSize: 16, fontFamily: fontFamily.bold }}>
-                  {editingVetId ? "Edit clinic" : "Add clinic"}
-                </Text>
-                <Field label="Clinic Name" value={vetForm.clinicName} onChangeText={(clinicName) => setVetForm((current) => ({ ...current, clinicName }))} />
-                <Field label="Veterinarian Name" value={vetForm.veterinarianName} onChangeText={(veterinarianName) => setVetForm((current) => ({ ...current, veterinarianName }))} />
-                <Field label="Phone Number" value={vetForm.phone} keyboardType="phone-pad" onChangeText={(phone) => setVetForm((current) => ({ ...current, phone }))} />
-                <Field label="Emergency Hotline" value={vetForm.emergencyHotline} keyboardType="phone-pad" onChangeText={(emergencyHotline) => setVetForm((current) => ({ ...current, emergencyHotline }))} />
-                <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                  <Chip label="Regular Clinic" active={!vetForm.isPrimary} onPress={() => setVetForm((current) => ({ ...current, isPrimary: false }))} />
-                  <Chip label="Primary Vet" active={vetForm.isPrimary} onPress={() => setVetForm((current) => ({ ...current, isPrimary: true }))} tone="navy" />
-                </View>
-                <FormActions
-                  submitLabel={editingVetId ? "Save" : "Add"}
-                  submitIcon="content-save-outline"
-                  onSubmit={submitVet}
-                  onCancel={() => {
-                    setShowVetForm(false);
-                    setEditingVetId(null);
-                    setVetForm(emptyVet);
-                  }}
-                />
-              </Card>
-            ) : null}
-
-            {veterinarians.map((vet) => (
-              <VetCard
-                key={vet.id}
-                vet={vet}
-                onEdit={() => startEditVet(vet)}
-                onDelete={() =>
-                  handleDeleteVet(vet)
-                }
-              />
-            ))}
-          </>
-        ) : null}
 
         {activePanel === "data" ? (
           <Card>

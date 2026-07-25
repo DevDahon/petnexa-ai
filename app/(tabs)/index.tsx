@@ -256,6 +256,30 @@ export default function HomeScreen() {
           tone={nextBestAction.tone}
         />
 
+        {/* ── Nearby Vet Recommendation ── */}
+        <SectionHeader title="Recommended Vet Clinics" action="View Map" />
+        <Card style={{ backgroundColor: palette.softTeal, borderColor: palette.mintLight }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <IconBubble icon="hospital-building" tone="teal" size={48} />
+            <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+              <Text selectable style={{ color: palette.text, fontSize: 16, fontFamily: fontFamily.black }}>
+                Find Nearby Vet Clinics
+              </Text>
+              <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 18, fontFamily: fontFamily.medium }}>
+                Locate emergency 24/7 care, top-rated local vets, and get turn-by-turn directions.
+              </Text>
+              <View style={{ marginTop: 6, alignSelf: "flex-start" }}>
+                <HeaderActionButton
+                  icon="map-marker-radius-outline"
+                  label="Find Vet Clinics"
+                  active
+                  onPress={() => router.push("/map")}
+                />
+              </View>
+            </View>
+          </View>
+        </Card>
+
         {/* ── Featured Pet ── */}
         {featuredPet ? (
           <>

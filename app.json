@@ -14,7 +14,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "PetNexa AI uses the camera only when you choose to add a pet photo or health record attachment.",
         "NSPhotoLibraryUsageDescription": "PetNexa AI uses your photo library only when you choose images for pet profiles, records, or backups.",
-        "NSUserTrackingUsageDescription": "PetNexa AI asks before using data for personalized ads. The app works without personalized ads."
+        "NSUserTrackingUsageDescription": "PetNexa AI asks before using data for personalized ads. The app works without personalized ads.",
+        "NSLocationWhenInUseUsageDescription": "PetNexa AI uses your location to find nearby veterinary clinics so you can get help for your pet quickly."
       }
     },
     "android": {
@@ -28,7 +29,9 @@
       "permissions": [
         "CAMERA",
         "READ_MEDIA_IMAGES",
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
       ]
     },
     "web": {
@@ -38,6 +41,12 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "PetNexa AI uses your location to show nearby veterinary clinics."
+        }
+      ],
       [
         "expo-splash-screen",
         {

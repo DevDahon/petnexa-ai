@@ -14,7 +14,7 @@ import {
   SectionHeader,
   useResponsiveLayout,
 } from "@/components/ui";
-import { fontFamily, lineHeights, palette, radii, typeScale } from "@/constants/theme";
+import { fontFamily, lineHeights, palette, radii, shadow, typeScale } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import {
   AI_SAFETY_NOTICE,
@@ -60,7 +60,7 @@ function stepMeta(step: number) {
   };
 }
 
-function StepHeader({ step }: { step: number }) {
+function StepHeader({ step, onClose }: { step: number; onClose?: () => void }) {
   const current = stepMeta(step);
   const layout = useResponsiveLayout();
   return (
@@ -135,6 +135,27 @@ function StepHeader({ step }: { step: number }) {
             {current.subtitle}
           </Text>
         </View>
+        {onClose && (
+          <Pressable
+            accessibilityLabel="Close consultation"
+            hitSlop={8}
+            onPress={onClose}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.7 : 1,
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: "#fff",
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1,
+              borderColor: palette.mintLight,
+              alignSelf: "flex-start",
+            })}
+          >
+            <MaterialCommunityIcons name="close" color={palette.muted} size={18} />
+          </Pressable>
+        )}
       </View>
       {/* Progress bar */}
       <View style={{ flexDirection: "row", gap: 5 }}>
@@ -244,6 +265,7 @@ function GuideActionButton({
   primary,
   danger,
   disabled,
+  iconOnly,
 }: {
   label: string;
   icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
@@ -251,8 +273,52 @@ function GuideActionButton({
   primary?: boolean;
   danger?: boolean;
   disabled?: boolean;
+  iconOnly?: boolean;
 }) {
-  const color = danger ? palette.danger : palette.teal;
+  const color = primary ? "#ffffff" : danger ? palette.danger : palette.teal;
+  const bgColor = primary
+    ? palette.teal
+    : danger
+    ? palette.dangerSoft
+    : palette.softTeal;
+  const borderColor = primary
+    ? palette.teal
+    : danger
+    ? "#FECACA"
+    : palette.mintLight;
+
+  if (iconOnly) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        disabled={disabled}
+        hitSlop={8}
+        onPress={onPress}
+        style={({ pressed }) => ({
+          opacity: disabled ? 0.45 : pressed ? 0.8 : 1,
+          transform: [{ scale: pressed ? 0.92 : 1 }],
+        })}
+      >
+        <View
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor,
+            backgroundColor: bgColor,
+            alignItems: "center",
+            justifyContent: "center",
+            ...shadow.xs,
+          }}
+        >
+          <MaterialCommunityIcons name={icon} color={color} size={18} />
+        </View>
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -261,35 +327,33 @@ function GuideActionButton({
       hitSlop={5}
       onPress={onPress}
       style={({ pressed }) => ({
-        opacity: disabled ? 0.48 : pressed ? 0.78 : 1,
+        opacity: disabled ? 0.48 : pressed ? 0.85 : 1,
       })}
     >
       <View
         style={{
-          minHeight: 40,
-          borderRadius: 13,
+          minHeight: 42,
+          borderRadius: radii.pill,
           borderWidth: 1,
-          borderColor: primary ? palette.teal : danger ? "#FECACA" : palette.border,
-          backgroundColor: primary ? palette.teal : danger ? palette.dangerSoft : "#fff",
-          paddingHorizontal: 12,
-          paddingVertical: 8,
+          borderColor,
+          backgroundColor: bgColor,
+          paddingHorizontal: 18,
+          paddingVertical: 9,
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",
-          gap: 5,
+          gap: 6,
+          ...(primary ? shadow.sm : shadow.xs),
         }}
       >
-        <MaterialCommunityIcons
-          name={icon}
-          color={primary ? "#fff" : color}
-          size={16}
-        />
+        {icon && (
+          <MaterialCommunityIcons name={icon} color={color} size={17} />
+        )}
         <Text
           selectable={false}
           style={{
-            color: primary ? "#fff" : color,
-            fontSize: typeScale.label,
-            lineHeight: lineHeights.label,
+            color,
+            fontSize: typeScale.bodySmall,
             fontFamily: fontFamily.bold,
           }}
         >
@@ -657,7 +721,7 @@ export default function AiAssistantScreen() {
           <>
             <SectionHeader title="Guided Consultation" />
             <Card style={{ borderColor: palette.mintLight }}>
-              <StepHeader step={step} />
+              <StepHeader step={step} onClose={closeConsultation} />
 
               {step === 1 ? (
                 <>
@@ -1056,43 +1120,44 @@ export default function AiAssistantScreen() {
               <View
                 style={{
                   flexDirection: "row",
-                  gap: 7,
+                  alignItems: "center",
                   justifyContent: "flex-end",
-                  flexWrap: "wrap",
-                  paddingTop: 2,
+                  paddingTop: 14,
+                  marginTop: 10,
+                  borderTopWidth: 1,
+                  borderTopColor: palette.borderLight,
+                  gap: 10,
                 }}
               >
                 {step > 1 ? (
                   <GuideActionButton
                     label="Back"
                     icon="arrow-left"
+                    iconOnly
                     onPress={() =>
                       setStep((current) => Math.max(1, current - 1))
                     }
                   />
                 ) : null}
+
                 {step < 3 ? (
                   <GuideActionButton
                     label="Continue"
                     icon="arrow-right"
                     primary
+                    iconOnly
                     onPress={goNext}
                   />
                 ) : (
                   <GuideActionButton
                     label={busy ? "Checking..." : "Submit"}
-                    icon="heart-pulse"
+                    icon={busy ? "loading" : "check"}
                     primary
                     disabled={busy}
+                    iconOnly
                     onPress={submit}
                   />
                 )}
-                <GuideActionButton
-                  label="Cancel"
-                  icon="close"
-                  danger
-                  onPress={closeConsultation}
-                />
               </View>
             </Card>
           </>
