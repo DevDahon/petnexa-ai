@@ -1,45 +1,110 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useState } from "react";
-import type { ComponentProps, ReactNode } from "react";
-import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
-import { Switch } from "react-native-paper";
 import {
   Card,
   Chip,
   CompactButton,
+  DropdownOption,
   Field,
   FormActions,
   HeaderActionButton,
   HeaderAppIcon,
   IconBubble,
   ResponsiveScrollView,
-  RowAction,
   Screen,
   ScreenHeader,
   SectionHeader,
+  SelectDropdown,
   StatusNotice,
   UndoBanner,
-  useResponsiveLayout,
+  useResponsiveLayout
 } from "@/components/ui";
-import { appInfo, releaseNotes } from "@/constants/app";
-import { aiSafetySections, LegalSection, PRIVACY_POLICY_URL, privacyPolicySections, SUPPORT_EMAIL, supportFaqSections, termsSections } from "@/constants/legal";
-import { fontFamily, palette } from "@/constants/theme";
+import { appInfo } from "@/constants/app";
+import { DEVELOPER_PORTFOLIO_URL, PRIVACY_POLICY_URL, SUPPORT_EMAIL } from "@/constants/legal";
+import { fontFamily, palette, radii } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
-import { Veterinarian } from "@/types/domain";
 import { getAgeYears, getReminderStatus, isValidIsoDate } from "@/utils/date";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import type { ComponentProps, ReactNode } from "react";
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  Linking,
+  Pressable,
+  Text,
+  View
+} from "react-native";
+import { Switch } from "react-native-paper";
 
 const MIN_OWNER_AGE = 13;
 
-type Panel = "profile" | "data" | "preferences" | "legal" | "help" | "about";
+type Panel = "profile" | "data" | "preferences" | "help" | "about";
 
 type UndoState = {
   message: string;
   onUndo: () => Promise<void>;
 };
 
+const DAILY_SUMMARY_OPTIONS: DropdownOption[] = [
+  {
+    label: "06:00 AM",
+    value: "06:00",
+    subtitle: "Early morning summary",
+    icon: "weather-sunset-up",
+  },
+  {
+    label: "07:00 AM",
+    value: "07:00",
+    subtitle: "Morning care check",
+    icon: "clock-outline",
+  },
+  {
+    label: "08:00 AM (Default)",
+    value: "08:00",
+    subtitle: "Standard morning summary",
+    icon: "clock-check-outline",
+  },
+  {
+    label: "09:00 AM",
+    value: "09:00",
+    subtitle: "Late morning summary",
+    icon: "clock-outline",
+  },
+  {
+    label: "12:00 PM",
+    value: "12:00",
+    subtitle: "Mid-day summary",
+    icon: "weather-sunny",
+  },
+  {
+    label: "06:00 PM",
+    value: "18:00",
+    subtitle: "Evening care check",
+    icon: "weather-sunset-down",
+  },
+  {
+    label: "08:00 PM",
+    value: "20:00",
+    subtitle: "Night summary",
+    icon: "moon-waning-crescent",
+  },
+  {
+    label: "09:00 PM",
+    value: "21:00",
+    subtitle: "Late night summary",
+    icon: "weather-night",
+  },
+];
+
 function Divider() {
-  return <View style={{ height: 1, backgroundColor: palette.borderLight, marginVertical: 6 }} />;
+  return (
+    <View
+      style={{
+        height: 1,
+        backgroundColor: palette.borderLight,
+        marginVertical: 6,
+      }}
+    />
+  );
 }
 
 function MenuRow({
@@ -58,18 +123,51 @@ function MenuRow({
   const layout = useResponsiveLayout();
 
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.68 : 1 })}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, minWidth: 0 }}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 12,
+          paddingVertical: 12,
+          minWidth: 0,
+        }}
+      >
         <IconBubble icon={icon} tone={active ? "teal" : "navy"} size={42} />
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-          <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.black }}>
+          <Text
+            selectable
+            numberOfLines={2}
+            style={{
+              color: active ? palette.tealDeep : palette.text,
+              fontSize: 15,
+              fontFamily: fontFamily.black,
+            }}
+          >
             {title}
           </Text>
-          <Text selectable numberOfLines={layout.isTiny ? 3 : 2} style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
+          <Text
+            selectable
+            numberOfLines={layout.isTiny ? 3 : 2}
+            style={{
+              color: palette.muted,
+              fontSize: 13,
+              lineHeight: 19,
+              fontFamily: fontFamily.medium,
+            }}
+          >
             {subtitle}
           </Text>
         </View>
-        <MaterialCommunityIcons name={active ? "chevron-up" : "chevron-right"} color={active ? palette.teal : palette.muted} size={24} />
+        <MaterialCommunityIcons
+          name={active ? "chevron-up" : "chevron-down"}
+          color={active ? palette.teal : palette.muted}
+          size={24}
+        />
       </View>
     </Pressable>
   );
@@ -102,16 +200,37 @@ function DetailRow({
     >
       <IconBubble icon={icon} tone={danger ? "danger" : "teal"} size={42} />
       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-        <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.bold }}>
+        <Text
+          selectable
+          numberOfLines={2}
+          style={{
+            color: palette.text,
+            fontSize: 15,
+            fontFamily: fontFamily.bold,
+          }}
+        >
           {title}
         </Text>
         {subtitle ? (
-          <Text selectable numberOfLines={3} style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
+          <Text
+            selectable
+            numberOfLines={3}
+            style={{
+              color: palette.muted,
+              fontSize: 13,
+              lineHeight: 19,
+              fontFamily: fontFamily.medium,
+            }}
+          >
             {subtitle}
           </Text>
         ) : null}
       </View>
-      {right ? <View style={{ alignSelf: layout.shouldStack ? "flex-start" : "auto" }}>{right}</View> : null}
+      {right ? (
+        <View style={{ alignSelf: layout.shouldStack ? "flex-start" : "auto" }}>
+          {right}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -147,33 +266,20 @@ function LogoutAction({
       })}
     >
       <MaterialCommunityIcons name="logout" color={palette.danger} size={19} />
-      <Text style={{ color: palette.danger, fontSize: 14, fontFamily: fontFamily.black }}>
-        {disabled ? "Logging Out" : mode === "home" ? "Log Out of Home" : "Exit Solo Mode"}
+      <Text
+        style={{
+          color: palette.danger,
+          fontSize: 14,
+          fontFamily: fontFamily.black,
+        }}
+      >
+        {disabled
+          ? "Logging Out"
+          : mode === "home"
+            ? "Log Out of Home"
+            : "Exit Solo Mode"}
       </Text>
     </Pressable>
-  );
-}
-
-function LegalBlock({ section }: { section: LegalSection }) {
-  return (
-    <Card noAnimation>
-      <View style={{ gap: 7 }}>
-        <Text selectable style={{ color: palette.text, fontSize: 16, fontFamily: fontFamily.black }}>
-          {section.title}
-        </Text>
-        <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 20, fontFamily: fontFamily.medium }}>
-          {section.body}
-        </Text>
-        {section.bullets?.map((bullet) => (
-          <View key={bullet} style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
-            <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: palette.teal, marginTop: 8 }} />
-            <Text selectable style={{ flex: 1, color: palette.textSecondary, fontSize: 13, lineHeight: 20, fontFamily: fontFamily.medium }}>
-              {bullet}
-            </Text>
-          </View>
-        ))}
-      </View>
-    </Card>
   );
 }
 
@@ -182,25 +288,50 @@ function callNumber(value?: string) {
     Alert.alert("No phone number", "Add a phone number for this clinic first.");
     return;
   }
-  Linking.openURL(`tel:${value}`).catch(() => Alert.alert("Call unavailable", "This device cannot open phone calls right now."));
+  Linking.openURL(`tel:${value}`).catch(() =>
+    Alert.alert(
+      "Call unavailable",
+      "This device cannot open phone calls right now.",
+    ),
+  );
 }
 
 function openPrivacyPolicy() {
-  Linking.openURL(PRIVACY_POLICY_URL).catch(() => Alert.alert("Privacy policy unavailable", "This device cannot open the privacy policy right now."));
+  Linking.openURL(PRIVACY_POLICY_URL).catch(() =>
+    Alert.alert(
+      "Privacy policy unavailable",
+      "This device cannot open the privacy policy right now.",
+    ),
+  );
+}
+
+function openDeveloperPortfolio() {
+  Linking.openURL(DEVELOPER_PORTFOLIO_URL).catch(() =>
+    Alert.alert(
+      "Portfolio unavailable",
+      "This device cannot open the developer portfolio right now.",
+    ),
+  );
 }
 
 function contactSupport() {
   const subject = encodeURIComponent("PetNexa AI support");
-  Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}`).catch(() => Alert.alert("Email unavailable", `Contact support at ${SUPPORT_EMAIL}.`));
+  Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}`).catch(() =>
+    Alert.alert("Email unavailable", `Contact support at ${SUPPORT_EMAIL}.`),
+  );
 }
 
 function contactDataRequest() {
   const subject = encodeURIComponent("PetNexa AI data request");
-  const body = encodeURIComponent("Please include your app version, device platform, care mode, and whether you use Home Furparent sync. Do not attach backups unless requested.");
-  Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`).catch(() => Alert.alert("Email unavailable", `Contact support at ${SUPPORT_EMAIL}.`));
+  const body = encodeURIComponent(
+    "Please include your app version, device platform, care mode, and whether you use Home Furparent sync. Do not attach backups unless requested.",
+  );
+  Linking.openURL(
+    `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`,
+  ).catch(() =>
+    Alert.alert("Email unavailable", `Contact support at ${SUPPORT_EMAIL}.`),
+  );
 }
-
-
 
 export default function SettingsScreen() {
   const {
@@ -231,12 +362,39 @@ export default function SettingsScreen() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [undo, setUndo] = useState<UndoState | null>(null);
 
-  const activeCare = reminders.filter((item) => ["Due Today", "Overdue"].includes(getReminderStatus(item))).length;
-  const pendingChanges = [...pets, ...records, ...reminders].filter((item) => item.syncStatus === "pending" || item.syncStatus === "error").length;
-  const dueToday = reminders.filter((item) => getReminderStatus(item) === "Due Today").length;
-  const overdue = reminders.filter((item) => getReminderStatus(item) === "Overdue").length;
-  const upcoming = reminders.filter((item) => getReminderStatus(item) === "Upcoming").length;
-  const careModeLabel = settings.careMode === "home" ? "Home Furparent" : settings.careMode === "solo" ? "Solo Furparent" : "Choose mode";
+  const [ownerForm, setOwnerForm] = useState({
+    fullName: owner?.fullName ?? "",
+    birthday: owner?.birthday ?? "",
+  });
+
+  useEffect(() => {
+    setOwnerForm({
+      fullName: owner?.fullName ?? "",
+      birthday: owner?.birthday ?? "",
+    });
+  }, [owner?.fullName, owner?.birthday]);
+
+  const activeCare = reminders.filter((item) =>
+    ["Due Today", "Overdue"].includes(getReminderStatus(item)),
+  ).length;
+  const pendingChanges = [...pets, ...records, ...reminders].filter(
+    (item) => item.syncStatus === "pending" || item.syncStatus === "error",
+  ).length;
+  const dueToday = reminders.filter(
+    (item) => getReminderStatus(item) === "Due Today",
+  ).length;
+  const overdue = reminders.filter(
+    (item) => getReminderStatus(item) === "Overdue",
+  ).length;
+  const upcoming = reminders.filter(
+    (item) => getReminderStatus(item) === "Upcoming",
+  ).length;
+  const careModeLabel =
+    settings.careMode === "home"
+      ? "Home Furparent"
+      : settings.careMode === "solo"
+        ? "Solo Furparent"
+        : "Choose mode";
   const syncState =
     settings.careMode !== "home"
       ? "Solo mode"
@@ -245,13 +403,29 @@ export default function SettingsScreen() {
         : settings.syncEnabled
           ? "Ready"
           : "Off";
-  const syncTone = settings.lastSyncError ? "danger" : pendingChanges > 0 ? "warning" : settings.careMode === "home" ? "success" : "navy";
-  const syncTitle = settings.careMode === "home" ? (settings.lastSyncError ? "Home sync needs attention" : pendingChanges > 0 ? "Home sync has pending changes" : "Home sync ready") : "Solo mode is local-only";
+  const syncTone = settings.lastSyncError
+    ? "danger"
+    : pendingChanges > 0
+      ? "warning"
+      : settings.careMode === "home"
+        ? "success"
+        : "navy";
+  const syncTitle =
+    settings.careMode === "home"
+      ? settings.lastSyncError
+        ? "Home sync needs attention"
+        : pendingChanges > 0
+          ? "Home sync has pending changes"
+          : "Home sync ready"
+      : "Solo mode is local-only";
   const syncMessage =
     settings.careMode === "home"
-      ? settings.lastSyncError || `${pendingChanges} pending · Last synced: ${settings.lastSyncAt || "Not yet"}`
+      ? settings.lastSyncError ||
+        `${pendingChanges} pending · Last synced: ${settings.lastSyncAt || "Not yet"}`
       : "Your pet data stays on this device unless you export a backup or switch to Home.";
-  const notificationTitle = settings.notificationsEnabled ? "Care reminders enabled" : "Care reminders off";
+  const notificationTitle = settings.notificationsEnabled
+    ? "Care reminders enabled"
+    : "Care reminders off";
   const notificationMessage = settings.notificationsEnabled
     ? `${dueToday} due today · ${overdue} overdue · ${upcoming} upcoming`
     : "Turn notifications on to receive local care reminders on supported devices.";
@@ -260,9 +434,15 @@ export default function SettingsScreen() {
     const fullName = ownerForm.fullName.trim();
     const birthday = ownerForm.birthday.trim();
 
-    if (!fullName) return Alert.alert("Name required", "Enter the owner full name.");
-    if (!isValidIsoDate(birthday)) return Alert.alert("Invalid birthday", "Use YYYY-MM-DD format.");
-    if (getAgeYears(birthday) < MIN_OWNER_AGE) return Alert.alert("Age requirement", `Owner must be at least ${MIN_OWNER_AGE} years old.`);
+    if (!fullName)
+      return Alert.alert("Name required", "Enter the owner full name.");
+    if (!isValidIsoDate(birthday))
+      return Alert.alert("Invalid birthday", "Use YYYY-MM-DD format.");
+    if (getAgeYears(birthday) < MIN_OWNER_AGE)
+      return Alert.alert(
+        "Age requirement",
+        `Owner must be at least ${MIN_OWNER_AGE} years old.`,
+      );
 
     await saveOwner({ id: owner.id, fullName, birthday });
   };
@@ -273,7 +453,10 @@ export default function SettingsScreen() {
       await syncHomeNow();
       Alert.alert("Sync complete", "Your Home Furparent data is up to date.");
     } catch {
-      Alert.alert("Sync unavailable", "Check your connection and Home Furparent setup, then try again.");
+      Alert.alert(
+        "Sync unavailable",
+        "Check your connection and Home Furparent setup, then try again.",
+      );
     } finally {
       setSyncing(false);
     }
@@ -283,7 +466,10 @@ export default function SettingsScreen() {
     try {
       await exportData();
     } catch {
-      Alert.alert("Export failed", "PetNexa AI could not create a backup on this device.");
+      Alert.alert(
+        "Export failed",
+        "PetNexa AI could not create a backup on this device.",
+      );
     }
   };
 
@@ -291,8 +477,14 @@ export default function SettingsScreen() {
     try {
       await restoreDataReplaceMode();
     } catch (error) {
-      if (error instanceof Error && error.message === "Restore cancelled.") return;
-      Alert.alert("Import failed", error instanceof Error ? error.message : "PetNexa AI could not import this backup.");
+      if (error instanceof Error && error.message === "Restore cancelled.")
+        return;
+      Alert.alert(
+        "Import failed",
+        error instanceof Error
+          ? error.message
+          : "PetNexa AI could not import this backup.",
+      );
     }
   };
 
@@ -300,13 +492,19 @@ export default function SettingsScreen() {
     try {
       await exportDiagnostics();
     } catch {
-      Alert.alert("Export failed", "Diagnostics could not be exported on this device.");
+      Alert.alert(
+        "Export failed",
+        "Diagnostics could not be exported on this device.",
+      );
     }
   };
 
   const handleClearDiagnostics = async () => {
     await clearDiagnostics();
-    Alert.alert("Diagnostics cleared", "Local diagnostic events were removed from this device.");
+    Alert.alert(
+      "Diagnostics cleared",
+      "Local diagnostic events were removed from this device.",
+    );
   };
 
   const handleResetLocalData = () => {
@@ -318,7 +516,13 @@ export default function SettingsScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => resetLocalData().catch(() => Alert.alert("Delete failed", "Could not clear local data right now.")),
+          onPress: () =>
+            resetLocalData().catch(() =>
+              Alert.alert(
+                "Delete failed",
+                "Could not clear local data right now.",
+              ),
+            ),
         },
       ],
     );
@@ -331,7 +535,12 @@ export default function SettingsScreen() {
     try {
       await logoutHomeAccount();
     } catch (error) {
-      Alert.alert("Logout failed", error instanceof Error ? error.message : "Could not log out on this device.");
+      Alert.alert(
+        "Logout failed",
+        error instanceof Error
+          ? error.message
+          : "Could not log out on this device.",
+      );
     } finally {
       setLoggingOut(false);
     }
@@ -342,7 +551,7 @@ export default function SettingsScreen() {
       <ResponsiveScrollView contentContainerStyle={{ gap: 14 }}>
         <ScreenHeader
           title="Settings"
-          subtitle="Account and app controls."
+          subtitle="App settings & account."
           right={
             <HeaderActionButton
               icon="home-outline"
@@ -353,14 +562,30 @@ export default function SettingsScreen() {
           }
         />
 
-        <Card style={{ backgroundColor: palette.softTeal, borderColor: palette.mintLight }}>
-          <View style={{ gap: 5 }}>
-            <View style={{ flex: 1, gap: 5 }}>
-              <Text selectable style={{ color: palette.text, fontSize: 20, fontFamily: fontFamily.black }}>
+        <Card>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <IconBubble icon="account-circle-outline" tone="teal" size={48} />
+            <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+              <Text
+                selectable
+                style={{
+                  color: palette.text,
+                  fontSize: 18,
+                  fontFamily: fontFamily.black,
+                }}
+              >
                 {owner.fullName || "Pet Parent"}
               </Text>
-          <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
-                {careModeLabel} · {pets.length} pets · {records.length} records · {activeCare} active care
+              <Text
+                selectable
+                style={{
+                  color: palette.muted,
+                  fontSize: 13,
+                  lineHeight: 19,
+                  fontFamily: fontFamily.medium,
+                }}
+              >
+                {careModeLabel} · {pets.length} pets
               </Text>
             </View>
           </View>
@@ -369,11 +594,25 @@ export default function SettingsScreen() {
         {settings.careMode ? (
           <Card style={{ gap: 0 }}>
             <DetailRow
-              icon={settings.careMode === "home" ? "home-account" : "account-lock-outline"}
-              title={settings.careMode === "home" ? "Home Account" : "Solo Account"}
-              subtitle={settings.careMode === "home" ? settings.homeName || "Home Furparent sync is connected" : "Local-only care on this device"}
+              icon={
+                settings.careMode === "home"
+                  ? "home-account"
+                  : "account-lock-outline"
+              }
+              title={
+                settings.careMode === "home" ? "Home Account" : "Solo Account"
+              }
+              subtitle={
+                settings.careMode === "home"
+                  ? settings.homeName || "Sync connected"
+                  : "Local mode"
+              }
             />
-            <LogoutAction mode={settings.careMode} disabled={loggingOut} onPress={handleLogout} />
+            <LogoutAction
+              mode={settings.careMode}
+              disabled={loggingOut}
+              onPress={handleLogout}
+            />
           </Card>
         ) : null}
 
@@ -383,231 +622,493 @@ export default function SettingsScreen() {
             message={undo.message}
             onDismiss={() => setUndo(null)}
             onUndo={() => {
-              undo.onUndo().catch(() => Alert.alert("Restore failed", "Could not restore this item right now."));
+              undo
+                .onUndo()
+                .catch(() =>
+                  Alert.alert("Restore failed", "Could not restore item."),
+                );
               setUndo(null);
             }}
           />
         ) : null}
-        <Card style={{ gap: 0 }}>
-          <MenuRow icon="account-outline" title="Owner Profile" subtitle="Name and birthday" active={activePanel === "profile"} onPress={() => setActivePanel(activePanel === "profile" ? null : "profile")} />
+
+        <Card style={{ gap: 4, padding: 6 }}>
+          {/* 1. Owner Profile Accordion */}
+          <View
+            style={{
+              borderRadius: radii.md,
+              backgroundColor:
+                activePanel === "profile" ? palette.neutralBg : "#FFFFFF",
+              borderWidth: 1,
+              borderColor:
+                activePanel === "profile" ? palette.border : "transparent",
+              borderLeftWidth: activePanel === "profile" ? 4 : 0,
+              borderLeftColor:
+                activePanel === "profile" ? palette.teal : "transparent",
+              paddingHorizontal: 8,
+              overflow: "hidden",
+            }}
+          >
+            <MenuRow
+              icon="account-outline"
+              title="Owner Profile"
+              subtitle="Name & birthday"
+              active={activePanel === "profile"}
+              onPress={() =>
+                setActivePanel(activePanel === "profile" ? null : "profile")
+              }
+            />
+            {activePanel === "profile" ? (
+              <View
+                style={{
+                  paddingHorizontal: 4,
+                  paddingBottom: 14,
+                  paddingTop: 4,
+                  gap: 10,
+                }}
+              >
+                <Divider />
+                <SectionHeader title="Owner Profile" />
+                <Field
+                  label="Full Name"
+                  value={ownerForm.fullName}
+                  onChangeText={(fullName) =>
+                    setOwnerForm((current) => ({ ...current, fullName }))
+                  }
+                />
+                <Field
+                  label="Birthday"
+                  value={ownerForm.birthday}
+                  placeholder="YYYY-MM-DD"
+                  onChangeText={(birthday) =>
+                    setOwnerForm((current) => ({ ...current, birthday }))
+                  }
+                />
+                <FormActions
+                  submitLabel="Save"
+                  submitIcon="content-save-outline"
+                  onSubmit={submitOwner}
+                  onCancel={() => setActivePanel(null)}
+                />
+              </View>
+            ) : null}
+          </View>
+
           <Divider />
-          <MenuRow icon="database-sync-outline" title="Data" subtitle="Backup, restore, and Home sync" active={activePanel === "data"} onPress={() => setActivePanel(activePanel === "data" ? null : "data")} />
+
+          {/* 2. Data Accordion */}
+          <View
+            style={{
+              borderRadius: radii.md,
+              backgroundColor:
+                activePanel === "data" ? palette.neutralBg : "#FFFFFF",
+              borderWidth: 1,
+              borderColor:
+                activePanel === "data" ? palette.border : "transparent",
+              borderLeftWidth: activePanel === "data" ? 4 : 0,
+              borderLeftColor:
+                activePanel === "data" ? palette.teal : "transparent",
+              paddingHorizontal: 8,
+              overflow: "hidden",
+            }}
+          >
+            <MenuRow
+              icon="database-sync-outline"
+              title="Data"
+              subtitle="Backup & sync"
+              active={activePanel === "data"}
+              onPress={() =>
+                setActivePanel(activePanel === "data" ? null : "data")
+              }
+            />
+            {activePanel === "data" ? (
+              <View
+                style={{
+                  paddingHorizontal: 4,
+                  paddingBottom: 14,
+                  paddingTop: 4,
+                  gap: 10,
+                }}
+              >
+                <Divider />
+                <SectionHeader title="Data Settings" />
+                <StatusNotice
+                  title={syncTitle}
+                  message={syncMessage}
+                  icon={
+                    settings.careMode === "home"
+                      ? "cloud-sync-outline"
+                      : "cellphone-lock"
+                  }
+                  tone={syncTone}
+                />
+
+                <DetailRow
+                  icon="backup-restore"
+                  title="Backup & Restore"
+                  subtitle="JSON file backup & restore"
+                  right={
+                    <View
+                      style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}
+                    >
+                      <CompactButton
+                        label="Export"
+                        icon="export"
+                        onPress={handleExportData}
+                      />
+                      <CompactButton
+                        label="Import"
+                        icon="import"
+                        danger
+                        onPress={handleImportData}
+                      />
+                    </View>
+                  }
+                />
+
+                <Divider />
+
+                <DetailRow
+                  icon="cloud-sync-outline"
+                  title="Home Sync"
+                  subtitle={settings.careMode === "home" ? "Automatic sync active" : "Solo mode (local only)"}
+                />
+
+                {settings.lastSyncError ? (
+                  <>
+                    <Divider />
+                    <DetailRow
+                      icon="alert-circle-outline"
+                      title="Sync Issue"
+                      subtitle={settings.lastSyncError}
+                      danger
+                    />
+                  </>
+                ) : null}
+
+                <Divider />
+
+                <DetailRow
+                  icon="database-remove-outline"
+                  title="Delete Local Data"
+                  subtitle="Deletes data on this device"
+                  danger
+                  right={
+                    <CompactButton
+                      label="Delete Local Data"
+                      icon="trash-can-outline"
+                      danger
+                      onPress={handleResetLocalData}
+                    />
+                  }
+                />
+              </View>
+            ) : null}
+          </View>
+
           <Divider />
-          <MenuRow icon="bell-outline" title="Preferences" subtitle="Notifications and daily summary" active={activePanel === "preferences"} onPress={() => setActivePanel(activePanel === "preferences" ? null : "preferences")} />
+
+          {/* 3. Preferences Accordion */}
+          <View
+            style={{
+              borderRadius: radii.md,
+              backgroundColor:
+                activePanel === "preferences" ? palette.neutralBg : "#FFFFFF",
+              borderWidth: 1,
+              borderColor:
+                activePanel === "preferences" ? palette.border : "transparent",
+              borderLeftWidth: activePanel === "preferences" ? 4 : 0,
+              borderLeftColor:
+                activePanel === "preferences" ? palette.teal : "transparent",
+              paddingHorizontal: 8,
+              overflow: "hidden",
+            }}
+          >
+            <MenuRow
+              icon="bell-outline"
+              title="Preferences"
+              subtitle="Reminders & summary"
+              active={activePanel === "preferences"}
+              onPress={() =>
+                setActivePanel(
+                  activePanel === "preferences" ? null : "preferences",
+                )
+              }
+            />
+            {activePanel === "preferences" ? (
+              <View
+                style={{
+                  paddingHorizontal: 4,
+                  paddingBottom: 14,
+                  paddingTop: 4,
+                  gap: 10,
+                }}
+              >
+                <Divider />
+                <SectionHeader title="Preferences" />
+                <StatusNotice
+                  title={notificationTitle}
+                  message={notificationMessage}
+                  icon={
+                    settings.notificationsEnabled
+                      ? "bell-check-outline"
+                      : "bell-off-outline"
+                  }
+                  tone={settings.notificationsEnabled ? "success" : "warning"}
+                />
+                <DetailRow
+                  icon="bell-outline"
+                  title="Notifications"
+                  subtitle="Care reminder alerts"
+                  right={
+                    <Switch
+                      value={settings.notificationsEnabled}
+                      onValueChange={(notificationsEnabled) =>
+                        updateSettings({ ...settings, notificationsEnabled })
+                      }
+                      color={palette.teal}
+                    />
+                  }
+                />
+                <Divider />
+                <SelectDropdown
+                  label="Summary Time"
+                  value={settings.dailySummaryTime || "08:00"}
+                  options={DAILY_SUMMARY_OPTIONS}
+                  icon="clock-outline"
+                  onSelect={(newTime) => {
+                    updateSettings({ ...settings, dailySummaryTime: newTime });
+                    Alert.alert(
+                      "Preference saved",
+                      `Daily summary time set to ${DAILY_SUMMARY_OPTIONS.find((o) => o.value === newTime)?.label || newTime}`,
+                    );
+                  }}
+                />
+              </View>
+            ) : null}
+          </View>
+
           <Divider />
-          <MenuRow icon="shield-check-outline" title="Legal & Privacy" subtitle="Policy, consent, and AI safety" active={activePanel === "legal"} onPress={() => setActivePanel(activePanel === "legal" ? null : "legal")} />
-          <Divider />
-          <MenuRow icon="help-circle-outline" title="Help & Support" subtitle="Contact, diagnostics, and urgent care guidance" active={activePanel === "help"} onPress={() => setActivePanel(activePanel === "help" ? null : "help")} />
-          <Divider />
-          <MenuRow icon="information-outline" title="About" subtitle="Version and developer" active={activePanel === "about"} onPress={() => setActivePanel(activePanel === "about" ? null : "about")} />
+
+          {/* 4. Help & Support Accordion */}
+          <View
+            style={{
+              borderRadius: radii.md,
+              backgroundColor:
+                activePanel === "help" ? palette.neutralBg : "#FFFFFF",
+              borderWidth: 1,
+              borderColor:
+                activePanel === "help" ? palette.border : "transparent",
+              borderLeftWidth: activePanel === "help" ? 4 : 0,
+              borderLeftColor:
+                activePanel === "help" ? palette.teal : "transparent",
+              paddingHorizontal: 8,
+              overflow: "hidden",
+            }}
+          >
+            <MenuRow
+              icon="help-circle-outline"
+              title="Help & Support"
+              subtitle="Contact support"
+              active={activePanel === "help"}
+              onPress={() =>
+                setActivePanel(activePanel === "help" ? null : "help")
+              }
+            />
+            {activePanel === "help" ? (
+              <View
+                style={{
+                  paddingHorizontal: 4,
+                  paddingBottom: 14,
+                  paddingTop: 4,
+                  gap: 10,
+                }}
+              >
+                <Divider />
+                <SectionHeader title="Help & Support" />
+                <StatusNotice
+                  title="Emergency symptoms need a veterinarian"
+                  message="Urgent symptoms require immediate veterinary care."
+                  icon="hospital-box-outline"
+                  tone="danger"
+                />
+                <DetailRow
+                  icon="email-outline"
+                  title="Contact Support"
+                  subtitle={SUPPORT_EMAIL}
+                  right={
+                    <CompactButton
+                      label="Email"
+                      icon="email-outline"
+                      onPress={contactSupport}
+                    />
+                  }
+                />
+                <Divider />
+                <DetailRow
+                  icon="database-search-outline"
+                  title="Data Request"
+                  subtitle="Privacy & data requests"
+                  right={
+                    <CompactButton
+                      label="Request"
+                      icon="email-fast-outline"
+                      onPress={contactDataRequest}
+                    />
+                  }
+                />
+              </View>
+            ) : null}
+          </View>
         </Card>
 
-        {activePanel === "profile" ? (
-          <Card>
-            <SectionHeader title="Owner Profile" />
-            <Field label="Owner Full Name" value={ownerForm.fullName} onChangeText={(fullName) => setOwnerForm((current) => ({ ...current, fullName }))} />
-            <Field label="Birthday" value={ownerForm.birthday} placeholder="YYYY-MM-DD" onChangeText={(birthday) => setOwnerForm((current) => ({ ...current, birthday }))} />
-            <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 19, fontFamily: fontFamily.medium }}>
-              Used for greetings and age eligibility.
+        {/* Standalone About Card */}
+        <Card style={{ gap: 12, padding: 16 }}>
+          <SectionHeader title="About PetNexa AI" />
+          <View style={{ alignItems: "center", gap: 10, paddingVertical: 6 }}>
+            <HeaderAppIcon size={72} />
+            <View style={{ alignItems: "center", gap: 2 }}>
+              <Text
+                selectable
+                style={{
+                  color: palette.text,
+                  fontSize: 21,
+                  fontFamily: fontFamily.black,
+                }}
+              >
+                {appInfo.name}
+              </Text>
+              <Text
+                selectable
+                style={{
+                  color: palette.teal,
+                  fontSize: 13,
+                  fontFamily: fontFamily.bold,
+                }}
+              >
+                {appInfo.tagline}
+              </Text>
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 8,
+                flexWrap: "wrap",
+                justifyContent: "center",
+                maxWidth: layout.isCompact ? 250 : undefined,
+              }}
+            >
+              <Chip label={`Version ${appInfo.version}`} active />
+              <Chip
+                label={`Developer: ${appInfo.developer}`}
+                tone="navy"
+              />
+            </View>
+            <Text
+              selectable
+              style={{
+                color: palette.muted,
+                fontSize: 13,
+                lineHeight: 19,
+                fontFamily: fontFamily.medium,
+                textAlign: "center",
+                paddingHorizontal: 8,
+              }}
+            >
+              {appInfo.description}
             </Text>
-            <FormActions submitLabel="Save" submitIcon="content-save-outline" onSubmit={submitOwner} onCancel={() => setActivePanel(null)} />
-          </Card>
-        ) : null}
-
-
-
-        {activePanel === "data" ? (
-          <Card>
-            <SectionHeader title="Data" />
-            <StatusNotice title={syncTitle} message={syncMessage} icon={settings.careMode === "home" ? "cloud-sync-outline" : "cellphone-lock"} tone={syncTone} />
-            <DetailRow icon="backup-restore" title="Backup & Restore" subtitle="Portable JSON backups include local images when the device can read them." />
-            <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", paddingTop: 4 }}>
-              <CompactButton label="Export" icon="export" onPress={handleExportData} />
-              <CompactButton label="Import" icon="import" danger onPress={handleImportData} />
-            </View>
-            <Divider />
-            <DetailRow
-              icon="cloud-sync-outline"
-              title="Home Sync"
-              subtitle={`${syncState} · Pending: ${pendingChanges} · Last synced: ${settings.lastSyncAt || "Not yet"}`}
-            />
-            {settings.lastSyncError ? (
-              <>
-                <Divider />
-                <DetailRow icon="alert-circle-outline" title="Sync Issue" subtitle={settings.lastSyncError} danger />
-              </>
-            ) : null}
-            <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", paddingTop: 4 }}>
-              <CompactButton label="Sync Now" icon="sync" disabled={settings.careMode !== "home" || syncing} onPress={handleSyncNow} />
-            </View>
-            <Divider />
-            <DetailRow
-              icon="bug-check-outline"
-              title="Local Diagnostics"
-              subtitle="Off by default. When enabled, failed sync/import events are stored locally until exported or cleared."
-              right={<Switch value={Boolean(settings.diagnosticsEnabled)} onValueChange={(diagnosticsEnabled) => updateSettings({ ...settings, diagnosticsEnabled })} color={palette.teal} />}
-            />
-            <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", paddingTop: 4 }}>
-              <CompactButton label="Export Logs" icon="file-export-outline" onPress={handleExportDiagnostics} />
-              <CompactButton label="Clear Logs" icon="delete-outline" danger onPress={handleClearDiagnostics} />
-            </View>
-            <Divider />
-            <DetailRow icon="database-remove-outline" title="Delete Local Device Data" subtitle="Clears this device without deleting Home cloud data." danger />
-            <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", paddingTop: 4 }}>
-              <CompactButton label="Delete Local Data" icon="trash-can-outline" danger onPress={handleResetLocalData} />
-            </View>
-          </Card>
-        ) : null}
-
-        {activePanel === "preferences" ? (
-          <Card>
-            <SectionHeader title="Preferences" />
-            <StatusNotice title={notificationTitle} message={notificationMessage} icon={settings.notificationsEnabled ? "bell-check-outline" : "bell-off-outline"} tone={settings.notificationsEnabled ? "success" : "warning"} />
-            <DetailRow
-              icon="bell-outline"
-              title="Notifications"
-              subtitle="Local care reminders when supported."
-              right={<Switch value={settings.notificationsEnabled} onValueChange={(notificationsEnabled) => updateSettings({ ...settings, notificationsEnabled })} color={palette.teal} />}
-            />
-            <Divider />
-            <DetailRow icon="clock-outline" title="Daily Summary" subtitle={`Preferred time: ${settings.dailySummaryTime}`} />
-            <Divider />
-            <DetailRow
-              icon="chart-line"
-              title="Analytics"
-              subtitle="Product analytics are disabled unless you explicitly opt in."
-              right={<Switch value={Boolean(settings.analyticsEnabled)} onValueChange={(analyticsEnabled) => updateSettings({ ...settings, analyticsEnabled })} color={palette.teal} />}
-            />
-            <Divider />
-            <DetailRow
-              icon="advertisements"
-              title="Personalized Ads"
-              subtitle="Controls consent for ad personalization separately from app use."
-              right={<Switch value={Boolean(settings.adsPersonalizationConsent)} onValueChange={(adsPersonalizationConsent) => updateSettings({ ...settings, adsPersonalizationConsent })} color={palette.teal} />}
-            />
-          </Card>
-        ) : null}
-
-        {activePanel === "legal" ? (
-          <>
-            <Card>
-              <SectionHeader title="Legal & Privacy" />
-              <DetailRow
-                icon="open-in-new"
-                title="Full Privacy Policy"
-                subtitle="Opens the standalone PetNexa AI Privacy Center website."
-                right={<CompactButton label="Open" icon="open-in-new" onPress={openPrivacyPolicy} />}
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 6,
+              marginTop: 4,
+              justifyContent: "center",
+            }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open Privacy Policy"
+              onPress={openPrivacyPolicy}
+              style={({ pressed }) => ({
+                flex: 1,
+                opacity: pressed ? 0.8 : 1,
+                minHeight: 40,
+                borderRadius: radii.sm,
+                borderWidth: 1,
+                borderColor: palette.border,
+                backgroundColor: palette.neutralBg,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 4,
+                paddingHorizontal: 6,
+              })}
+            >
+              <MaterialCommunityIcons
+                name="shield-check-outline"
+                color={palette.teal}
+                size={16}
               />
-              <Divider />
-              <DetailRow
-                icon="shield-check-outline"
-                title="Privacy Policy"
-                subtitle={settings.privacyAcknowledgedAt ? `Acknowledged: ${settings.privacyAcknowledgedAt.slice(0, 10)}` : "Review and acknowledge before using online features."}
-                right={
-                  <CompactButton
-                    label={settings.privacyAcknowledgedAt ? "Acknowledged" : "Acknowledge"}
-                    icon="check-circle-outline"
-                    primary={!settings.privacyAcknowledgedAt}
-                    onPress={() => updateSettings({ ...settings, privacyAcknowledgedAt: new Date().toISOString() })}
-                  />
-                }
+              <Text
+                numberOfLines={1}
+                style={{
+                  color: palette.text,
+                  fontSize: 12,
+                  fontFamily: fontFamily.bold,
+                }}
+              >
+                Privacy Policy
+              </Text>
+              <MaterialCommunityIcons
+                name="open-in-new"
+                color={palette.muted}
+                size={13}
               />
-              <Divider />
-              <DetailRow
-                icon="robot-outline"
-                title="AI Safety Notice"
-                subtitle={settings.aiDisclaimerAcceptedAt ? `Accepted: ${settings.aiDisclaimerAcceptedAt.slice(0, 10)}` : "AI guidance is informational and not a veterinary diagnosis."}
-                right={
-                  <CompactButton
-                    label={settings.aiDisclaimerAcceptedAt ? "Accepted" : "Accept"}
-                    icon="check-circle-outline"
-                    primary={!settings.aiDisclaimerAcceptedAt}
-                    onPress={() => updateSettings({ ...settings, aiDisclaimerAcceptedAt: new Date().toISOString() })}
-                  />
-                }
-              />
-            </Card>
+            </Pressable>
 
-            <SectionHeader title="Privacy Policy" />
-            {privacyPolicySections.map((section) => <LegalBlock key={section.title} section={section} />)}
-
-            <SectionHeader title="Terms" />
-            {termsSections.map((section) => <LegalBlock key={section.title} section={section} />)}
-
-            <SectionHeader title="AI Safety" />
-            {aiSafetySections.map((section) => <LegalBlock key={section.title} section={section} />)}
-          </>
-        ) : null}
-
-        {activePanel === "help" ? (
-          <>
-            <Card>
-              <SectionHeader title="Help & Support" />
-              <StatusNotice
-                title="Emergency symptoms need a veterinarian"
-                message="Breathing trouble, poisoning, seizures, severe injury, collapse, or rapidly worsening symptoms should go to urgent veterinary care."
-                icon="hospital-box-outline"
-                tone="danger"
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open About Developer Portfolio"
+              onPress={openDeveloperPortfolio}
+              style={({ pressed }) => ({
+                flex: 1,
+                opacity: pressed ? 0.8 : 1,
+                minHeight: 40,
+                borderRadius: radii.sm,
+                borderWidth: 1,
+                borderColor: palette.border,
+                backgroundColor: palette.neutralBg,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 4,
+                paddingHorizontal: 6,
+              })}
+            >
+              <MaterialCommunityIcons
+                name="code-tags"
+                color={palette.teal}
+                size={16}
               />
-              <DetailRow
-                icon="email-outline"
-                title="Contact Support"
-                subtitle={SUPPORT_EMAIL}
-                right={<CompactButton label="Email" icon="email-outline" onPress={contactSupport} />}
+              <Text
+                numberOfLines={1}
+                style={{
+                  color: palette.text,
+                  fontSize: 12,
+                  fontFamily: fontFamily.bold,
+                }}
+              >
+                About Developer
+              </Text>
+              <MaterialCommunityIcons
+                name="open-in-new"
+                color={palette.muted}
+                size={13}
               />
-              <Divider />
-              <DetailRow
-                icon="database-search-outline"
-                title="Data Request"
-                subtitle="Use this for privacy questions, Home data requests, or provider-retention questions."
-                right={<CompactButton label="Request" icon="email-fast-outline" onPress={contactDataRequest} />}
-              />
-              <Divider />
-              <DetailRow
-                icon="file-export-outline"
-                title="Diagnostics"
-                subtitle="Export local diagnostic logs only when support asks for them."
-                right={<CompactButton label="Export" icon="file-export-outline" onPress={handleExportDiagnostics} />}
-              />
-            </Card>
-
-            <SectionHeader title="Support FAQ" />
-            {supportFaqSections.map((section) => <LegalBlock key={section.title} section={section} />)}
-          </>
-        ) : null}
-
-        {activePanel === "about" ? (
-          <Card>
-            <View style={{ alignItems: "center", gap: 10 }}>
-              <HeaderAppIcon size={72} />
-              <View style={{ alignItems: "center", gap: 2 }}>
-                <Text selectable style={{ color: palette.text, fontSize: 21, fontFamily: fontFamily.black }}>
-                  {appInfo.name}
-                </Text>
-                <Text selectable style={{ color: palette.teal, fontSize: 13, fontFamily: fontFamily.bold }}>
-                  {appInfo.tagline}
-                </Text>
-              </View>
-              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "center", maxWidth: layout.isCompact ? 250 : undefined }}>
-                <Chip label={`Version ${appInfo.version}`} active />
-                <Chip label={`Developer: ${appInfo.developer}`} tone="navy" />
-              </View>
-            </View>
-            <Divider />
-            <DetailRow icon="shield-check-outline" title="Privacy" subtitle="Data stays local by default. Online use is limited to AI consultation, optional Home sync, sharing, and ads." />
-            <Divider />
-            <DetailRow icon="database-outline" title="Local Records" subtitle={`${pets.length} pets · ${records.length} records · ${consultations.length} AI consultations`} />
-            <Divider />
-            {releaseNotes.map((note) => (
-              <DetailRow
-                key={`${note.version}-${note.date}`}
-                icon="history"
-                title={`${note.version} · ${note.title}`}
-                subtitle={`${note.date} · ${note.changes.join(" ")}`}
-              />
-            ))}
-          </Card>
-        ) : null}
+            </Pressable>
+          </View>
+        </Card>
       </ResponsiveScrollView>
     </Screen>
   );

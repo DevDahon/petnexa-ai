@@ -45,7 +45,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
-type Tone = "teal" | "danger" | "warning" | "navy" | "success" | "peach";
+type Tone = "teal" | "danger" | "warning" | "navy" | "success" | "peach" | "indigo";
 
 export function useResponsiveLayout() {
   const { width, height } = useWindowDimensions();
@@ -121,6 +121,7 @@ function toneColor(tone: Tone = "teal") {
   if (tone === "navy") return palette.navy;
   if (tone === "success") return palette.success;
   if (tone === "peach") return palette.peach;
+  if (tone === "indigo") return palette.indigo;
   return palette.teal;
 }
 
@@ -130,6 +131,7 @@ function toneSoft(tone: Tone = "teal") {
   if (tone === "navy") return palette.softNavy;
   if (tone === "peach") return palette.softPeach;
   if (tone === "success") return palette.successSoft;
+  if (tone === "indigo") return palette.softIndigo;
   return palette.softTeal;
 }
 
@@ -727,33 +729,46 @@ export function CompactButton({
   danger?: boolean;
   disabled?: boolean;
 }) {
-  const iconColor = danger ? palette.danger : primary ? "#fff" : palette.navy;
-  const buttonIcon = icon
-    ? ({ size }: { color: string; size: number }) => (
-        <MaterialCommunityIcons name={icon} color={iconColor} size={size} />
-      )
-    : undefined;
+  const bgColor = primary
+    ? palette.teal
+    : danger
+      ? palette.dangerSoft
+      : palette.backgroundAlt;
+  const textColor = primary
+    ? "#FFFFFF"
+    : danger
+      ? palette.danger
+      : palette.textSecondary;
+  const borderColor = primary
+    ? palette.teal
+    : danger
+      ? "#FECACA"
+      : palette.border;
 
   return (
-    <Button
-      compact
-      icon={buttonIcon}
-      mode={primary ? "contained" : "text"}
+    <Pressable
+      accessibilityRole="button"
       disabled={disabled}
-      buttonColor={primary ? palette.teal : undefined}
-      textColor={iconColor}
       onPress={onPress}
-      style={{ borderRadius: radii.md }}
-      contentStyle={{ minHeight: 40, paddingHorizontal: primary ? 10 : 4 }}
-      labelStyle={{
-        fontSize: typeScale.label,
-        fontFamily: fontFamily.bold,
-        letterSpacing: 0,
-        marginHorizontal: 0,
-      }}
+      style={({ pressed }) => ({
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        paddingHorizontal: 13,
+        paddingVertical: 8,
+        borderRadius: radii.sm,
+        backgroundColor: bgColor,
+        borderWidth: 1,
+        borderColor: borderColor,
+        opacity: disabled ? 0.55 : pressed ? 0.8 : 1,
+      })}
     >
-      {label}
-    </Button>
+      {icon ? <MaterialCommunityIcons name={icon} color={textColor} size={16} /> : null}
+      <Text style={{ color: textColor, fontSize: 13, fontFamily: fontFamily.bold, letterSpacing: 0.1 }}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -904,6 +919,151 @@ export function Field({
       outlineColor={palette.border}
       activeOutlineColor={palette.teal}
     />
+  );
+}
+
+// ─── SelectDropdown ────────────────────────────────────────────────────────────
+
+export type DropdownOption<T extends string = string> = {
+  label: string;
+  value: T;
+  subtitle?: string;
+  icon?: IconName;
+};
+
+export function SelectDropdown<T extends string = string>({
+  label,
+  value,
+  options,
+  onSelect,
+  placeholder = "Select an option",
+  disabled = false,
+  icon = "clock-outline",
+}: {
+  label?: string;
+  value: T;
+  options: DropdownOption<T>[];
+  onSelect: (value: T) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  icon?: IconName;
+}) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  return (
+    <View style={{ gap: 6, marginVertical: 4 }}>
+      {label ? (
+        <Text style={{ color: palette.textSecondary, fontSize: 13, fontFamily: fontFamily.bold, letterSpacing: 0.2 }}>
+          {label}
+        </Text>
+      ) : null}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: isOpen }}
+        disabled={disabled}
+        onPress={() => setIsOpen((prev) => !prev)}
+        style={({ pressed }) => ({
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 12,
+          paddingHorizontal: 14,
+          paddingVertical: 12,
+          backgroundColor: isOpen ? palette.softTeal : "#FFFFFF",
+          borderRadius: radii.md,
+          borderWidth: 1.5,
+          borderColor: isOpen ? palette.teal : palette.border,
+          shadowColor: isOpen ? palette.teal : "#0F172A",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isOpen ? 0.08 : 0.03,
+          shadowRadius: 6,
+          elevation: isOpen ? 2 : 1,
+          opacity: disabled ? 0.6 : pressed ? 0.88 : 1,
+        })}
+      >
+        <IconBubble icon={selectedOption?.icon ?? icon} tone={isOpen ? "teal" : "navy"} size={36} />
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+          <Text numberOfLines={1} style={{ color: selectedOption ? palette.text : palette.muted, fontSize: 15, fontFamily: fontFamily.bold }}>
+            {selectedOption ? selectedOption.label : placeholder}
+          </Text>
+          {selectedOption?.subtitle ? (
+            <Text numberOfLines={1} style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.medium }}>
+              {selectedOption.subtitle}
+            </Text>
+          ) : null}
+        </View>
+        <MaterialCommunityIcons
+          name={isOpen ? "chevron-up" : "chevron-down"}
+          color={isOpen ? palette.teal : palette.muted}
+          size={22}
+        />
+      </Pressable>
+
+      {isOpen ? (
+        <View
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: radii.md,
+            borderWidth: 1,
+            borderColor: palette.border,
+            padding: 6,
+            gap: 4,
+            shadowColor: "#0F172A",
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.1,
+            shadowRadius: 16,
+            elevation: 5,
+            marginTop: 2,
+          }}
+        >
+          {options.map((opt) => {
+            const isSelected = opt.value === value;
+            return (
+              <Pressable
+                key={opt.value}
+                accessibilityRole="button"
+                onPress={() => {
+                  onSelect(opt.value);
+                  setIsOpen(false);
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 10,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                  borderRadius: radii.sm,
+                  backgroundColor: isSelected ? palette.softTeal : pressed ? palette.neutralBg : "transparent",
+                  borderLeftWidth: isSelected ? 3 : 0,
+                  borderLeftColor: isSelected ? palette.teal : "transparent",
+                })}
+              >
+                {opt.icon ? (
+                  <MaterialCommunityIcons
+                    name={opt.icon}
+                    color={isSelected ? palette.teal : palette.muted}
+                    size={20}
+                  />
+                ) : null}
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ color: isSelected ? palette.tealDeep : palette.text, fontSize: 14, fontFamily: isSelected ? fontFamily.black : fontFamily.medium }}>
+                    {opt.label}
+                  </Text>
+                  {opt.subtitle ? (
+                    <Text style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.regular }}>
+                      {opt.subtitle}
+                    </Text>
+                  ) : null}
+                </View>
+                {isSelected ? (
+                  <MaterialCommunityIcons name="check-circle" color={palette.teal} size={20} />
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+    </View>
   );
 }
 

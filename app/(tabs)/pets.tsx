@@ -356,13 +356,7 @@ export default function PetsScreen() {
             const gaps = profileGaps(pet, petRecords.length);
             const isCat = pet.species === "Cat";
             return (
-              <Card
-                key={pet.id}
-                style={{
-                  backgroundColor: isCat ? palette.softPeach : "#fff",
-                  borderColor: isCat ? "#FFE1CC" : palette.borderLight,
-                }}
-              >
+              <Card key={pet.id}>
                 <View style={{ gap: 14, minHeight: layout.isCompact ? 168 : 154, position: "relative" }}>
                   <View style={{ position: "absolute", top: 0, right: 0, zIndex: 1, alignItems: "flex-end" }}>
                     <Chip label={`${petRecords.length} records`} tone="navy" />

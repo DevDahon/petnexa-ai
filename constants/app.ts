@@ -3,6 +3,7 @@ export const appInfo = {
   version: "1.0.0",
   developer: "Dahon",
   tagline: "Smart Pet Health, Connected Care.",
+  description: "An intelligent pet care companion designed to help pet parents manage health records, track daily routines, and receive smart AI guidance.",
 };
 
 export const releaseNotes = [

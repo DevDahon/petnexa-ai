@@ -66,10 +66,10 @@ function StepHeader({ step, onClose }: { step: number; onClose?: () => void }) {
   return (
     <View
       style={{
-        backgroundColor: palette.softTeal,
+        backgroundColor: "#FFFFFF",
         borderRadius: radii.lg,
         borderWidth: 1,
-        borderColor: palette.mintLight,
+        borderColor: palette.border,
         padding: 12,
         gap: 10,
       }}

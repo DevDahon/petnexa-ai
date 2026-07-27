@@ -1,51 +1,55 @@
 import { MD3LightTheme, configureFonts } from "react-native-paper";
 
 export const palette = {
-  // Brand
-  teal: "#22C1A8",
-  tealDeep: "#0FA896",
-  tealDark: "#0D8F80",
-  navy: "#1E3A8A",
-  navySoft: "#314EA5",
-  navyDark: "#152B6A",
+  // Brand (Refined Teal & Slate Deep)
+  teal: "#0D9488",
+  tealDeep: "#0F766E",
+  tealDark: "#115E59",
+  navy: "#1E293B",
+  navySoft: "#334155",
+  navyDark: "#0F172A",
 
-  // Accents
-  mint: "#A7E3D5",
-  mintLight: "#D0F0EA",
-  peach: "#FFB384",
-  yellow: "#FFD166",
-  gold: "#F5A623",
+  // Modern 2026 Accents
+  indigo: "#6366F1",
+  indigoSoft: "#EEF2FF",
+  mint: "#10B981",
+  mintLight: "#D1FAE5",
+  peach: "#F97316",
+  yellow: "#F59E0B",
+  gold: "#D97706",
 
   // Backgrounds
-  background: "#F0F5F9",
-  backgroundAlt: "#E8F2F7",
+  background: "#F8FAFC",
+  backgroundAlt: "#F1F5F9",
   card: "#FFFFFF",
   cardRaised: "#FAFCFE",
 
-  // Text
-  text: "#0B1F4D",
-  textSecondary: "#2D4070",
-  muted: "#667085",
-  mutedLight: "#98A6B5",
+  // Text (Slate palette for clean readability)
+  text: "#0F172A",
+  textSecondary: "#334155",
+  muted: "#64748B",
+  mutedLight: "#94A3B8",
 
   // Borders
-  border: "#DDE4EC",
-  borderLight: "#EBF0F5",
+  border: "#E2E8F0",
+  borderLight: "#F1F5F9",
 
   // Status
-  success: "#16A34A",
-  successSoft: "#DCFCE7",
-  warning: "#D97706",
+  success: "#10B981",
+  successSoft: "#ECFDF5",
+  warning: "#F59E0B",
   warningSoft: "#FEF3C7",
-  danger: "#DC2626",
-  dangerSoft: "#FEE2E2",
+  danger: "#EF4444",
+  dangerSoft: "#FEF2F2",
 
   // Soft tones
-  softTeal: "#E4F5F1",
-  softPeach: "#FFF0E6",
-  softDanger: "#FEECEC",
-  softNavy: "#EAF0FF",
-  softYellow: "#FFFBEB",
+  softTeal: "#F0FDFA",
+  softIndigo: "#EEF2FF",
+  softPeach: "#FFF7ED",
+  softDanger: "#FEF2F2",
+  softNavy: "#F1F5F9",
+  softYellow: "#FEFCE8",
+  neutralBg: "#F8FAFC",
 };
 
 export const radii = {
@@ -60,30 +64,30 @@ export const radii = {
 
 export const shadow = {
   xs: {
-    shadowColor: "#1E3A8A",
+    shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.03,
     shadowRadius: 4,
     elevation: 1,
   },
   sm: {
-    shadowColor: "#1E3A8A",
+    shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.07,
+    shadowOpacity: 0.06,
     shadowRadius: 10,
     elevation: 2,
   },
   md: {
-    shadowColor: "#1E3A8A",
+    shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.10,
+    shadowOpacity: 0.09,
     shadowRadius: 18,
     elevation: 4,
   },
   lg: {
-    shadowColor: "#1E3A8A",
+    shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.14,
+    shadowOpacity: 0.12,
     shadowRadius: 28,
     elevation: 8,
   },
@@ -91,10 +95,10 @@ export const shadow = {
 
 // Legacy string shadows for web compatibility
 export const shadowWeb = {
-  xs: "0 1px 4px rgba(30, 58, 138, 0.04)",
-  sm: "0 3px 10px rgba(30, 58, 138, 0.07)",
-  md: "0 6px 18px rgba(30, 58, 138, 0.10)",
-  lg: "0 10px 28px rgba(30, 58, 138, 0.14)",
+  xs: "0 1px 4px rgba(15, 23, 42, 0.03)",
+  sm: "0 3px 10px rgba(15, 23, 42, 0.06)",
+  md: "0 6px 18px rgba(15, 23, 42, 0.09)",
+  lg: "0 10px 28px rgba(15, 23, 42, 0.12)",
 };
 
 export const gradients = {
@@ -104,6 +108,7 @@ export const gradients = {
   warm: [palette.softPeach, "#FFFBF8"] as const,
   calm: [palette.softTeal, "#F5FCFA"] as const,
   mint: [palette.mintLight, "#E0F7F2"] as const,
+  indigo: [palette.indigo, "#4F46E5"] as const,
   danger: [palette.dangerSoft, "#FFF5F5"] as const,
   sunset: ["#FFB384", "#FFD9C2"] as const,
 };

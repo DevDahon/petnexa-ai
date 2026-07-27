@@ -258,7 +258,7 @@ export default function HomeScreen() {
 
         {/* ── Nearby Vet Recommendation ── */}
         <SectionHeader title="Recommended Vet Clinics" action="View Map" />
-        <Card style={{ backgroundColor: palette.softTeal, borderColor: palette.mintLight }}>
+        <Card>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
             <IconBubble icon="hospital-building" tone="teal" size={48} />
             <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
@@ -284,12 +284,7 @@ export default function HomeScreen() {
         {featuredPet ? (
           <>
             <SectionHeader title="Featured Pet" />
-            <Card
-              style={{
-                backgroundColor: featuredPet.species === "Cat" ? palette.softPeach : palette.softTeal,
-                borderColor: featuredPet.species === "Cat" ? "#FFE1CC" : palette.mintLight,
-              }}
-            >
+            <Card>
               <View style={{ flexDirection: layout.isCompact ? "column" : "row", alignItems: layout.isCompact ? "flex-start" : "center", gap: 16 }}>
                 <PetAvatar pet={featuredPet} size={layout.isCompact ? 78 : 90} />
                 <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
