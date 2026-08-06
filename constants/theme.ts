@@ -1,56 +1,93 @@
-import { MD3LightTheme, configureFonts } from "react-native-paper";
+import { MD3LightTheme, MD3DarkTheme, configureFonts } from "react-native-paper";
+import type { ThemeMode } from "@/types/domain";
 
 export const palette = {
-  // Brand (Refined Teal & Slate Deep)
+  // Brand (Rich Emerald Teal & Deep Slate Navy)
   teal: "#0D9488",
   tealDeep: "#0F766E",
   tealDark: "#115E59",
-  navy: "#1E293B",
-  navySoft: "#334155",
-  navyDark: "#0F172A",
+  navy: "#0F172A",
+  navySoft: "#1E293B",
+  navyDark: "#020617",
 
-  // Modern 2026 Accents
-  indigo: "#6366F1",
-  indigoSoft: "#EEF2FF",
-  mint: "#10B981",
-  mintLight: "#D1FAE5",
-  peach: "#F97316",
-  yellow: "#F59E0B",
-  gold: "#D97706",
+  // Modern Vivid Accents
+  indigo: "#4F46E5",
+  indigoSoft: "#E0E7FF",
+  mint: "#059669",
+  mintLight: "#A7F3D0",
+  peach: "#EA580C",
+  yellow: "#D97706",
+  gold: "#B45309",
 
-  // Backgrounds
+  // Backgrounds & Surface (Crisp Slate High Contrast)
   background: "#F8FAFC",
   backgroundAlt: "#F1F5F9",
   card: "#FFFFFF",
-  cardRaised: "#FAFCFE",
+  cardRaised: "#F8FAFC",
 
-  // Text (Slate palette for clean readability)
+  // Text (Deep Slate for Bold High-Contrast Readability)
   text: "#0F172A",
-  textSecondary: "#334155",
-  muted: "#64748B",
-  mutedLight: "#94A3B8",
+  textSecondary: "#1E293B",
+  muted: "#475569",
+  mutedLight: "#64748B",
 
   // Borders
-  border: "#E2E8F0",
-  borderLight: "#F1F5F9",
+  border: "#CBD5E1",
+  borderLight: "#E2E8F0",
 
-  // Status
-  success: "#10B981",
-  successSoft: "#ECFDF5",
-  warning: "#F59E0B",
+  // Status (Vivid High Contrast)
+  success: "#059669",
+  successSoft: "#D1FAE5",
+  warning: "#D97706",
   warningSoft: "#FEF3C7",
-  danger: "#EF4444",
-  dangerSoft: "#FEF2F2",
+  danger: "#DC2626",
+  dangerSoft: "#FEE2E2",
 
-  // Soft tones
-  softTeal: "#F0FDFA",
-  softIndigo: "#EEF2FF",
-  softPeach: "#FFF7ED",
-  softDanger: "#FEF2F2",
-  softNavy: "#F1F5F9",
-  softYellow: "#FEFCE8",
-  neutralBg: "#F8FAFC",
+  // Rich Crisp Tones (Non-Pastel, Solid & High-Contrast)
+  softTeal: "#CCFBF1",
+  softIndigo: "#E0E7FF",
+  softPeach: "#FFEDD5",
+  softDanger: "#FEE2E2",
+  softNavy: "#E2E8F0",
+  softYellow: "#FEF3C7",
+  neutralBg: "#F1F5F9",
 };
+
+export const darkPalette = {
+  ...palette,
+  teal: "#14B8A6",
+  tealDeep: "#0D9488",
+  tealDark: "#0F766E",
+  navy: "#F8FAFC",
+  navySoft: "#E2E8F0",
+  navyDark: "#FFFFFF",
+
+  background: "#090D16",
+  backgroundAlt: "#0F172A",
+  card: "#151D2A",
+  cardRaised: "#1E293B",
+
+  text: "#F8FAFC",
+  textSecondary: "#E2E8F0",
+  muted: "#94A3B8",
+  mutedLight: "#64748B",
+
+  border: "#2A364F",
+  borderLight: "#1E293B",
+
+  softTeal: "#0F3836",
+  softIndigo: "#1E1B4B",
+  softPeach: "#451A03",
+  softDanger: "#450A0A",
+  softNavy: "#1E293B",
+  softYellow: "#451A03",
+  neutralBg: "#0F172A",
+};
+
+export function getPalette(mode?: ThemeMode) {
+  if (mode === "dark") return darkPalette;
+  return palette;
+}
 
 export const radii = {
   xs: 8,
@@ -64,30 +101,30 @@ export const radii = {
 
 export const shadow = {
   xs: {
-    shadowColor: "#0F172A",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 1,
   },
   sm: {
-    shadowColor: "#0F172A",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 2,
   },
   md: {
-    shadowColor: "#0F172A",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.09,
+    shadowOpacity: 0.2,
     shadowRadius: 18,
     elevation: 4,
   },
   lg: {
-    shadowColor: "#0F172A",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.25,
     shadowRadius: 28,
     elevation: 8,
   },
@@ -95,22 +132,22 @@ export const shadow = {
 
 // Legacy string shadows for web compatibility
 export const shadowWeb = {
-  xs: "0 1px 4px rgba(15, 23, 42, 0.03)",
-  sm: "0 3px 10px rgba(15, 23, 42, 0.06)",
-  md: "0 6px 18px rgba(15, 23, 42, 0.09)",
-  lg: "0 10px 28px rgba(15, 23, 42, 0.12)",
+  xs: "0 1px 4px rgba(0, 0, 0, 0.08)",
+  sm: "0 3px 10px rgba(0, 0, 0, 0.12)",
+  md: "0 6px 18px rgba(0, 0, 0, 0.16)",
+  lg: "0 10px 28px rgba(0, 0, 0, 0.22)",
 };
 
 export const gradients = {
-  primary: [palette.teal, palette.tealDark] as const,
-  hero: [palette.teal, "#0B7A6B"] as const,
-  secondary: [palette.navy, palette.navySoft] as const,
-  warm: [palette.softPeach, "#FFFBF8"] as const,
-  calm: [palette.softTeal, "#F5FCFA"] as const,
-  mint: [palette.mintLight, "#E0F7F2"] as const,
-  indigo: [palette.indigo, "#4F46E5"] as const,
-  danger: [palette.dangerSoft, "#FFF5F5"] as const,
-  sunset: ["#FFB384", "#FFD9C2"] as const,
+  primary: ["#0D9488", "#0F766E"] as const,
+  hero: ["#0D9488", "#0F766E"] as const,
+  secondary: ["#0F172A", "#1E293B"] as const,
+  warm: ["#EA580C", "#C2410C"] as const,
+  calm: ["#0F766E", "#1E293B"] as const,
+  mint: ["#059669", "#047857"] as const,
+  indigo: ["#4F46E5", "#3730A3"] as const,
+  danger: ["#DC2626", "#991B1B"] as const,
+  sunset: ["#D97706", "#92400E"] as const,
 };
 
 export const spacing = {
@@ -184,3 +221,37 @@ export const paperTheme = {
     },
   },
 };
+
+export const paperDarkTheme = {
+  ...MD3DarkTheme,
+  roundness: 20,
+  fonts: configureFonts({
+    config: {
+      fontFamily: "Inter_500Medium",
+    },
+  }),
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: darkPalette.teal,
+    secondary: "#94A3B8",
+    tertiary: darkPalette.yellow,
+    background: darkPalette.background,
+    surface: darkPalette.card,
+    surfaceVariant: "#1E293B",
+    error: darkPalette.danger,
+    outline: darkPalette.border,
+    onSurface: darkPalette.text,
+    onSurfaceVariant: darkPalette.muted,
+    elevation: {
+      ...MD3DarkTheme.colors.elevation,
+      level0: "transparent",
+      level1: darkPalette.card,
+      level2: darkPalette.cardRaised,
+    },
+  },
+};
+
+export function getPaperTheme(mode?: ThemeMode) {
+  if (mode === "dark") return paperDarkTheme;
+  return paperTheme;
+}

@@ -32,7 +32,7 @@ import {
   VetClinic,
 } from "@/services/vetClinics";
 import VetMap from "@/components/vet-map";
-import { useResponsiveLayout } from "@/components/ui";
+import { useAppPalette, useResponsiveLayout } from "@/components/ui";
 
 type FilterKey = "all" | "favorites" | "1km" | "5km";
 
@@ -46,6 +46,8 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 const SEARCH_RADIUS_M = 10000; // 10 km
 
 function PermissionDeniedView({ onRetry }: { onRetry: () => void }) {
+  const pal = useAppPalette();
+  const styles = useStyles(pal);
   return (
     <View style={styles.centeredState}>
       <View style={styles.stateIconWrap}>
@@ -71,6 +73,8 @@ function PermissionDeniedView({ onRetry }: { onRetry: () => void }) {
 }
 
 function ErrorView({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const pal = useAppPalette();
+  const styles = useStyles(pal);
   return (
     <View style={styles.centeredState}>
       <View style={[styles.stateIconWrap, { backgroundColor: palette.dangerSoft }]}>
@@ -86,6 +90,8 @@ function ErrorView({ message, onRetry }: { message: string; onRetry: () => void 
 }
 
 function LoadingView() {
+  const pal = useAppPalette();
+  const styles = useStyles(pal);
   const pulse = useRef(new Animated.Value(0.4)).current;
   useEffect(() => {
     Animated.loop(
@@ -115,6 +121,8 @@ function ClinicCard({
   onToggleFavorite: () => void;
   selected: boolean;
 }) {
+  const pal = useAppPalette();
+  const styles = useStyles(pal);
   return (
     <Pressable
       id={`clinic-card-${clinic.id}`}
@@ -206,6 +214,8 @@ function RecommendedClinicBanner({
   onPress: () => void;
   onToggleFavorite: () => void;
 }) {
+  const pal = useAppPalette();
+  const styles = useStyles(pal);
   return (
     <View style={styles.recommendedBox}>
       <View style={styles.recommendedBadgeRow}>
@@ -257,13 +267,15 @@ function RecommendedClinicBanner({
 }
 
 export default function MapScreen() {
+  const pal = useAppPalette();
+  const styles = useStyles(pal);
   const insets = useSafeAreaInsets();
   const responsive = useResponsiveLayout();
   const { isTablet, isTiny, height, width } = responsive;
 
   // Dynamic panel sizing
   const panelHeight = Math.min(480, Math.max(340, height * 0.55));
-  const peekHeight = isTiny ? 180 : 210;
+  const peekHeight = 70; // Full minimize
   const panelExpandedOffset = -(panelHeight - peekHeight);
 
   const [permissionStatus, setPermissionStatus] = useState<"undetermined" | "granted" | "denied">("undetermined");
@@ -368,7 +380,7 @@ export default function MapScreen() {
 
   const panelTranslateY = panelY.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, panelExpandedOffset],
+    outputRange: [-panelExpandedOffset, 0],
   });
 
   const sidebarWidth = Math.min(420, Math.max(340, width * 0.35));
@@ -665,7 +677,8 @@ export default function MapScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+export function useStyles(palette: any) {
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: palette.background,
@@ -718,7 +731,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.background,
   },
   tabletSidebar: {
-    backgroundColor: "#fff",
+    backgroundColor: palette.card,
     borderRightWidth: 1,
     borderRightColor: palette.borderLight,
     paddingTop: 12,
@@ -731,7 +744,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    backgroundColor: "#fff",
+    backgroundColor: palette.card,
     borderTopLeftRadius: radii.xl,
     borderTopRightRadius: radii.xl,
     ...shadow.lg,
@@ -845,7 +858,7 @@ const styles = StyleSheet.create({
     gap: 12,
     borderBottomWidth: 1,
     borderBottomColor: palette.borderLight,
-    backgroundColor: "#fff",
+    backgroundColor: palette.card,
   },
   clinicCardSelected: {
     backgroundColor: palette.softTeal,
@@ -1018,3 +1031,4 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
 });
+}

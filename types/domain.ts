@@ -118,10 +118,14 @@ export type AiCreditState = {
   totalConsultationsUsed: number;
 };
 
+export type ThemeMode = "light" | "dark" | "system";
+
 export type Settings = {
   notificationsEnabled: boolean;
   dailySummaryTime: string;
   careMode: CareMode | null;
+  themeMode?: ThemeMode;
+  hasCompletedTutorial?: boolean;
   homeId?: string;
   homeName?: string;
   homeInviteCode?: string;

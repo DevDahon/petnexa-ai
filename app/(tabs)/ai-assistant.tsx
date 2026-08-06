@@ -13,8 +13,9 @@ import {
   ScreenHeader,
   SectionHeader,
   useResponsiveLayout,
+  useAppPalette,
 } from "@/components/ui";
-import { fontFamily, lineHeights, palette, radii, shadow, typeScale } from "@/constants/theme";
+import { fontFamily, lineHeights, radii, shadow, typeScale } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import {
   AI_SAFETY_NOTICE,
@@ -63,10 +64,11 @@ function stepMeta(step: number) {
 function StepHeader({ step, onClose }: { step: number; onClose?: () => void }) {
   const current = stepMeta(step);
   const layout = useResponsiveLayout();
+  const palette = useAppPalette();
   return (
     <View
       style={{
-        backgroundColor: "#FFFFFF",
+        backgroundColor: palette.card,
         borderRadius: radii.lg,
         borderWidth: 1,
         borderColor: palette.border,
@@ -86,7 +88,7 @@ function StepHeader({ step, onClose }: { step: number; onClose?: () => void }) {
             width: 40,
             height: 40,
             borderRadius: 14,
-            backgroundColor: "#fff",
+            backgroundColor: palette.card,
             alignItems: "center",
             justifyContent: "center",
             borderWidth: 1,
@@ -145,7 +147,7 @@ function StepHeader({ step, onClose }: { step: number; onClose?: () => void }) {
               width: 32,
               height: 32,
               borderRadius: 16,
-              backgroundColor: "#fff",
+              backgroundColor: palette.card,
               alignItems: "center",
               justifyContent: "center",
               borderWidth: 1,
@@ -188,6 +190,7 @@ function OptionButton({
   tone?: "teal" | "warning" | "danger" | "navy";
   icon?: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 }) {
+  const palette = useAppPalette();
   const color =
     tone === "danger"
       ? palette.danger
@@ -275,6 +278,7 @@ function GuideActionButton({
   disabled?: boolean;
   iconOnly?: boolean;
 }) {
+  const palette = useAppPalette();
   const color = primary ? "#ffffff" : danger ? palette.danger : palette.teal;
   const bgColor = primary
     ? palette.teal
@@ -374,6 +378,7 @@ function presetIcon(label: string) {
 }
 
 export default function AiAssistantScreen() {
+  const palette = useAppPalette();
   const {
     pets,
     consultations,
@@ -489,7 +494,7 @@ export default function AiAssistantScreen() {
         />
 
         {/* ── Hero ── */}
-        <GradientCard variant="calm">
+        <Card>
           <View
             style={{
               flexDirection: "column",
@@ -522,23 +527,23 @@ export default function AiAssistantScreen() {
                   flexDirection: "row",
                   alignItems: "center",
                   gap: 8,
-                  backgroundColor: palette.softNavy,
+                  backgroundColor: palette.softTeal,
                   borderRadius: 999,
                   paddingHorizontal: 12,
                   paddingVertical: 7,
                   borderWidth: 1,
-                  borderColor: palette.border,
+                  borderColor: palette.mintLight,
                 }}
               >
                 <MaterialCommunityIcons
                   name="star-four-points"
-                  color={palette.navy}
+                  color={palette.teal}
                   size={14}
                 />
                 <Text
                   selectable
                   style={{
-                    color: palette.navy,
+                    color: palette.teal,
                     fontSize: typeScale.caption,
                     fontFamily: fontFamily.bold,
                   }}
@@ -620,7 +625,7 @@ export default function AiAssistantScreen() {
               </View>
             </Pressable>
           </View>
-        </GradientCard>
+        </Card>
 
         {/* ── Emergency Notice ── */}
         <Card

@@ -21,6 +21,8 @@ function normalizeSnapshot(snapshot: AppSnapshot): AppSnapshot {
       notificationsEnabled: snapshot.settings?.notificationsEnabled ?? sampleData.settings.notificationsEnabled,
       dailySummaryTime: snapshot.settings?.dailySummaryTime ?? sampleData.settings.dailySummaryTime,
       careMode: snapshot.settings?.careMode ?? sampleData.settings.careMode,
+      themeMode: snapshot.settings?.themeMode ?? "light",
+      hasCompletedTutorial: snapshot.settings?.hasCompletedTutorial ?? false,
       homeId: snapshot.settings?.homeId,
       homeName: snapshot.settings?.homeName,
       homeInviteCode: snapshot.settings?.homeInviteCode,

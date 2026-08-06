@@ -19,9 +19,10 @@ import {
   SectionHeader,
   StatusRail,
   UndoBanner,
+  useAppPalette,
   useResponsiveLayout,
 } from "@/components/ui";
-import { fontFamily, palette, radii } from "@/constants/theme";
+import { fontFamily, radii } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { HealthRecord, RecordType } from "@/types/domain";
 import { formatFriendlyDate, todayIso } from "@/utils/date";
@@ -53,6 +54,7 @@ function recordVisual(type: RecordType) {
 }
 
 export default function RecordsScreen() {
+  const pal = useAppPalette();
   const { pets, records, reminders, saveRecord, removeRecord, restoreRecordDeletion } = useAppData();
   const layout = useResponsiveLayout();
   const [query, setQuery] = useState("");
@@ -137,7 +139,7 @@ export default function RecordsScreen() {
         {/* ── Header ── */}
         <ScreenHeader
           title="Records"
-          subtitle="Track every health event"
+          subtitle="Health records & history"
           right={
             <HeaderActionButton
               icon="cog-outline"
@@ -178,7 +180,7 @@ export default function RecordsScreen() {
             <SectionHeader title={editingId ? "Edit Record" : "Add Record"} />
             <Card>
               {/* Pet selector */}
-              <Text selectable style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.bold }}>Select pet</Text>
+              <Text selectable style={{ color: pal.muted, fontSize: 13, fontFamily: fontFamily.bold }}>Select pet</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                 {pets.map((pet) => (
                   <Chip
@@ -191,7 +193,7 @@ export default function RecordsScreen() {
               </ScrollView>
 
               {/* Type selector */}
-              <Text selectable style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.bold }}>Record type</Text>
+              <Text selectable style={{ color: pal.muted, fontSize: 13, fontFamily: fontFamily.bold }}>Record type</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                 {recordTypes.map((type) => (
                   <Chip
@@ -223,17 +225,17 @@ export default function RecordsScreen() {
                   flexDirection: layout.isCompact ? "column" : "row",
                   alignItems: layout.isCompact ? "flex-start" : "center",
                   gap: 12,
-                  backgroundColor: palette.background,
+                  backgroundColor: pal.background,
                   borderRadius: radii.lg,
                   borderWidth: 1,
-                  borderColor: palette.border,
+                  borderColor: pal.border,
                   padding: 12,
                 }}
               >
                 <IconBubble icon={form.attachmentUri ? "image-check-outline" : "image-plus"} size={44} />
                 <View style={{ flex: 1, gap: 2 }}>
-                  <Text selectable style={{ color: palette.text, fontSize: 15, fontFamily: fontFamily.bold }}>Attachment</Text>
-                  <Text selectable style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.medium }}>
+                  <Text selectable style={{ color: pal.text, fontSize: 15, fontFamily: fontFamily.bold }}>Attachment</Text>
+                  <Text selectable style={{ color: pal.muted, fontSize: 13, fontFamily: fontFamily.medium }}>
                     {form.attachmentUri ? "Image attached to this record." : "Optional photo or document image."}
                   </Text>
                 </View>
@@ -274,17 +276,17 @@ export default function RecordsScreen() {
                     <StatusRail tone={visual.tone} />
                     <IconBubble icon={visual.icon} tone={visual.tone} size={52} />
                     <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-                      <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: 16, fontFamily: fontFamily.bold }}>
+                      <Text selectable numberOfLines={2} style={{ color: pal.text, fontSize: 16, fontFamily: fontFamily.bold }}>
                         {record.type}
                       </Text>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, minWidth: 0 }}>
                         <PetAvatar pet={pet} size={18} />
-                        <Text selectable numberOfLines={2} style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.medium, flex: 1, minWidth: 0 }}>
+                        <Text selectable numberOfLines={2} style={{ color: pal.muted, fontSize: 13, fontFamily: fontFamily.medium, flex: 1, minWidth: 0 }}>
                           {pet?.name ?? "Pet"} • {formatFriendlyDate(record.date)}
                         </Text>
                       </View>
                       {record.clinic ? (
-                        <Text selectable numberOfLines={2} style={{ color: palette.navy, fontSize: 13, fontFamily: fontFamily.semiBold }}>
+                        <Text selectable numberOfLines={2} style={{ color: pal.navy, fontSize: 13, fontFamily: fontFamily.semiBold }}>
                           {record.clinic}
                         </Text>
                       ) : null}

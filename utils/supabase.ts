@@ -4,13 +4,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-const isServerRender = typeof globalThis.window === "undefined" && process.env.EXPO_OS === "web";
-
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error("Missing Supabase configuration. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.");
-}
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
+const isServerRender = typeof globalThis.window === "undefined" && Platform.OS === "web";
 
 const webStorage = {
   getItem: (key: string) => {

@@ -15,11 +15,12 @@ import {
   SelectDropdown,
   StatusNotice,
   UndoBanner,
+  useAppPalette,
   useResponsiveLayout
 } from "@/components/ui";
 import { appInfo } from "@/constants/app";
 import { DEVELOPER_PORTFOLIO_URL, PRIVACY_POLICY_URL, SUPPORT_EMAIL } from "@/constants/legal";
-import { fontFamily, palette, radii } from "@/constants/theme";
+import { fontFamily, radii } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { getAgeYears, getReminderStatus, isValidIsoDate } from "@/utils/date";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -96,11 +97,12 @@ const DAILY_SUMMARY_OPTIONS: DropdownOption[] = [
 ];
 
 function Divider() {
+  const pal = useAppPalette();
   return (
     <View
       style={{
         height: 1,
-        backgroundColor: palette.borderLight,
+        backgroundColor: pal.borderLight,
         marginVertical: 6,
       }}
     />
@@ -120,6 +122,7 @@ function MenuRow({
   active?: boolean;
   onPress: () => void;
 }) {
+  const pal = useAppPalette();
   const layout = useResponsiveLayout();
 
   return (
@@ -143,7 +146,7 @@ function MenuRow({
             selectable
             numberOfLines={2}
             style={{
-              color: active ? palette.tealDeep : palette.text,
+              color: active ? pal.teal : pal.text,
               fontSize: 15,
               fontFamily: fontFamily.black,
             }}
@@ -154,7 +157,7 @@ function MenuRow({
             selectable
             numberOfLines={layout.isTiny ? 3 : 2}
             style={{
-              color: palette.muted,
+              color: pal.muted,
               fontSize: 13,
               lineHeight: 19,
               fontFamily: fontFamily.medium,
@@ -165,7 +168,7 @@ function MenuRow({
         </View>
         <MaterialCommunityIcons
           name={active ? "chevron-up" : "chevron-down"}
-          color={active ? palette.teal : palette.muted}
+          color={active ? pal.teal : pal.muted}
           size={24}
         />
       </View>
@@ -186,13 +189,15 @@ function DetailRow({
   right?: ReactNode;
   danger?: boolean;
 }) {
+  const pal = useAppPalette();
   const layout = useResponsiveLayout();
+  const shouldStack = layout.shouldStackRow;
 
   return (
     <View
       style={{
-        flexDirection: layout.shouldStack && right ? "column" : "row",
-        alignItems: layout.shouldStack && right ? "stretch" : "center",
+        flexDirection: shouldStack && right ? "column" : "row",
+        alignItems: shouldStack && right ? "flex-start" : "center",
         gap: 12,
         paddingVertical: 6,
         minWidth: 0,
@@ -202,9 +207,8 @@ function DetailRow({
       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
         <Text
           selectable
-          numberOfLines={2}
           style={{
-            color: palette.text,
+            color: pal.text,
             fontSize: 15,
             fontFamily: fontFamily.bold,
           }}
@@ -214,9 +218,8 @@ function DetailRow({
         {subtitle ? (
           <Text
             selectable
-            numberOfLines={3}
             style={{
-              color: palette.muted,
+              color: pal.muted,
               fontSize: 13,
               lineHeight: 19,
               fontFamily: fontFamily.medium,
@@ -227,7 +230,7 @@ function DetailRow({
         ) : null}
       </View>
       {right ? (
-        <View style={{ alignSelf: layout.shouldStack ? "flex-start" : "auto" }}>
+        <View style={{ alignSelf: shouldStack ? "flex-start" : "auto", flexShrink: 0, flexWrap: "wrap", flexDirection: "row", gap: 6 }}>
           {right}
         </View>
       ) : null}
@@ -235,53 +238,7 @@ function DetailRow({
   );
 }
 
-function LogoutAction({
-  mode,
-  disabled,
-  onPress,
-}: {
-  mode: "solo" | "home";
-  disabled?: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Log out"
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => ({
-        opacity: disabled ? 0.55 : pressed ? 0.75 : 1,
-        marginTop: 12,
-        minHeight: 50,
-        borderRadius: 18,
-        borderWidth: 1.5,
-        borderColor: "#FECACA",
-        backgroundColor: palette.dangerSoft,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 8,
-        paddingHorizontal: 14,
-      })}
-    >
-      <MaterialCommunityIcons name="logout" color={palette.danger} size={19} />
-      <Text
-        style={{
-          color: palette.danger,
-          fontSize: 14,
-          fontFamily: fontFamily.black,
-        }}
-      >
-        {disabled
-          ? "Logging Out"
-          : mode === "home"
-            ? "Log Out of Home"
-            : "Exit Solo Mode"}
-      </Text>
-    </Pressable>
-  );
-}
+
 
 function callNumber(value?: string) {
   if (!value) {
@@ -334,6 +291,7 @@ function contactDataRequest() {
 }
 
 export default function SettingsScreen() {
+  const pal = useAppPalette();
   const {
     owner,
     pets,
@@ -347,6 +305,7 @@ export default function SettingsScreen() {
     removeVet,
     restoreVetDeletion,
     updateSettings,
+    setThemeMode,
     syncHomeNow,
     logoutHomeAccount,
     exportData,
@@ -530,20 +489,35 @@ export default function SettingsScreen() {
 
   const handleLogout = async () => {
     if (loggingOut) return;
-    console.log("[PetNexa] logout pressed", settings.careMode);
-    setLoggingOut(true);
-    try {
-      await logoutHomeAccount();
-    } catch (error) {
-      Alert.alert(
-        "Logout failed",
-        error instanceof Error
-          ? error.message
-          : "Could not log out on this device.",
-      );
-    } finally {
-      setLoggingOut(false);
-    }
+    const isHomeMode = settings.careMode === "home";
+    const title = isHomeMode ? "Log Out of Home?" : "Exit Solo Mode?";
+    const message = isHomeMode
+      ? "Are you sure you want to log out of your Home account?"
+      : "Are you sure you want to exit Solo Mode and return to setup?";
+
+    Alert.alert(title, message, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: isHomeMode ? "Log Out" : "Exit",
+        style: "destructive",
+        onPress: async () => {
+          console.log("[PetNexa] logout confirmed", settings.careMode);
+          setLoggingOut(true);
+          try {
+            await logoutHomeAccount();
+          } catch (error) {
+            Alert.alert(
+              "Logout failed",
+              error instanceof Error
+                ? error.message
+                : "Could not log out on this device.",
+            );
+          } finally {
+            setLoggingOut(false);
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -551,7 +525,7 @@ export default function SettingsScreen() {
       <ResponsiveScrollView contentContainerStyle={{ gap: 14 }}>
         <ScreenHeader
           title="Settings"
-          subtitle="App settings & account."
+          subtitle="Preferences & account"
           right={
             <HeaderActionButton
               icon="home-outline"
@@ -562,59 +536,71 @@ export default function SettingsScreen() {
           }
         />
 
-        <Card>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-            <IconBubble icon="account-circle-outline" tone="teal" size={48} />
-            <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-              <Text
-                selectable
-                style={{
-                  color: palette.text,
-                  fontSize: 18,
-                  fontFamily: fontFamily.black,
-                }}
-              >
-                {owner.fullName || "Pet Parent"}
-              </Text>
-              <Text
-                selectable
-                style={{
-                  color: palette.muted,
-                  fontSize: 13,
-                  lineHeight: 19,
-                  fontFamily: fontFamily.medium,
-                }}
-              >
-                {careModeLabel} · {pets.length} pets
-              </Text>
+        {/* ── Merged User & Account Card ── */}
+        <Card style={{ padding: 16 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+              <IconBubble icon="account-circle-outline" tone="teal" size={48} />
+              <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+                <Text
+                  selectable
+                  numberOfLines={1}
+                  style={{
+                    color: pal.text,
+                    fontSize: 17,
+                    fontFamily: fontFamily.black,
+                    letterSpacing: -0.2,
+                  }}
+                >
+                  {owner.fullName || "Pet Parent"}
+                </Text>
+                <Text
+                  selectable
+                  numberOfLines={1}
+                  style={{
+                    color: pal.muted,
+                    fontSize: 13,
+                    fontFamily: fontFamily.medium,
+                  }}
+                >
+                  {pets.length} {pets.length === 1 ? "pet" : "pets"} · {careModeLabel}
+                </Text>
+              </View>
             </View>
+
+            {settings.careMode ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Log out"
+                disabled={loggingOut}
+                onPress={handleLogout}
+                style={({ pressed }) => ({
+                  opacity: loggingOut ? 0.5 : pressed ? 0.75 : 1,
+                  backgroundColor: pal.dangerSoft,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderRadius: radii.pill,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  flexShrink: 0,
+                })}
+              >
+                <MaterialCommunityIcons name="logout" color={pal.danger} size={16} />
+                <Text style={{ color: pal.danger, fontSize: 13, fontFamily: fontFamily.bold }}>
+                  {loggingOut ? "Leaving..." : settings.careMode === "home" ? "Log Out" : "Exit"}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         </Card>
-
-        {settings.careMode ? (
-          <Card style={{ gap: 0 }}>
-            <DetailRow
-              icon={
-                settings.careMode === "home"
-                  ? "home-account"
-                  : "account-lock-outline"
-              }
-              title={
-                settings.careMode === "home" ? "Home Account" : "Solo Account"
-              }
-              subtitle={
-                settings.careMode === "home"
-                  ? settings.homeName || "Sync connected"
-                  : "Local mode"
-              }
-            />
-            <LogoutAction
-              mode={settings.careMode}
-              disabled={loggingOut}
-              onPress={handleLogout}
-            />
-          </Card>
-        ) : null}
 
         <SectionHeader title="Settings" />
         {undo ? (
@@ -637,14 +623,13 @@ export default function SettingsScreen() {
           <View
             style={{
               borderRadius: radii.md,
-              backgroundColor:
-                activePanel === "profile" ? palette.neutralBg : "#FFFFFF",
+              backgroundColor: pal.card,
               borderWidth: 1,
               borderColor:
-                activePanel === "profile" ? palette.border : "transparent",
-              borderLeftWidth: activePanel === "profile" ? 4 : 0,
+                activePanel === "profile" ? pal.teal : pal.borderLight,
+              borderLeftWidth: activePanel === "profile" ? 4 : 1,
               borderLeftColor:
-                activePanel === "profile" ? palette.teal : "transparent",
+                activePanel === "profile" ? pal.teal : pal.borderLight,
               paddingHorizontal: 8,
               overflow: "hidden",
             }}
@@ -700,22 +685,21 @@ export default function SettingsScreen() {
           <View
             style={{
               borderRadius: radii.md,
-              backgroundColor:
-                activePanel === "data" ? palette.neutralBg : "#FFFFFF",
+              backgroundColor: pal.card,
               borderWidth: 1,
               borderColor:
-                activePanel === "data" ? palette.border : "transparent",
-              borderLeftWidth: activePanel === "data" ? 4 : 0,
+                activePanel === "data" ? pal.teal : pal.borderLight,
+              borderLeftWidth: activePanel === "data" ? 4 : 1,
               borderLeftColor:
-                activePanel === "data" ? palette.teal : "transparent",
+                activePanel === "data" ? pal.teal : pal.borderLight,
               paddingHorizontal: 8,
               overflow: "hidden",
             }}
           >
             <MenuRow
               icon="database-sync-outline"
-              title="Data"
-              subtitle="Backup & sync"
+              title="Data & Sync"
+              subtitle="Backup & sync options"
               active={activePanel === "data"}
               onPress={() =>
                 setActivePanel(activePanel === "data" ? null : "data")
@@ -746,7 +730,7 @@ export default function SettingsScreen() {
                 <DetailRow
                   icon="backup-restore"
                   title="Backup & Restore"
-                  subtitle="JSON file backup & restore"
+                  subtitle="JSON backup file"
                   right={
                     <View
                       style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}
@@ -771,7 +755,7 @@ export default function SettingsScreen() {
                 <DetailRow
                   icon="cloud-sync-outline"
                   title="Home Sync"
-                  subtitle={settings.careMode === "home" ? "Automatic sync active" : "Solo mode (local only)"}
+                  subtitle={settings.careMode === "home" ? "Auto-sync active" : "Local only"}
                 />
 
                 {settings.lastSyncError ? (
@@ -791,11 +775,11 @@ export default function SettingsScreen() {
                 <DetailRow
                   icon="database-remove-outline"
                   title="Delete Local Data"
-                  subtitle="Deletes data on this device"
+                  subtitle="Clear device data"
                   danger
                   right={
                     <CompactButton
-                      label="Delete Local Data"
+                      label="Delete Data"
                       icon="trash-can-outline"
                       danger
                       onPress={handleResetLocalData}
@@ -812,14 +796,13 @@ export default function SettingsScreen() {
           <View
             style={{
               borderRadius: radii.md,
-              backgroundColor:
-                activePanel === "preferences" ? palette.neutralBg : "#FFFFFF",
+              backgroundColor: pal.card,
               borderWidth: 1,
               borderColor:
-                activePanel === "preferences" ? palette.border : "transparent",
-              borderLeftWidth: activePanel === "preferences" ? 4 : 0,
+                activePanel === "preferences" ? pal.teal : pal.borderLight,
+              borderLeftWidth: activePanel === "preferences" ? 4 : 1,
               borderLeftColor:
-                activePanel === "preferences" ? palette.teal : "transparent",
+                activePanel === "preferences" ? pal.teal : pal.borderLight,
               paddingHorizontal: 8,
               overflow: "hidden",
             }}
@@ -827,7 +810,7 @@ export default function SettingsScreen() {
             <MenuRow
               icon="bell-outline"
               title="Preferences"
-              subtitle="Reminders & summary"
+              subtitle="Notifications & theme"
               active={activePanel === "preferences"}
               onPress={() =>
                 setActivePanel(
@@ -859,15 +842,35 @@ export default function SettingsScreen() {
                 <DetailRow
                   icon="bell-outline"
                   title="Notifications"
-                  subtitle="Care reminder alerts"
+                  subtitle="Care alerts"
                   right={
                     <Switch
                       value={settings.notificationsEnabled}
                       onValueChange={(notificationsEnabled) =>
                         updateSettings({ ...settings, notificationsEnabled })
                       }
-                      color={palette.teal}
+                      color={pal.teal}
                     />
+                  }
+                />
+                <Divider />
+                <DetailRow
+                  icon={settings.themeMode === "dark" ? "moon-waning-crescent" : "white-balance-sunny"}
+                  title="App Theme"
+                  subtitle={settings.themeMode === "dark" ? "Dark Mode" : "Light Mode"}
+                  right={
+                    <View style={{ flexDirection: "row", gap: 6 }}>
+                      <CompactButton
+                        label="Light"
+                        icon="white-balance-sunny"
+                        onPress={() => setThemeMode("light")}
+                      />
+                      <CompactButton
+                        label="Dark"
+                        icon="moon-waning-crescent"
+                        onPress={() => setThemeMode("dark")}
+                      />
+                    </View>
                   }
                 />
                 <Divider />
@@ -894,14 +897,13 @@ export default function SettingsScreen() {
           <View
             style={{
               borderRadius: radii.md,
-              backgroundColor:
-                activePanel === "help" ? palette.neutralBg : "#FFFFFF",
+              backgroundColor: pal.card,
               borderWidth: 1,
               borderColor:
-                activePanel === "help" ? palette.border : "transparent",
-              borderLeftWidth: activePanel === "help" ? 4 : 0,
+                activePanel === "help" ? pal.teal : pal.borderLight,
+              borderLeftWidth: activePanel === "help" ? 4 : 1,
               borderLeftColor:
-                activePanel === "help" ? palette.teal : "transparent",
+                activePanel === "help" ? pal.teal : pal.borderLight,
               paddingHorizontal: 8,
               overflow: "hidden",
             }}
@@ -909,7 +911,7 @@ export default function SettingsScreen() {
             <MenuRow
               icon="help-circle-outline"
               title="Help & Support"
-              subtitle="Contact support"
+              subtitle="Support & tour"
               active={activePanel === "help"}
               onPress={() =>
                 setActivePanel(activePanel === "help" ? null : "help")
@@ -944,11 +946,26 @@ export default function SettingsScreen() {
                     />
                   }
                 />
+                <DetailRow
+                  icon="school-outline"
+                  title="Feature Tour"
+                  subtitle="Replay tour"
+                  right={
+                    <CompactButton
+                      label="Replay Tour"
+                      icon="play-circle-outline"
+                      onPress={() => {
+                        updateSettings({ ...settings, hasCompletedTutorial: false });
+                        Alert.alert("Feature Tour", "Replaying the animated feature tutorial now.");
+                      }}
+                    />
+                  }
+                />
                 <Divider />
                 <DetailRow
                   icon="database-search-outline"
                   title="Data Request"
-                  subtitle="Privacy & data requests"
+                  subtitle="Request export"
                   right={
                     <CompactButton
                       label="Request"
@@ -971,7 +988,7 @@ export default function SettingsScreen() {
               <Text
                 selectable
                 style={{
-                  color: palette.text,
+                  color: pal.text,
                   fontSize: 21,
                   fontFamily: fontFamily.black,
                 }}
@@ -981,7 +998,7 @@ export default function SettingsScreen() {
               <Text
                 selectable
                 style={{
-                  color: palette.teal,
+                  color: pal.teal,
                   fontSize: 13,
                   fontFamily: fontFamily.bold,
                 }}
@@ -1007,7 +1024,7 @@ export default function SettingsScreen() {
             <Text
               selectable
               style={{
-                color: palette.muted,
+                color: pal.muted,
                 fontSize: 13,
                 lineHeight: 19,
                 fontFamily: fontFamily.medium,
@@ -1018,96 +1035,46 @@ export default function SettingsScreen() {
               {appInfo.description}
             </Text>
           </View>
-          <View
-            style={{
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open Privacy Policy"
+            onPress={openPrivacyPolicy}
+            style={({ pressed }) => ({
+              alignSelf: "center",
+              opacity: pressed ? 0.8 : 1,
+              minHeight: 42,
+              borderRadius: radii.md,
+              borderWidth: 1,
+              borderColor: pal.border,
+              backgroundColor: pal.neutralBg,
               flexDirection: "row",
-              gap: 6,
-              marginTop: 4,
+              alignItems: "center",
               justifyContent: "center",
-            }}
+              gap: 6,
+              paddingHorizontal: 20,
+              marginTop: 6,
+            })}
           >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Open Privacy Policy"
-              onPress={openPrivacyPolicy}
-              style={({ pressed }) => ({
-                flex: 1,
-                opacity: pressed ? 0.8 : 1,
-                minHeight: 40,
-                borderRadius: radii.sm,
-                borderWidth: 1,
-                borderColor: palette.border,
-                backgroundColor: palette.neutralBg,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 4,
-                paddingHorizontal: 6,
-              })}
+            <MaterialCommunityIcons
+              name="shield-check-outline"
+              color={pal.teal}
+              size={18}
+            />
+            <Text
+              style={{
+                color: pal.text,
+                fontSize: 13,
+                fontFamily: fontFamily.bold,
+              }}
             >
-              <MaterialCommunityIcons
-                name="shield-check-outline"
-                color={palette.teal}
-                size={16}
-              />
-              <Text
-                numberOfLines={1}
-                style={{
-                  color: palette.text,
-                  fontSize: 12,
-                  fontFamily: fontFamily.bold,
-                }}
-              >
-                Privacy Policy
-              </Text>
-              <MaterialCommunityIcons
-                name="open-in-new"
-                color={palette.muted}
-                size={13}
-              />
-            </Pressable>
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Open About Developer Portfolio"
-              onPress={openDeveloperPortfolio}
-              style={({ pressed }) => ({
-                flex: 1,
-                opacity: pressed ? 0.8 : 1,
-                minHeight: 40,
-                borderRadius: radii.sm,
-                borderWidth: 1,
-                borderColor: palette.border,
-                backgroundColor: palette.neutralBg,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 4,
-                paddingHorizontal: 6,
-              })}
-            >
-              <MaterialCommunityIcons
-                name="code-tags"
-                color={palette.teal}
-                size={16}
-              />
-              <Text
-                numberOfLines={1}
-                style={{
-                  color: palette.text,
-                  fontSize: 12,
-                  fontFamily: fontFamily.bold,
-                }}
-              >
-                About Developer
-              </Text>
-              <MaterialCommunityIcons
-                name="open-in-new"
-                color={palette.muted}
-                size={13}
-              />
-            </Pressable>
-          </View>
+              Privacy Policy
+            </Text>
+            <MaterialCommunityIcons
+              name="open-in-new"
+              color={pal.muted}
+              size={14}
+            />
+          </Pressable>
         </Card>
       </ResponsiveScrollView>
     </Screen>

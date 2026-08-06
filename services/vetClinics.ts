@@ -162,9 +162,30 @@ async function fetchNominatimClinics(
   }
 }
 
+const CACHED_VETS_KEY = "@petnexa_cached_vets";
+
+/** Get cached vet clinics from AsyncStorage (used when offline) */
+export async function getCachedVetClinics(lat?: number, lng?: number): Promise<VetClinic[]> {
+  try {
+    const json = await AsyncStorage.getItem(CACHED_VETS_KEY);
+    if (!json) return [];
+    const clinics: VetClinic[] = JSON.parse(json);
+    const favoriteIds = await getFavoriteClinicIds();
+    return clinics
+      .map((c) => ({
+        ...c,
+        isFavorite: favoriteIds.includes(c.id),
+        distance: lat !== undefined && lng !== undefined ? haversineKm(lat, lng, c.lat, c.lng) : c.distance,
+      }))
+      .sort((a, b) => a.distance - b.distance);
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Fetch real vet clinics near a given coordinate using multi-source API queries,
- * merged with favorite statuses and sorted by distance.
+ * merged with favorite statuses and sorted by distance. Fallbacks to cached data when offline.
  */
 export async function fetchNearbyVetClinics(
   lat: number,
@@ -180,6 +201,12 @@ export async function fetchNearbyVetClinics(
   if (clinics.length === 0) {
     const fallbackClinics = await fetchNominatimClinics(lat, lng);
     clinics = fallbackClinics;
+  }
+
+  // If network queries returned no clinics (e.g. offline), retrieve cached clinics
+  if (clinics.length === 0) {
+    const cached = await getCachedVetClinics(lat, lng);
+    if (cached.length > 0) return cached;
   }
 
   // Deduplicate and apply favorite status
@@ -198,7 +225,12 @@ export async function fetchNearbyVetClinics(
     }
   }
 
-  return uniqueClinics.sort((a, b) => a.distance - b.distance);
+  const sorted = uniqueClinics.sort((a, b) => a.distance - b.distance);
+  if (sorted.length > 0) {
+    AsyncStorage.setItem(CACHED_VETS_KEY, JSON.stringify(sorted)).catch(() => {});
+  }
+
+  return sorted;
 }
 
 /** Format distance nicely */

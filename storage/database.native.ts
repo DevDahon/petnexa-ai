@@ -27,6 +27,8 @@ function normalizeSettings(value: Partial<Settings> | null | undefined): Setting
     notificationsEnabled: value?.notificationsEnabled ?? sampleData.settings.notificationsEnabled,
     dailySummaryTime: value?.dailySummaryTime ?? sampleData.settings.dailySummaryTime,
     careMode: value?.careMode ?? sampleData.settings.careMode,
+    themeMode: value?.themeMode ?? "light",
+    hasCompletedTutorial: value?.hasCompletedTutorial ?? false,
     homeId: value?.homeId,
     homeName: value?.homeName,
     homeInviteCode: value?.homeInviteCode,

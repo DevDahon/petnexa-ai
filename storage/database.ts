@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { AiCreditState, AppSnapshot, Consultation, HealthRecord, Owner, Pet, Reminder, Settings, Veterinarian } from "@/types/domain";
 
 type DatabaseModule = typeof import("./database.web");
@@ -6,7 +7,7 @@ let modulePromise: Promise<DatabaseModule> | null = null;
 
 function database(): Promise<DatabaseModule> {
   if (!modulePromise) {
-    modulePromise = process.env.EXPO_OS === "web"
+    modulePromise = Platform.OS === "web"
       ? import("./database.web")
       : import("./database.native");
   }

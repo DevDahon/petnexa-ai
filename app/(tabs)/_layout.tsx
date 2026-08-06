@@ -52,6 +52,8 @@ const WEB_NAV_ITEMS = [
   { key: "ai-assistant", label: "AI Assistant", icon: "robot-happy-outline", path: "/ai-assistant" },
 ];
 
+import { useAppData } from "@/context/AppContext";
+
 function TabIcon({
   color,
   focused,
@@ -63,6 +65,7 @@ function TabIcon({
   iconName: MaterialIconName;
   isCompact: boolean;
 }) {
+  const { isDark, themePalette } = useAppData();
   const progress = useSharedValue(focused ? 1 : 0);
 
   useEffect(() => {
@@ -72,16 +75,19 @@ function TabIcon({
     });
   }, [focused, progress]);
 
+  const activePillBg = isDark ? "#112D2B" : palette.softTeal;
+  const activePillBorder = isDark ? "#0D9488" : palette.mintLight;
+
   const pillStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
       progress.value,
       [0, 1],
-      ["transparent", palette.softTeal]
+      ["transparent", activePillBg]
     ),
     borderColor: interpolateColor(
       progress.value,
       [0, 1],
-      ["transparent", palette.mintLight]
+      ["transparent", activePillBorder]
     ),
     transform: [{ scale: interpolate(progress.value, [0, 1], [0.94, 1]) }],
   }));
@@ -126,6 +132,7 @@ function TabLabel({
   isCompact: boolean;
   label: string;
 }) {
+  const { themePalette } = useAppData();
   const progress = useSharedValue(focused ? 1 : 0);
 
   useEffect(() => {
@@ -136,7 +143,7 @@ function TabLabel({
   }, [focused, progress]);
 
   const labelStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(progress.value, [0, 1], [palette.muted, palette.teal]),
+    color: interpolateColor(progress.value, [0, 1], [themePalette.muted, themePalette.teal]),
     opacity: interpolate(progress.value, [0, 1], [0.78, 1]),
     transform: [{ translateY: interpolate(progress.value, [0, 1], [1, 0]) }],
   }));
@@ -230,6 +237,7 @@ function TopWebHeader() {
 }
 
 export default function TabLayout() {
+  const { isDark, themePalette } = useAppData();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isCompact = width < 360;
@@ -238,15 +246,15 @@ export default function TabLayout() {
   const tabBarHeight = (isCompact ? 62 : 66) + safeBottom;
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: themePalette.background }}>
       {isWebDesktop && <TopWebHeader />}
       <Tabs
         screenOptions={({ route }) => {
           const iconSet = icons[route.name] ?? { default: "home-outline", active: "home" };
           return {
             headerShown: false,
-            tabBarActiveTintColor: palette.teal,
-            tabBarInactiveTintColor: palette.muted,
+            tabBarActiveTintColor: themePalette.teal,
+            tabBarInactiveTintColor: themePalette.muted,
             tabBarHideOnKeyboard: true,
             tabBarShowLabel: true,
             tabBarLabel: ({ focused }) => (
@@ -261,14 +269,16 @@ export default function TabLayout() {
             tabBarStyle: isWebDesktop
               ? { display: "none" }
               : {
-                  backgroundColor: "#fff",
-                  borderTopColor: palette.borderLight,
+                  backgroundColor: themePalette.card,
+                  borderTopColor: themePalette.border,
                   borderTopWidth: 1,
                   height: tabBarHeight,
                   paddingBottom: safeBottom,
                   paddingTop: isCompact ? 7 : 8,
                   paddingHorizontal: 0,
-                  boxShadow: "0 -4px 20px rgba(30, 58, 138, 0.08)",
+                  boxShadow: isDark
+                    ? "0 -4px 20px rgba(0, 0, 0, 0.4)"
+                    : "0 -4px 20px rgba(30, 58, 138, 0.08)",
                 },
             tabBarItemStyle: {
               flex: 1,
@@ -324,7 +334,7 @@ export default function TabLayout() {
 
 const webHeaderStyles = StyleSheet.create({
   wrapper: {
-    backgroundColor: "#ffffff",
+    backgroundColor: palette.background,
     borderBottomWidth: 1,
     borderBottomColor: palette.borderLight,
     ...shadow.xs,

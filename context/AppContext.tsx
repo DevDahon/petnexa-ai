@@ -3,7 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import * as Linking from "expo-linking";
 import React, { createContext, PropsWithChildren, useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AppState, Platform } from "react-native";
-import { AppSnapshot, Consultation, HealthRecord, Owner, Pet, Reminder, Settings, SyncMetadata, Veterinarian } from "@/types/domain";
+import { AppSnapshot, Consultation, HealthRecord, Owner, Pet, Reminder, Settings, SyncMetadata, ThemeMode, Veterinarian } from "@/types/domain";
 import { initDatabase, getSnapshot, replaceSnapshot, upsertConsultation, upsertCreditState, upsertOwner, upsertPet, upsertRecord, upsertReminder, upsertSettings, upsertVet, deletePet, deleteRecord, deleteReminder, deleteVet } from "@/storage/database";
 import { createId, currentWeekKey, todayIso } from "@/utils/date";
 import { exportBackup, pickBackupFile } from "@/services/backup";
@@ -14,8 +14,12 @@ import type { HomeAccount } from "@/services/home-sync";
 import { showRewardedAd } from "@/services/rewarded-ads";
 import { supabase } from "@/utils/supabase";
 
+import { getPalette, palette } from "@/constants/theme";
+
 type AppContextValue = AppSnapshot & {
   ready: boolean;
+  isDark: boolean;
+  themePalette: typeof palette;
   refresh: () => Promise<void>;
   saveOwner: (owner: Owner) => Promise<void>;
   savePet: (pet: Omit<Pet, "id" | "createdAt"> & Partial<Pick<Pet, "id" | "createdAt">>) => Promise<void>;
@@ -36,6 +40,8 @@ type AppContextValue = AppSnapshot & {
   deductAiCredit: () => Promise<void>;
   watchRewardedAd: () => Promise<string>;
   updateSettings: (settings: Settings) => Promise<void>;
+  setThemeMode: (mode: ThemeMode) => Promise<void>;
+  completeTutorial: () => Promise<void>;
   chooseSoloMode: () => Promise<void>;
   sendHomeOtp: (email: string) => Promise<void>;
   verifyHomeOtp: (email: string, token: string) => Promise<void>;
@@ -103,19 +109,27 @@ function clearHomeSettings(settings: Settings): Settings {
 
 async function getInstallationId() {
   const key = "petnexa_installation_id";
-  if (process.env.EXPO_OS === "web") {
-    const value = await AsyncStorage.getItem(key);
+  if (Platform.OS === "web") {
+    const value = await AsyncStorage.getItem(key).catch(() => null);
     if (value) return value;
     const next = createId("install");
-    await AsyncStorage.setItem(key, next);
+    await AsyncStorage.setItem(key, next).catch(() => undefined);
     return next;
   }
 
-  const value = await SecureStore.getItemAsync(key);
-  if (value) return value;
-  const next = createId("install");
-  await SecureStore.setItemAsync(key, next);
-  return next;
+  try {
+    const value = await SecureStore.getItemAsync(key);
+    if (value) return value;
+    const next = createId("install");
+    await SecureStore.setItemAsync(key, next);
+    return next;
+  } catch {
+    const value = await AsyncStorage.getItem(key).catch(() => null);
+    if (value) return value;
+    const next = createId("install");
+    await AsyncStorage.setItem(key, next).catch(() => undefined);
+    return next;
+  }
 }
 
 async function getInitialAuthUrl() {
@@ -129,7 +143,11 @@ export function AppProvider({ children }: PropsWithChildren) {
   const [authSessionVersion, setAuthSessionVersion] = useState(0);
 
   const refresh = useCallback(async () => {
-    setSnapshot(await getSnapshot());
+    try {
+      setSnapshot(await getSnapshot());
+    } catch {
+      // Keep existing snapshot on error
+    }
   }, []);
 
   const syncIfEnabled = useCallback(async (base?: AppSnapshot) => {
@@ -181,32 +199,41 @@ export function AppProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     async function boot() {
-      await processAuthCallback(await getInitialAuthUrl());
-      await initDatabase();
-      await getInstallationId();
-      await AsyncStorage.setItem("petnexa_last_opened", new Date().toISOString());
-      const current = await getSnapshot();
-      setSnapshot(current);
-      if (current.settings.notificationsEnabled) await syncReminderNotifications(current.reminders);
       try {
-        await syncIfEnabled(current);
+        await processAuthCallback(await getInitialAuthUrl().catch(() => null)).catch(() => undefined);
+        await initDatabase().catch(() => undefined);
+        await getInstallationId().catch(() => undefined);
+        await AsyncStorage.setItem("petnexa_last_opened", new Date().toISOString()).catch(() => undefined);
+        const current = await getSnapshot().catch(() => emptySnapshot);
+        setSnapshot(current);
+        if (current.settings.notificationsEnabled) await syncReminderNotifications(current.reminders).catch(() => undefined);
+        try {
+          await syncIfEnabled(current);
+        } catch (error) {
+          await recordDiagnosticEvent(
+            { type: "sync_error", message: "Startup sync failed", details: errorMessage(error) },
+            current.settings.diagnosticsEnabled,
+          ).catch(() => undefined);
+          // Home sync should never block local app startup.
+        }
       } catch (error) {
-        await recordDiagnosticEvent(
-          { type: "sync_error", message: "Startup sync failed", details: errorMessage(error) },
-          current.settings.diagnosticsEnabled,
-        );
-        // Home sync should never block local app startup.
+        console.error("Boot error caught:", error);
+      } finally {
+        setReady(true);
       }
-      setReady(true);
     }
     boot();
   }, [processAuthCallback, syncIfEnabled]);
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange(() => {
-      setAuthSessionVersion((value) => value + 1);
-    });
-    return () => data.subscription.unsubscribe();
+    try {
+      const { data } = supabase.auth.onAuthStateChange(() => {
+        setAuthSessionVersion((value) => value + 1);
+      });
+      return () => data?.subscription?.unsubscribe();
+    } catch {
+      // Safe fallback if auth state listener fails
+    }
   }, []);
 
   useEffect(() => {
@@ -223,9 +250,14 @@ export function AppProvider({ children }: PropsWithChildren) {
     return () => subscription.remove();
   }, [syncIfEnabled]);
 
+  const isDark = snapshot.settings.themeMode === "dark";
+  const themePalette = useMemo(() => getPalette(snapshot.settings.themeMode), [snapshot.settings.themeMode]);
+
   const value = useMemo<AppContextValue>(() => ({
     ...snapshot,
     ready,
+    isDark,
+    themePalette,
     refresh,
     saveOwner: async (owner) => {
       await upsertOwner(owner);
@@ -364,6 +396,16 @@ export function AppProvider({ children }: PropsWithChildren) {
     updateSettings: async (settings) => {
       await upsertSettings(settings);
       await syncReminderNotifications(settings.notificationsEnabled ? snapshot.reminders : []);
+      await refresh();
+    },
+    setThemeMode: async (mode) => {
+      const nextSettings = { ...snapshot.settings, themeMode: mode };
+      await upsertSettings(nextSettings);
+      await refresh();
+    },
+    completeTutorial: async () => {
+      const nextSettings = { ...snapshot.settings, hasCompletedTutorial: true };
+      await upsertSettings(nextSettings);
       await refresh();
     },
     chooseSoloMode: async () => {

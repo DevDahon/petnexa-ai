@@ -20,8 +20,9 @@ import {
     StatusRail,
     UndoBanner,
     useResponsiveLayout,
+    useAppPalette,
 } from "@/components/ui";
-import { fontFamily, palette } from "@/constants/theme";
+import { fontFamily } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Reminder, ReminderType } from "@/types/domain";
 import { formatFriendlyDate, getReminderStatus, todayIso } from "@/utils/date";
@@ -55,6 +56,7 @@ function statusTone(reminder: Reminder) {
 }
 
 export default function RemindersScreen() {
+  const palette = useAppPalette();
   const { pets, reminders, settings, saveReminder, completeReminder, removeReminder, restoreReminderDeletion } =
     useAppData();
   const layout = useResponsiveLayout();
@@ -184,7 +186,7 @@ export default function RemindersScreen() {
         {/* ── Header ── */}
         <ScreenHeader
           title="Care"
-          subtitle="Care tasks, schedules & follow-ups"
+          subtitle="Care tasks & schedules"
           right={
             <HeaderActionButton
               icon="cog-outline"
@@ -209,21 +211,23 @@ export default function RemindersScreen() {
         <GradientCard variant={hasUrgent ? "danger" : "calm"}>
           <View
             style={{
-              flexDirection: layout.shouldStack ? "column" : "row",
-              alignItems: layout.shouldStack ? "flex-start" : "center",
+              flexDirection: "row",
+              alignItems: "center",
               gap: 14,
             }}
           >
-            <IconBubble
-              icon={hasUrgent ? "alert-outline" : "calendar-heart"}
-              tone={hasUrgent ? "danger" : "teal"}
-              size={40}
-            />
+            <View style={{ flexShrink: 0 }}>
+              <IconBubble
+                icon={hasUrgent ? "alert-outline" : "calendar-heart"}
+                tone={hasUrgent ? "danger" : "teal"}
+                size={40}
+              />
+            </View>
             <View style={{ flex: 1, minWidth: 0, gap: 5 }}>
               <Text
                 selectable
                 style={{
-                  color: palette.text,
+                  color: "#FFFFFF",
                   fontSize: 20,
                   fontFamily: fontFamily.black,
                 }}
@@ -235,7 +239,7 @@ export default function RemindersScreen() {
               <Text
                 selectable
                 style={{
-                  color: palette.muted,
+                  color: "rgba(255,255,255,0.88)",
                   lineHeight: 20,
                   fontFamily: fontFamily.medium,
                   fontSize: 13,

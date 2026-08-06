@@ -6,6 +6,7 @@ import {
     radii,
     typeScale,
 } from "@/constants/theme";
+import { useAppData } from "@/context/AppContext";
 import { Pet, Reminder } from "@/types/domain";
 import { calculateAge, getLifeStage, getReminderStatus } from "@/utils/date";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -13,6 +14,16 @@ import { Image as ExpoImage } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import React, { PropsWithChildren } from "react";
+
+export function useAppPalette() {
+  try {
+    const data = useAppData();
+    if (data?.themePalette) return data.themePalette;
+  } catch {
+    // safe fallback
+  }
+  return palette;
+}
 import {
     Image as NativeImage,
     Pressable,
@@ -36,11 +47,16 @@ import {
     TextInput,
 } from "react-native-paper";
 import Animated, {
-    FadeInUp,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming,
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
+  ZoomIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -52,9 +68,11 @@ export function useResponsiveLayout() {
   const isTiny = width < 340;
   const isCompact = width < 390;
   const isWidePhone = width >= 430;
+  const isMediumWeb = width >= 430 && width < 768;
   const isTablet = width >= 768;
   const isLandscape = width > height;
   const shouldStack = width < 430;
+  const shouldStackRow = width < 580;
   const horizontalPadding = isTiny ? 10 : isCompact ? 12 : isTablet ? 32 : 16;
   const gap = isTiny ? 10 : isCompact ? 12 : 16;
   const cardPadding = isTiny ? 12 : isCompact ? 14 : 16;
@@ -67,9 +85,11 @@ export function useResponsiveLayout() {
     isTiny,
     isCompact,
     isWidePhone,
+    isMediumWeb,
     isTablet,
     isLandscape,
     shouldStack,
+    shouldStackRow,
     horizontalPadding,
     gap,
     cardPadding,
@@ -115,24 +135,24 @@ export function ResponsiveScrollView({
   );
 }
 
-function toneColor(tone: Tone = "teal") {
-  if (tone === "danger") return palette.danger;
-  if (tone === "warning") return palette.warning;
-  if (tone === "navy") return palette.navy;
-  if (tone === "success") return palette.success;
-  if (tone === "peach") return palette.peach;
-  if (tone === "indigo") return palette.indigo;
-  return palette.teal;
+function toneColor(tone: Tone = "teal", pal: any = palette) {
+  if (tone === "danger") return pal.danger;
+  if (tone === "warning") return pal.warning;
+  if (tone === "navy") return pal.navy;
+  if (tone === "success") return pal.success;
+  if (tone === "peach") return pal.peach;
+  if (tone === "indigo") return pal.indigo;
+  return pal.teal;
 }
 
-function toneSoft(tone: Tone = "teal") {
-  if (tone === "danger") return palette.dangerSoft;
-  if (tone === "warning") return palette.warningSoft;
-  if (tone === "navy") return palette.softNavy;
-  if (tone === "peach") return palette.softPeach;
-  if (tone === "success") return palette.successSoft;
-  if (tone === "indigo") return palette.softIndigo;
-  return palette.softTeal;
+function toneSoft(tone: Tone = "teal", pal: any = palette) {
+  if (tone === "danger") return pal.dangerSoft;
+  if (tone === "warning") return pal.warningSoft;
+  if (tone === "navy") return pal.softNavy;
+  if (tone === "peach") return pal.softPeach;
+  if (tone === "success") return pal.successSoft;
+  if (tone === "indigo") return pal.softIndigo;
+  return pal.softTeal;
 }
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
@@ -141,6 +161,7 @@ export function Screen({ children }: PropsWithChildren) {
   const opacity = useSharedValue(1);
   const translateY = useSharedValue(0);
   const insets = useSafeAreaInsets();
+  const pal = useAppPalette();
 
   useFocusEffect(
     React.useCallback(() => {
@@ -160,7 +181,7 @@ export function Screen({ children }: PropsWithChildren) {
     <View
       style={{
         flex: 1,
-        backgroundColor: palette.background,
+        backgroundColor: pal.background,
         paddingTop: insets.top,
       }}
     >
@@ -183,26 +204,23 @@ export function ScreenHeader({
   right?: React.ReactNode;
 }) {
   const layout = useResponsiveLayout();
+  const pal = useAppPalette();
 
   return (
-    <View
-      style={[
-        styles.screenHeader,
-        layout.shouldStack ? styles.screenHeaderStacked : null,
-      ]}
-    >
+    <View style={styles.screenHeader}>
       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
         <Text
           selectable
           style={[
             styles.screenTitle,
+            { color: pal.text },
             layout.isCompact ? styles.screenTitleCompact : null,
           ]}
         >
           {title}
         </Text>
         {subtitle ? (
-          <Text selectable style={styles.screenSubtitle}>
+          <Text selectable style={[styles.screenSubtitle, { color: pal.muted }]}>
             {subtitle}
           </Text>
         ) : null}
@@ -212,8 +230,8 @@ export function ScreenHeader({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            justifyContent: layout.shouldStack ? "flex-start" : "flex-end",
-            flexWrap: "wrap",
+            justifyContent: "flex-end",
+            flexShrink: 0,
             gap: 8,
           }}
         >
@@ -231,14 +249,33 @@ export function Card({
   style,
   contentStyle,
   noAnimation,
+  onPress,
+  delay = 0,
 }: PropsWithChildren<{
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
   noAnimation?: boolean;
+  onPress?: () => void;
+  delay?: number;
 }>) {
   const layout = useResponsiveLayout();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    if (onPress) scale.value = withSpring(0.97, { damping: 15, stiffness: 200 });
+  };
+  const handlePressOut = () => {
+    if (onPress) scale.value = withSpring(1, { damping: 15, stiffness: 200 });
+  };
+
+  const pal = useAppPalette();
+
   const inner = (
-    <PaperCard mode="elevated" style={[styles.card, style]}>
+    <PaperCard mode="elevated" style={[styles.card, { backgroundColor: pal.card, borderColor: pal.borderLight }, style]}>
       <PaperCard.Content
         style={[
           styles.cardContent,
@@ -254,15 +291,22 @@ export function Card({
     </PaperCard>
   );
 
-  if (noAnimation)
-    return <View style={{ minWidth: 0, borderRadius: radii.xl }}>{inner}</View>;
+  const cardNode = onPress ? (
+    <Pressable onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut}>
+      {inner}
+    </Pressable>
+  ) : (
+    inner
+  );
+
+  if (noAnimation) return <Animated.View style={[{ minWidth: 0, borderRadius: radii.xl }, animatedStyle]}>{cardNode}</Animated.View>;
 
   return (
     <Animated.View
-      entering={FadeInUp.duration(220)}
-      style={{ minWidth: 0, borderRadius: radii.xl }}
+      entering={FadeInUp.delay(delay).duration(280).springify().damping(16).stiffness(140)}
+      style={[{ minWidth: 0, borderRadius: radii.xl }, animatedStyle]}
     >
-      {inner}
+      {cardNode}
     </Animated.View>
   );
 }
@@ -273,11 +317,12 @@ export function GradientCard({
   children,
   variant = "primary",
   style,
-}: PropsWithChildren<{ variant?: keyof typeof gradients; style?: ViewStyle }>) {
+  delay = 0,
+}: PropsWithChildren<{ variant?: keyof typeof gradients; style?: ViewStyle; delay?: number }>) {
   const layout = useResponsiveLayout();
   return (
     <Animated.View
-      entering={FadeInUp.duration(260)}
+      entering={FadeInUp.delay(delay).duration(320).springify().damping(15).stiffness(130)}
       style={[styles.gradientCardWrapper, style]}
     >
       <LinearGradient
@@ -303,8 +348,9 @@ export function Panel({
   children,
   style,
 }: PropsWithChildren<{ style?: ViewStyle }>) {
+  const pal = useAppPalette();
   return (
-    <Surface elevation={1} style={[styles.panel, style]}>
+    <Surface elevation={1} style={[styles.panel, { backgroundColor: pal.card, borderColor: pal.borderLight }, style]}>
       {children}
     </Surface>
   );
@@ -322,6 +368,7 @@ export function SectionHeader({
   rightNode?: React.ReactNode;
 }) {
   const layout = useResponsiveLayout();
+  const pal = useAppPalette();
 
   return (
     <View
@@ -331,13 +378,13 @@ export function SectionHeader({
       ]}
     >
       <View style={[styles.sectionHeaderLeft]}>
-        <View style={styles.sectionHeaderAccent} />
-        <Text selectable style={styles.sectionHeaderTitle}>
+        <View style={[styles.sectionHeaderAccent, { backgroundColor: pal.teal }]} />
+        <Text selectable style={[styles.sectionHeaderTitle, { color: pal.text }]}>
           {title}
         </Text>
         {action ? (
-          <View style={styles.sectionHeaderBadge}>
-            <Text selectable style={styles.sectionHeaderAction}>
+          <View style={[styles.sectionHeaderBadge, { backgroundColor: pal.softTeal, borderColor: pal.mintLight }]}>
+            <Text selectable style={[styles.sectionHeaderAction, { color: pal.teal }]}>
               {action}
             </Text>
           </View>
@@ -368,8 +415,9 @@ export function IconBubble({
   tone?: Tone;
   size?: number;
 }) {
-  const color = toneColor(tone);
-  const bg = toneSoft(tone);
+  const pal = useAppPalette();
+  const color = toneColor(tone, pal);
+  const bg = toneSoft(tone, pal);
   return (
     <View
       style={{
@@ -395,6 +443,7 @@ export function IconBubble({
 // ─── HeaderAppIcon ────────────────────────────────────────────────────────────
 
 export function HeaderAppIcon({ size = 42 }: { size?: number }) {
+  const pal = useAppPalette();
   return (
     <NativeImage
       source={require("../assets/images/icon.png")}
@@ -403,9 +452,9 @@ export function HeaderAppIcon({ size = 42 }: { size?: number }) {
         width: size,
         height: size,
         borderRadius: Math.round(size * 0.3),
-        backgroundColor: palette.softTeal,
+        backgroundColor: pal.softTeal,
         borderWidth: 1.5,
-        borderColor: palette.mintLight,
+        borderColor: pal.mintLight,
       }}
     />
   );
@@ -423,26 +472,27 @@ export function ScreenIntro({
   icon: IconName;
 }) {
   const layout = useResponsiveLayout();
+  const pal = useAppPalette();
   return (
-    <GradientCard variant="calm">
+    <Card>
       <View
         style={{
           flexDirection: layout.shouldStack ? "column" : "row",
           alignItems: layout.shouldStack ? "flex-start" : "center",
-          gap: 14,
+          gap: 16,
         }}
       >
-        <IconBubble icon={icon} size={56} />
+        <IconBubble icon={icon} tone="teal" size={56} />
         <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-          <Text selectable style={styles.screenIntroTitle}>
+          <Text selectable style={[styles.screenIntroTitle, { color: pal.text }]}>
             {title}
           </Text>
-          <Text selectable style={styles.screenIntroSubtitle}>
+          <Text selectable style={[styles.screenIntroSubtitle, { color: pal.muted }]}>
             {subtitle}
           </Text>
         </View>
       </View>
-    </GradientCard>
+    </Card>
   );
 }
 
@@ -459,12 +509,13 @@ export function StatCard({
   icon: IconName;
   tone?: Tone;
 }) {
-  const color = toneColor(tone);
-  const soft = toneSoft(tone);
+  const pal = useAppPalette();
+  const color = toneColor(tone, pal);
+  const soft = toneSoft(tone, pal);
   return (
     <Animated.View
-      entering={FadeInUp.duration(240)}
-      style={[styles.statCardWrapper, { borderColor: `${color}25` }]}
+      entering={FadeInUp.springify().damping(15).stiffness(140)}
+      style={[styles.statCardWrapper, { backgroundColor: pal.card, borderColor: pal.border }]}
     >
       <View style={[styles.statIconBubble, { backgroundColor: soft }]}>
         <MaterialCommunityIcons name={icon} color={color} size={20} />
@@ -472,7 +523,7 @@ export function StatCard({
       <Text selectable style={[styles.statValue, { color }]}>
         {value}
       </Text>
-      <Text selectable style={styles.statLabel}>
+      <Text selectable style={[styles.statLabel, { color: pal.text }]}>
         {label}
       </Text>
     </Animated.View>
@@ -494,27 +545,28 @@ export function EmptyState({
   onAction?: () => void;
   icon?: IconName;
 }) {
+  const pal = useAppPalette();
   return (
-    <GradientCard variant="calm">
+    <Card>
       <View style={styles.emptyStateContainer}>
         <View style={styles.emptyStateIconRing}>
-          <View style={styles.emptyStateIconBg} />
-          <MaterialCommunityIcons name={icon} color={palette.teal} size={44} />
-          <View style={styles.emptyStateHeartBadge}>
+          <View style={[styles.emptyStateIconBg, { backgroundColor: pal.softTeal }]} />
+          <MaterialCommunityIcons name={icon} color={pal.teal} size={44} />
+          <View style={[styles.emptyStateHeartBadge, { backgroundColor: pal.yellow }]}>
             <MaterialCommunityIcons name="heart" color="#fff" size={13} />
           </View>
         </View>
-        <Text selectable style={styles.emptyStateTitle}>
+        <Text selectable style={[styles.emptyStateTitle, { color: pal.text }]}>
           {title}
         </Text>
-        <Text selectable style={styles.emptyStateMessage}>
+        <Text selectable style={[styles.emptyStateMessage, { color: pal.muted }]}>
           {message}
         </Text>
         {actionLabel && onAction ? (
           <PrimaryButton label={actionLabel} onPress={onAction} />
         ) : null}
       </View>
-    </GradientCard>
+    </Card>
   );
 }
 
@@ -533,6 +585,7 @@ export function StatusNotice({
   tone?: Tone;
   right?: React.ReactNode;
 }) {
+  const pal = useAppPalette();
   const color = toneColor(tone);
 
   return (
@@ -556,7 +609,7 @@ export function StatusNotice({
           borderRadius: 14,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#fff",
+          backgroundColor: palette.card,
           borderWidth: 1,
           borderColor: `${color}35`,
         }}
@@ -564,10 +617,10 @@ export function StatusNotice({
         <MaterialCommunityIcons name={icon} color={color} size={21} />
       </View>
       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-        <Text selectable numberOfLines={2} style={{ color: palette.text, fontSize: typeScale.body, fontFamily: fontFamily.black }}>
+        <Text selectable numberOfLines={2} style={{ color: pal.text, fontSize: typeScale.body, fontFamily: fontFamily.black }}>
           {title}
         </Text>
-        <Text selectable numberOfLines={3} style={{ color: palette.muted, fontSize: typeScale.bodySmall, lineHeight: lineHeights.bodySmall, fontFamily: fontFamily.medium }}>
+        <Text selectable numberOfLines={3} style={{ color: pal.muted, fontSize: typeScale.bodySmall, lineHeight: lineHeights.bodySmall, fontFamily: fontFamily.medium }}>
           {message}
         </Text>
       </View>
@@ -587,6 +640,7 @@ export function UndoBanner({
   onUndo: () => void;
   onDismiss: () => void;
 }) {
+  const pal = useAppPalette();
   return (
     <View
       style={{
@@ -602,7 +656,7 @@ export function UndoBanner({
       }}
     >
       <MaterialCommunityIcons name="restore" color={palette.navy} size={22} />
-      <Text selectable numberOfLines={2} style={{ flex: 1, minWidth: 0, color: palette.text, fontSize: typeScale.bodySmall, lineHeight: lineHeights.bodySmall, fontFamily: fontFamily.bold }}>
+      <Text selectable numberOfLines={2} style={{ flex: 1, minWidth: 0, color: pal.text, fontSize: typeScale.bodySmall, lineHeight: lineHeights.bodySmall, fontFamily: fontFamily.bold }}>
         {message}
       </Text>
       <CompactButton label="Undo" icon="undo" onPress={onUndo} />
@@ -642,7 +696,7 @@ export function RowAction({
       accessibilityLabel={label}
       style={{
         margin: 0,
-        backgroundColor: "#fff",
+        backgroundColor: palette.card,
         borderWidth: danger ? 1.5 : 1,
         borderColor: danger ? palette.danger : palette.border,
         borderRadius: radii.md,
@@ -669,7 +723,8 @@ export function HeaderActionButton({
   active?: boolean;
   danger?: boolean;
 }) {
-  const color = danger ? palette.danger : palette.teal;
+  const pal = useAppPalette();
+  const color = danger ? palette.danger : pal.teal;
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -690,15 +745,15 @@ export function HeaderActionButton({
           styles.headerActionBtn,
           {
             backgroundColor: active
-              ? palette.softTeal
+              ? pal.softTeal
               : danger
                 ? palette.dangerSoft
-                : palette.teal,
+                : pal.teal,
             borderColor: active
-              ? palette.mint
+              ? pal.mint
               : danger
                 ? "#FECACA"
-                : palette.tealDeep,
+                : pal.tealDeep,
           },
         ]}
       >
@@ -729,21 +784,22 @@ export function CompactButton({
   danger?: boolean;
   disabled?: boolean;
 }) {
+  const pal = useAppPalette();
   const bgColor = primary
-    ? palette.teal
+    ? pal.teal
     : danger
-      ? palette.dangerSoft
-      : palette.backgroundAlt;
+      ? pal.dangerSoft
+      : pal.backgroundAlt || pal.card;
   const textColor = primary
     ? "#FFFFFF"
     : danger
-      ? palette.danger
-      : palette.textSecondary;
+      ? pal.danger
+      : pal.textSecondary || pal.muted;
   const borderColor = primary
-    ? palette.teal
+    ? pal.teal
     : danger
       ? "#FECACA"
-      : palette.border;
+      : pal.border;
 
   return (
     <Pressable
@@ -874,7 +930,7 @@ export function GhostButton({
       style={{
         borderRadius: radii.pill,
         borderColor: danger ? palette.danger : palette.border,
-        backgroundColor: "#fff",
+        backgroundColor: palette.card,
       }}
       contentStyle={{ minHeight: 46, paddingHorizontal: 10 }}
       labelStyle={{
@@ -905,6 +961,7 @@ export function Field({
   multiline?: boolean;
   keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
 }) {
+  const pal = useAppPalette();
   return (
     <TextInput
       mode="outlined"
@@ -914,10 +971,10 @@ export function Field({
       placeholder={placeholder}
       multiline={multiline}
       keyboardType={keyboardType}
-      style={{ backgroundColor: "#fff", minHeight: multiline ? 90 : 50 }}
+      style={{ backgroundColor: pal.card, minHeight: multiline ? 90 : 50 }}
       outlineStyle={{ borderRadius: radii.md, borderWidth: 1.5 }}
-      outlineColor={palette.border}
-      activeOutlineColor={palette.teal}
+      outlineColor={pal.border}
+      activeOutlineColor={pal.teal}
     />
   );
 }
@@ -950,11 +1007,12 @@ export function SelectDropdown<T extends string = string>({
 }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const selectedOption = options.find((opt) => opt.value === value);
+  const pal = useAppPalette();
 
   return (
     <View style={{ gap: 6, marginVertical: 4 }}>
       {label ? (
-        <Text style={{ color: palette.textSecondary, fontSize: 13, fontFamily: fontFamily.bold, letterSpacing: 0.2 }}>
+        <Text style={{ color: pal.textSecondary, fontSize: 13, fontFamily: fontFamily.bold, letterSpacing: 0.2 }}>
           {label}
         </Text>
       ) : null}
@@ -969,11 +1027,11 @@ export function SelectDropdown<T extends string = string>({
           gap: 12,
           paddingHorizontal: 14,
           paddingVertical: 12,
-          backgroundColor: isOpen ? palette.softTeal : "#FFFFFF",
+          backgroundColor: isOpen ? pal.softTeal : pal.card,
           borderRadius: radii.md,
           borderWidth: 1.5,
-          borderColor: isOpen ? palette.teal : palette.border,
-          shadowColor: isOpen ? palette.teal : "#0F172A",
+          borderColor: isOpen ? pal.teal : pal.borderLight,
+          shadowColor: isOpen ? pal.teal : "#0F172A",
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: isOpen ? 0.08 : 0.03,
           shadowRadius: 6,
@@ -983,18 +1041,18 @@ export function SelectDropdown<T extends string = string>({
       >
         <IconBubble icon={selectedOption?.icon ?? icon} tone={isOpen ? "teal" : "navy"} size={36} />
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-          <Text numberOfLines={1} style={{ color: selectedOption ? palette.text : palette.muted, fontSize: 15, fontFamily: fontFamily.bold }}>
+          <Text numberOfLines={1} style={{ color: selectedOption ? pal.text : pal.muted, fontSize: 15, fontFamily: fontFamily.bold }}>
             {selectedOption ? selectedOption.label : placeholder}
           </Text>
           {selectedOption?.subtitle ? (
-            <Text numberOfLines={1} style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.medium }}>
+            <Text numberOfLines={1} style={{ color: pal.muted, fontSize: 12, fontFamily: fontFamily.medium }}>
               {selectedOption.subtitle}
             </Text>
           ) : null}
         </View>
         <MaterialCommunityIcons
           name={isOpen ? "chevron-up" : "chevron-down"}
-          color={isOpen ? palette.teal : palette.muted}
+          color={isOpen ? pal.teal : pal.muted}
           size={22}
         />
       </Pressable>
@@ -1002,18 +1060,18 @@ export function SelectDropdown<T extends string = string>({
       {isOpen ? (
         <View
           style={{
-            backgroundColor: "#FFFFFF",
+            backgroundColor: pal.card,
             borderRadius: radii.md,
-            borderWidth: 1,
-            borderColor: palette.border,
+            borderWidth: 1.5,
+            borderColor: pal.mintLight,
             padding: 6,
             gap: 4,
             shadowColor: "#0F172A",
             shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.1,
+            shadowOpacity: 0.12,
             shadowRadius: 16,
             elevation: 5,
-            marginTop: 2,
+            marginTop: 4,
           }}
         >
           {options.map((opt) => {
@@ -1033,30 +1091,30 @@ export function SelectDropdown<T extends string = string>({
                   paddingHorizontal: 12,
                   paddingVertical: 10,
                   borderRadius: radii.sm,
-                  backgroundColor: isSelected ? palette.softTeal : pressed ? palette.neutralBg : "transparent",
+                  backgroundColor: isSelected ? pal.softTeal : pressed ? pal.neutralBg : "transparent",
                   borderLeftWidth: isSelected ? 3 : 0,
-                  borderLeftColor: isSelected ? palette.teal : "transparent",
+                  borderLeftColor: isSelected ? pal.teal : "transparent",
                 })}
               >
                 {opt.icon ? (
                   <MaterialCommunityIcons
                     name={opt.icon}
-                    color={isSelected ? palette.teal : palette.muted}
+                    color={isSelected ? pal.teal : pal.muted}
                     size={20}
                   />
                 ) : null}
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ color: isSelected ? palette.tealDeep : palette.text, fontSize: 14, fontFamily: isSelected ? fontFamily.black : fontFamily.medium }}>
+                  <Text style={{ color: isSelected ? pal.teal : pal.text, fontSize: 14, fontFamily: isSelected ? fontFamily.black : fontFamily.medium }}>
                     {opt.label}
                   </Text>
                   {opt.subtitle ? (
-                    <Text style={{ color: palette.muted, fontSize: 12, fontFamily: fontFamily.regular }}>
+                    <Text style={{ color: pal.muted, fontSize: 12, fontFamily: fontFamily.regular }}>
                       {opt.subtitle}
                     </Text>
                   ) : null}
                 </View>
                 {isSelected ? (
-                  <MaterialCommunityIcons name="check-circle" color={palette.teal} size={20} />
+                  <MaterialCommunityIcons name="check-circle" color={pal.teal} size={20} />
                 ) : null}
               </Pressable>
             );
@@ -1153,13 +1211,16 @@ export function PetAvatar({ pet, size = 62 }: { pet?: Pet; size?: number }) {
 
 export function PetCard({ pet }: { pet: Pet }) {
   const layout = useResponsiveLayout();
+  const pal = useAppPalette();
   const isCat = pet.species === "Cat";
   return (
     <Card
       style={{
-        width: layout.isTablet ? 220 : layout.isCompact ? 156 : 184,
-        backgroundColor: isCat ? palette.softPeach : palette.softTeal,
-        borderColor: isCat ? "#FFE1CC" : palette.mintLight,
+        flex: 1,
+        minWidth: layout.isCompact ? 144 : 160,
+        maxWidth: layout.isTablet ? 240 : 200,
+        backgroundColor: isCat ? pal.softPeach : pal.softTeal,
+        borderColor: isCat ? "#FFE1CC" : pal.border,
       }}
     >
       <View style={{ gap: 12 }}>
@@ -1168,7 +1229,7 @@ export function PetCard({ pet }: { pet: Pet }) {
           <Text
             selectable
             style={{
-              color: palette.text,
+              color: pal.text,
               fontFamily: fontFamily.black,
               fontSize: 18,
             }}
@@ -1178,7 +1239,7 @@ export function PetCard({ pet }: { pet: Pet }) {
           <Text
             selectable
             style={{
-              color: palette.muted,
+              color: pal.muted,
               fontSize: typeScale.bodySmall,
               fontFamily: fontFamily.semiBold,
             }}
@@ -1186,14 +1247,14 @@ export function PetCard({ pet }: { pet: Pet }) {
             {pet.breed || pet.species}
           </Text>
           <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
-            <Badge style={{ backgroundColor: "#fff", color: palette.text }}>
+            <Badge style={{ backgroundColor: pal.card, color: pal.text }}>
               {pet.species}
             </Badge>
-            <Badge style={{ backgroundColor: palette.teal }}>
+            <Badge style={{ backgroundColor: pal.teal }}>
               {getLifeStage(pet.birthday, pet.species)}
             </Badge>
           </View>
-          <Text selectable style={{ color: palette.text, fontSize: typeScale.bodySmall }}>
+          <Text selectable style={{ color: pal.text, fontSize: typeScale.bodySmall }}>
             {calculateAge(pet.birthday)}
           </Text>
         </View>
@@ -1214,7 +1275,8 @@ export function ReminderPill({ reminder }: { reminder: Reminder }) {
         : status === "Completed"
           ? "success"
           : "teal";
-  const color = toneColor(tone);
+  const pal = useAppPalette();
+  const color = toneColor(tone, pal);
   const icon: IconName =
     status === "Overdue"
       ? "alert-circle-outline"
@@ -1230,7 +1292,7 @@ export function ReminderPill({ reminder }: { reminder: Reminder }) {
         flexDirection: "row",
         alignItems: "center",
         gap: 4,
-        backgroundColor: toneSoft(tone),
+        backgroundColor: toneSoft(tone, pal),
         borderRadius: radii.pill,
         paddingHorizontal: 10,
         paddingVertical: 5,
@@ -1280,6 +1342,7 @@ export function TimelineRail({ tone = "teal" }: { tone?: Tone }) {
 // ─── BrandMark ────────────────────────────────────────────────────────────────
 
 export function BrandMark({ compact }: { compact?: boolean }) {
+  const pal = useAppPalette();
   const { isCompact } = useResponsiveLayout();
   const size = compact ? 64 : isCompact ? 92 : 116;
   return (
@@ -1324,14 +1387,14 @@ export function BrandMark({ compact }: { compact?: boolean }) {
       <Text
         selectable
         style={{
-          color: compact ? "#fff" : palette.text,
-          fontSize: compact ? typeScale.title : isCompact ? 28 : 34,
+          color: pal.text,
+          fontSize: compact ? 26 : 38,
           fontFamily: fontFamily.black,
-          letterSpacing: 0,
+          letterSpacing: -1,
         }}
       >
         PetNexa{" "}
-        <Text style={{ color: compact ? palette.yellow : palette.teal }}>
+        <Text style={{ color: compact ? pal.yellow : pal.teal }}>
           AI
         </Text>
       </Text>
@@ -1339,7 +1402,7 @@ export function BrandMark({ compact }: { compact?: boolean }) {
         <Text
           selectable
           style={{
-            color: palette.muted,
+            color: pal.muted,
             fontSize: typeScale.body,
             fontFamily: fontFamily.medium,
           }}
@@ -1355,6 +1418,7 @@ export function BrandMark({ compact }: { compact?: boolean }) {
 
 export function StatusRail({ tone = "teal" }: { tone?: Tone }) {
   const layout = useResponsiveLayout();
+  const pal = useAppPalette();
   if (layout.shouldStack) {
     return (
       <View
@@ -1362,7 +1426,7 @@ export function StatusRail({ tone = "teal" }: { tone?: Tone }) {
           height: 5,
           alignSelf: "stretch",
           borderRadius: 99,
-          backgroundColor: toneColor(tone),
+          backgroundColor: toneColor(tone, pal),
         }}
       />
     );
@@ -1396,7 +1460,6 @@ const styles = StyleSheet.create({
     alignItems: "stretch",
   },
   screenTitle: {
-    color: palette.text,
     fontSize: typeScale.screen,
     fontFamily: fontFamily.black,
     letterSpacing: 0,
@@ -1405,16 +1468,13 @@ const styles = StyleSheet.create({
     fontSize: 26,
   },
   screenSubtitle: {
-    color: palette.muted,
     fontSize: typeScale.bodySmall,
     fontFamily: fontFamily.medium,
     marginTop: 1,
   },
   card: {
-    backgroundColor: palette.card,
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: palette.borderLight,
     boxShadow: "0 2px 12px rgba(30, 58, 138, 0.06)",
     width: "100%",
     minWidth: 0,
@@ -1436,12 +1496,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   panel: {
-    backgroundColor: palette.card,
     borderRadius: radii.xl,
     padding: 16,
     gap: 12,
     borderWidth: 1,
-    borderColor: palette.borderLight,
     boxShadow: "0 2px 12px rgba(30, 58, 138, 0.06)",
   },
   sectionHeader: {
@@ -1480,36 +1538,29 @@ const styles = StyleSheet.create({
     width: 4,
     height: 20,
     borderRadius: 2,
-    backgroundColor: palette.teal,
   },
   sectionHeaderTitle: {
-    color: palette.text,
     fontSize: typeScale.title,
     fontFamily: fontFamily.black,
     letterSpacing: 0,
     flexShrink: 1,
   },
   sectionHeaderBadge: {
-    backgroundColor: palette.softTeal,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: palette.mintLight,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   sectionHeaderAction: {
-    color: palette.teal,
     fontSize: typeScale.caption,
     fontFamily: fontFamily.bold,
   },
   screenIntroTitle: {
-    color: palette.text,
     fontSize: typeScale.headline,
     fontFamily: fontFamily.black,
     letterSpacing: 0,
   },
   screenIntroSubtitle: {
-    color: palette.muted,
     lineHeight: lineHeights.body,
     fontSize: typeScale.body,
     fontFamily: fontFamily.medium,
@@ -1518,7 +1569,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 92,
     borderRadius: radii.lg,
-    backgroundColor: "#fff",
     borderWidth: 1,
     padding: 14,
     gap: 7,
@@ -1539,7 +1589,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
   },
   statLabel: {
-    color: palette.text,
     fontSize: typeScale.caption,
     fontFamily: fontFamily.bold,
     textAlign: "center",
@@ -1561,7 +1610,6 @@ const styles = StyleSheet.create({
     width: 82,
     height: 64,
     borderRadius: 28,
-    backgroundColor: "#fff",
     opacity: 0.95,
   },
   emptyStateHeartBadge: {
@@ -1571,18 +1619,15 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: palette.yellow,
     alignItems: "center",
     justifyContent: "center",
   },
   emptyStateTitle: {
-    color: palette.text,
     fontSize: typeScale.title,
     fontFamily: fontFamily.black,
     textAlign: "center",
   },
   emptyStateMessage: {
-    color: palette.muted,
     textAlign: "center",
     lineHeight: lineHeights.body,
     maxWidth: 280,

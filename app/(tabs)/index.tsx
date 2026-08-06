@@ -17,6 +17,7 @@ import {
   StatCard,
   StatusNotice,
   StatusRail,
+  useAppPalette,
   useResponsiveLayout,
 } from "@/components/ui";
 import { fontFamily, palette } from "@/constants/theme";
@@ -38,9 +39,10 @@ function PetInfoPill({
   tone?: PetInfoPillTone;
   icon?: ComponentProps<typeof MaterialCommunityIcons>["name"];
 }) {
-  const color = tone === "navy" ? palette.navy : "#fff";
-  const backgroundColor = tone === "navy" ? "#fff" : palette.teal;
-  const borderColor = tone === "navy" ? "#C9D7F7" : palette.teal;
+  const pal = useAppPalette();
+  const color = tone === "navy" ? pal.navy : "#fff";
+  const backgroundColor = tone === "navy" ? pal.card : pal.teal;
+  const borderColor = tone === "navy" ? pal.border : pal.teal;
 
   return (
     <View
@@ -54,12 +56,12 @@ function PetInfoPill({
         borderWidth: 1,
         borderColor,
         paddingHorizontal: 11,
-        paddingVertical: 7,
-        minHeight: 34,
+        paddingVertical: 6,
+        minHeight: 32,
         flexShrink: 0,
       }}
     >
-      {icon ? <MaterialCommunityIcons name={icon} color={color} size={15} /> : null}
+      {icon ? <MaterialCommunityIcons name={icon} color={color} size={14} /> : null}
       <Text
         selectable
         numberOfLines={1}
@@ -87,6 +89,7 @@ function greeting() {
 export default function HomeScreen() {
   const { owner, pets, reminders, records, settings } = useAppData();
   const layout = useResponsiveLayout();
+  const pal = useAppPalette();
   const due = reminders.filter((item) => getReminderStatus(item) === "Due Today");
   const overdue = reminders.filter((item) => getReminderStatus(item) === "Overdue");
   const upcoming = reminders.filter((item) => getReminderStatus(item) === "Upcoming");
@@ -158,12 +161,13 @@ export default function HomeScreen() {
         <GradientCard variant="hero">
           <View
             style={{
-              flexDirection: layout.shouldStack ? "column" : "row",
-              alignItems: layout.shouldStack ? "flex-start" : "center",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
               gap: 14,
             }}
           >
-            <View style={{ flex: 1, gap: 8 }}>
+            <View style={{ flex: 1, minWidth: 0, gap: 8 }}>
               <Text
                 selectable
                 style={{
@@ -217,24 +221,25 @@ export default function HomeScreen() {
               accessibilityLabel="PetNexa AI logo"
               accessible
               style={{
-                width: layout.isCompact ? 66 : 76,
-                height: layout.isCompact ? 66 : 76,
-                borderRadius: 24,
+                width: layout.isCompact ? 62 : 72,
+                height: layout.isCompact ? 62 : 72,
+                borderRadius: 20,
                 backgroundColor: "rgba(255,255,255,0.94)",
-                  alignItems: "center",
-                  justifyContent: "center",
+                alignItems: "center",
+                justifyContent: "center",
                 borderWidth: 1.5,
                 borderColor: "rgba(255,255,255,0.70)",
                 boxShadow: "0 8px 18px rgba(0, 51, 92, 0.16)",
+                flexShrink: 0,
               }}
             >
               <Image
                 source={require("../../assets/images/icon.png")}
                 resizeMode="contain"
                 style={{
-                  width: layout.isCompact ? 58 : 68,
-                  height: layout.isCompact ? 58 : 68,
-                  borderRadius: 18,
+                  width: layout.isCompact ? 54 : 64,
+                  height: layout.isCompact ? 54 : 64,
+                  borderRadius: 16,
                 }}
               />
             </View>
@@ -256,45 +261,23 @@ export default function HomeScreen() {
           tone={nextBestAction.tone}
         />
 
-        {/* ── Nearby Vet Recommendation ── */}
-        <SectionHeader title="Recommended Vet Clinics" action="View Map" />
-        <Card>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-            <IconBubble icon="hospital-building" tone="teal" size={48} />
-            <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-              <Text selectable style={{ color: palette.text, fontSize: 16, fontFamily: fontFamily.black }}>
-                Find Nearby Vet Clinics
-              </Text>
-              <Text selectable style={{ color: palette.muted, fontSize: 13, lineHeight: 18, fontFamily: fontFamily.medium }}>
-                Locate emergency 24/7 care, top-rated local vets, and get turn-by-turn directions.
-              </Text>
-              <View style={{ marginTop: 6, alignSelf: "flex-start" }}>
-                <HeaderActionButton
-                  icon="map-marker-radius-outline"
-                  label="Find Vet Clinics"
-                  active
-                  onPress={() => router.push("/map")}
-                />
-              </View>
-            </View>
-          </View>
-        </Card>
-
         {/* ── Featured Pet ── */}
         {featuredPet ? (
           <>
             <SectionHeader title="Featured Pet" />
             <Card>
-              <View style={{ flexDirection: layout.isCompact ? "column" : "row", alignItems: layout.isCompact ? "flex-start" : "center", gap: 16 }}>
-                <PetAvatar pet={featuredPet} size={layout.isCompact ? 78 : 90} />
-                <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
-                  <Text selectable style={{ color: palette.text, fontSize: 22, fontFamily: fontFamily.black, letterSpacing: 0 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 14, minWidth: 0 }}>
+                <View style={{ flexShrink: 0 }}>
+                  <PetAvatar pet={featuredPet} size={layout.isCompact ? 68 : layout.isTablet ? 84 : 76} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+                  <Text selectable numberOfLines={1} style={{ color: pal.text, fontSize: 20, fontFamily: fontFamily.black, letterSpacing: 0 }}>
                     {featuredPet.name}
                   </Text>
-                  <Text selectable style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.semiBold }}>
+                  <Text selectable numberOfLines={1} style={{ color: pal.muted, fontSize: 13, fontFamily: fontFamily.semiBold }}>
                     {featuredPet.breed || featuredPet.species}
                   </Text>
-                  <View style={{ flexDirection: "row", gap: 6, flexWrap: layout.isTiny ? "wrap" : "nowrap", alignItems: "center", maxWidth: "100%" }}>
+                  <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", alignItems: "center", maxWidth: "100%", marginTop: 2 }}>
                     <PetInfoPill label={calculateAge(featuredPet.birthday).replace(" old", "")} icon="check-circle" />
                     <PetInfoPill label={`${featuredPet.weightKg} kg`} tone="navy" />
                     <PetInfoPill label={featuredPet.sex} tone="navy" />
@@ -328,19 +311,19 @@ export default function HomeScreen() {
                   <Text
                     selectable
                     numberOfLines={1}
-                    style={{ color: palette.text, fontFamily: fontFamily.black, fontSize: 14, lineHeight: 18, textAlign: "center", maxWidth: "100%" }}
+                    style={{ color: pal.text, fontFamily: fontFamily.black, fontSize: 14, lineHeight: 18, textAlign: "center", maxWidth: "100%" }}
                   >
                     {pet.name}
                   </Text>
                   <Text
                     selectable
                     numberOfLines={1}
-                    style={{ color: palette.muted, fontSize: 12, lineHeight: 16, fontFamily: fontFamily.medium, textAlign: "center", marginTop: -4, maxWidth: "100%" }}
+                    style={{ color: pal.muted, fontSize: 12, lineHeight: 16, fontFamily: fontFamily.medium, textAlign: "center", marginTop: -4, maxWidth: "100%" }}
                   >
                     {pet.breed || pet.species}
                   </Text>
-                  <View style={{ backgroundColor: palette.softNavy, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4, maxWidth: "100%" }}>
-                    <Text selectable numberOfLines={1} style={{ color: palette.navy, fontSize: 12, lineHeight: 16, fontFamily: fontFamily.bold, fontVariant: ["tabular-nums"] }}>
+                  <View style={{ backgroundColor: pal.softNavy, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4, maxWidth: "100%" }}>
+                    <Text selectable numberOfLines={1} style={{ color: pal.navy, fontSize: 12, lineHeight: 16, fontFamily: fontFamily.bold, fontVariant: ["tabular-nums"] }}>
                       {calculateAge(pet.birthday).replace(" old", "")}
                     </Text>
                   </View>
@@ -370,10 +353,10 @@ export default function HomeScreen() {
               <StatusRail tone={getReminderStatus(nextReminder) === "Due Today" ? "warning" : "teal"} />
               <IconBubble icon="calendar-clock" size={48} />
               <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-                <Text selectable style={{ color: palette.text, fontFamily: fontFamily.black, fontSize: 15 }}>
+                <Text selectable style={{ color: pal.text, fontFamily: fontFamily.black, fontSize: 15 }}>
                   {nextReminder.title}
                 </Text>
-                <Text selectable style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.medium }}>
+                <Text selectable style={{ color: pal.muted, fontSize: 13, fontFamily: fontFamily.medium }}>
                   {formatFriendlyDate(nextReminder.dueDate)}
                 </Text>
               </View>
@@ -412,19 +395,19 @@ export default function HomeScreen() {
                   size={44}
                 />
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text selectable style={{ color: palette.text, fontFamily: fontFamily.bold, fontSize: 14 }}>
+                  <Text selectable style={{ color: pal.text, fontFamily: fontFamily.bold, fontSize: 14 }}>
                     {record.type}
                   </Text>
-                  <Text selectable numberOfLines={2} style={{ color: palette.muted, fontSize: 13, fontFamily: fontFamily.medium }}>
+                  <Text selectable numberOfLines={2} style={{ color: pal.muted, fontSize: 13, fontFamily: fontFamily.medium }}>
                     {pet?.name ?? "Pet"} • {formatFriendlyDate(record.date)}
                   </Text>
                   {record.clinic ? (
-                    <Text selectable style={{ color: palette.navy, fontSize: 12, fontFamily: fontFamily.semiBold }}>
+                    <Text selectable style={{ color: pal.navy, fontSize: 12, fontFamily: fontFamily.semiBold }}>
                       {record.clinic}
                     </Text>
                   ) : null}
                 </View>
-                <MaterialCommunityIcons name="chevron-right" color={palette.mintLight} size={22} />
+                <MaterialCommunityIcons name="chevron-right" color={pal.mintLight} size={22} />
               </View>
             </Card>
           );

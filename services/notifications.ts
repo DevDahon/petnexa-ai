@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { Reminder } from "@/types/domain";
 
 type NotificationsModule = typeof import("./notifications.web");
@@ -6,7 +7,7 @@ let modulePromise: Promise<NotificationsModule> | null = null;
 
 function notifications(): Promise<NotificationsModule> {
   if (!modulePromise) {
-    modulePromise = process.env.EXPO_OS === "web"
+    modulePromise = Platform.OS === "web"
       ? import("./notifications.web")
       : import("./notifications.native");
   }
