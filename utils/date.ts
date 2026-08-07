@@ -33,6 +33,21 @@ export function calculateAge(birthday: string) {
   return `${years} year${years === 1 ? "" : "s"} ${months} month${months === 1 ? "" : "s"} old`;
 }
 
+export function formatCompactAge(birthday: string) {
+  const birth = new Date(`${birthday}T00:00:00`);
+  const now = new Date();
+  let years = now.getFullYear() - birth.getFullYear();
+  let months = now.getMonth() - birth.getMonth();
+  if (now.getDate() < birth.getDate()) months -= 1;
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+  if (years <= 0) return `${Math.max(months, 0)}m`;
+  if (months === 0) return `${years}y`;
+  return `${years}y ${months}m`;
+}
+
 export function getAgeYears(birthday: string) {
   const birth = new Date(`${birthday}T00:00:00`);
   const now = new Date();

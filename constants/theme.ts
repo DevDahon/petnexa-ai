@@ -75,12 +75,22 @@ export const darkPalette = {
   border: "#2A364F",
   borderLight: "#1E293B",
 
+  // Status Dark Tones
+  success: "#10B981",
+  successSoft: "#062E25",
+  warning: "#F59E0B",
+  warningSoft: "#3A2308",
+  danger: "#EF4444",
+  dangerSoft: "#3B1219",
+
+  // Rich Dark Tones
   softTeal: "#0F3836",
   softIndigo: "#1E1B4B",
   softPeach: "#451A03",
-  softDanger: "#450A0A",
+  softDanger: "#3B1219",
   softNavy: "#1E293B",
-  softYellow: "#451A03",
+  softYellow: "#3A2308",
+  indigoSoft: "#1E1B4B",
   neutralBg: "#0F172A",
 };
 

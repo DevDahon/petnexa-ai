@@ -26,7 +26,7 @@ import {
 import { fontFamily, palette, radii } from "@/constants/theme";
 import { useAppData } from "@/context/AppContext";
 import { Pet, PetSpecies, Sex } from "@/types/domain";
-import { calculateAge, getLifeStage, todayIso } from "@/utils/date";
+import { calculateAge, formatCompactAge, getLifeStage, todayIso } from "@/utils/date";
 
 const emptyPet = {
   name: "",
@@ -115,7 +115,6 @@ export default function PetsScreen() {
 
   const profileGaps = (pet: Pet, recordCount: number) => {
     const gaps = [];
-    if (!pet.photoUri) gaps.push("photo");
     if (!pet.birthday) gaps.push("birthday");
     if (!pet.weightKg) gaps.push("weight");
     if (!pet.assignedVetId) gaps.push("vet");
@@ -360,69 +359,122 @@ export default function PetsScreen() {
             const gaps = profileGaps(pet, petRecords.length);
             const isCat = pet.species === "Cat";
             return (
-              <Card key={pet.id}>
+              <Card key={pet.id} style={{ padding: 16 }}>
                 <View style={{ gap: 14 }}>
-                  <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12, minWidth: 0, flexWrap: "wrap" }}>
-                    <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12, flex: 1, minWidth: 0 }}>
-                      <PetAvatar pet={pet} size={layout.isCompact ? 72 : 80} />
-                      <View style={{ flex: 1, minWidth: 0, gap: 5 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
-                          <Text
-                            selectable
-                            numberOfLines={1}
-                            style={{ color: pal.text, fontSize: 19, lineHeight: 24, fontFamily: fontFamily.black, flexShrink: 1 }}
-                          >
-                            {pet.name}
-                          </Text>
-                          <MaterialCommunityIcons
-                            name={pet.species === "Cat" ? "cat" : pet.species === "Dog" ? "dog" : "paw"}
-                            color={isCat ? pal.peach : pal.teal}
-                            size={18}
-                          />
-                        </View>
-                        <Text selectable numberOfLines={1} style={{ color: pal.muted, fontSize: 13, fontFamily: fontFamily.medium }}>
-                          {pet.breed || pet.species}
+                  {/* Header Row */}
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                    <PetAvatar pet={pet} size={layout.isCompact ? 60 : 64} />
+                    <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <Text
+                          selectable
+                          numberOfLines={1}
+                          style={{ color: pal.text, fontSize: 20, fontFamily: fontFamily.black }}
+                        >
+                          {pet.name}
                         </Text>
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 5, marginTop: 2 }}>
-                          <Chip label={calculateAge(pet.birthday)} icon="calendar-clock" active tone="teal" />
-                          <Chip label={pet.sex} icon={pet.sex === "Female" ? "gender-female" : "gender-male"} tone="navy" />
-                          <Chip label={`${pet.weightKg} kg`} icon="weight-kilogram" tone="peach" />
-                        </View>
+                        <Chip
+                          label={pet.species}
+                          icon={pet.species === "Cat" ? "cat" : pet.species === "Dog" ? "dog" : "paw"}
+                          tone={isCat ? "warning" : "teal"}
+                          active
+                        />
                       </View>
+                      <Text
+                        selectable
+                        style={{ color: pal.muted, fontSize: 13, fontFamily: fontFamily.semiBold, lineHeight: 18 }}
+                      >
+                        {pet.breed || pet.species}
+                      </Text>
                     </View>
-                    <Chip label={`${petRecords.length} records`} tone="navy" />
                   </View>
 
+                  {/* Spec Grid Bar */}
                   <View
                     style={{
-                      flexDirection: layout.isTiny ? "column" : "row",
-                      alignItems: layout.isTiny ? "stretch" : "flex-end",
-                      justifyContent: "space-between",
-                      gap: 12,
-                      marginTop: 4,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-around",
+                      backgroundColor: pal.backgroundAlt,
+                      borderRadius: radii.lg,
+                      borderWidth: 1,
+                      borderColor: pal.borderLight,
+                      paddingVertical: 10,
+                      paddingHorizontal: 6,
                     }}
                   >
-                    <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", flex: 1 }}>
-                      <Chip label={getLifeStage(pet.birthday, pet.species)} active tone="teal" />
-                      <Chip label={`${petReminders.length} care`} tone="warning" />
-                      <Chip label={gaps.length ? `Missing: ${gaps.slice(0, 2).join(", ")}${gaps.length > 2 ? ` +${gaps.length - 2}` : ""}` : "Profile complete"} tone={gaps.length ? "navy" : "success"} active={!gaps.length} />
+                    <View style={{ alignItems: "center", flex: 1, minWidth: 0, gap: 2 }}>
+                      <Text style={{ color: pal.muted, fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 0.5 }}>
+                        AGE
+                      </Text>
+                      <Text
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.7}
+                        style={{ color: pal.text, fontSize: 13, fontFamily: fontFamily.bold }}
+                      >
+                        {formatCompactAge(pet.birthday)}
+                      </Text>
                     </View>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        gap: 8,
-                        alignSelf: "flex-end",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <RowAction icon="pencil-outline" label={`Edit ${pet.name}`} onPress={() => startEdit(pet)} />
-                      <RowAction
-                        icon="trash-can-outline"
-                        label={`Delete ${pet.name}`}
-                        danger
-                        onPress={() => deletePetWithUndo(pet)}
-                      />
+
+                    <View style={{ width: 1, height: 22, backgroundColor: pal.borderLight }} />
+
+                    <View style={{ alignItems: "center", flex: 1, minWidth: 0, gap: 2 }}>
+                      <Text style={{ color: pal.muted, fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 0.5 }}>
+                        SEX
+                      </Text>
+                      <Text
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.7}
+                        style={{ color: pal.text, fontSize: 13, fontFamily: fontFamily.bold }}
+                      >
+                        {pet.sex === "Female" ? "Female ♀" : "Male ♂"}
+                      </Text>
                     </View>
+
+                    <View style={{ width: 1, height: 22, backgroundColor: pal.borderLight }} />
+
+                    <View style={{ alignItems: "center", flex: 1, minWidth: 0, gap: 2 }}>
+                      <Text style={{ color: pal.muted, fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 0.5 }}>
+                        WEIGHT
+                      </Text>
+                      <Text
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.7}
+                        style={{ color: pal.text, fontSize: 13, fontFamily: fontFamily.bold }}
+                      >
+                        {pet.weightKg ? `${pet.weightKg} kg` : "N/A"}
+                      </Text>
+                    </View>
+
+                    <View style={{ width: 1, height: 22, backgroundColor: pal.borderLight }} />
+
+                    <View style={{ alignItems: "center", flex: 1, minWidth: 0, gap: 2 }}>
+                      <Text style={{ color: pal.muted, fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 0.5 }}>
+                        RECORDS
+                      </Text>
+                      <Text
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.7}
+                        style={{ color: pal.teal, fontSize: 13, fontFamily: fontFamily.bold }}
+                      >
+                        {petRecords.length} {petRecords.length === 1 ? "entry" : "entries"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Footer Row */}
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 6, marginTop: 2 }}>
+                    <RowAction icon="pencil-outline" label={`Edit ${pet.name}`} onPress={() => startEdit(pet)} />
+                    <RowAction
+                      icon="trash-can-outline"
+                      label={`Delete ${pet.name}`}
+                      danger
+                      onPress={() => deletePetWithUndo(pet)}
+                    />
                   </View>
                 </View>
               </Card>

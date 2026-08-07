@@ -291,20 +291,33 @@ export function Card({
     </PaperCard>
   );
 
+  const isFlexCell = style && (typeof style === "object" && "flex" in style && style.flex);
+
   const cardNode = onPress ? (
-    <Pressable onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut}>
+    <Pressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={{ flex: isFlexCell ? 1 : undefined, width: "100%", minWidth: 0 }}
+    >
       {inner}
     </Pressable>
   ) : (
     inner
   );
 
-  if (noAnimation) return <Animated.View style={[{ minWidth: 0, borderRadius: radii.xl }, animatedStyle]}>{cardNode}</Animated.View>;
+  const containerStyle = [
+    { flex: isFlexCell ? 1 : undefined, width: "100%", minWidth: 0, borderRadius: radii.xl },
+    style,
+    animatedStyle,
+  ];
+
+  if (noAnimation) return <Animated.View style={containerStyle}>{cardNode}</Animated.View>;
 
   return (
     <Animated.View
       entering={FadeInUp.delay(delay).duration(280).springify().damping(16).stiffness(140)}
-      style={[{ minWidth: 0, borderRadius: radii.xl }, animatedStyle]}
+      style={containerStyle}
     >
       {cardNode}
     </Animated.View>
@@ -367,36 +380,35 @@ export function SectionHeader({
   action?: string;
   rightNode?: React.ReactNode;
 }) {
-  const layout = useResponsiveLayout();
   const pal = useAppPalette();
 
   return (
     <View
-      style={[
-        styles.sectionHeader,
-        layout.shouldStack && rightNode ? styles.sectionHeaderStacked : null,
-      ]}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingTop: 6,
+        paddingBottom: 2,
+        gap: 10,
+        width: "100%",
+      }}
     >
-      <View style={[styles.sectionHeaderLeft]}>
-        <View style={[styles.sectionHeaderAccent, { backgroundColor: pal.teal }]} />
-        <Text selectable style={[styles.sectionHeaderTitle, { color: pal.text }]}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1, minWidth: 0, flexWrap: "wrap" }}>
+        <View style={{ width: 4, height: 20, borderRadius: 2, backgroundColor: pal.teal }} />
+        <Text selectable style={{ fontSize: typeScale.title, fontFamily: fontFamily.black, color: pal.text }}>
           {title}
         </Text>
         {action ? (
-          <View style={[styles.sectionHeaderBadge, { backgroundColor: pal.softTeal, borderColor: pal.mintLight }]}>
-            <Text selectable style={[styles.sectionHeaderAction, { color: pal.teal }]}>
+          <View style={{ borderRadius: radii.pill, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 3, backgroundColor: pal.softTeal, borderColor: pal.mintLight }}>
+            <Text selectable style={{ fontSize: typeScale.caption, fontFamily: fontFamily.bold, color: pal.teal }}>
               {action}
             </Text>
           </View>
         ) : null}
       </View>
       {rightNode ? (
-        <View
-          style={[
-            styles.sectionHeaderRight,
-            layout.shouldStack ? styles.sectionHeaderRightStacked : null,
-          ]}
-        >
+        <View style={{ flexShrink: 0, flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
           {rightNode}
         </View>
       ) : null}
@@ -586,13 +598,14 @@ export function StatusNotice({
   right?: React.ReactNode;
 }) {
   const pal = useAppPalette();
-  const color = toneColor(tone);
+  const color = toneColor(tone, pal);
+  const soft = toneSoft(tone, pal);
 
   return (
     <View
       style={{
-        backgroundColor: toneSoft(tone),
-        borderColor: `${color}35`,
+        backgroundColor: soft,
+        borderColor: `${color}40`,
         borderRadius: radii.lg,
         borderWidth: 1,
         flexDirection: "row",
@@ -609,9 +622,9 @@ export function StatusNotice({
           borderRadius: 14,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: palette.card,
+          backgroundColor: pal.card,
           borderWidth: 1,
-          borderColor: `${color}35`,
+          borderColor: `${color}40`,
         }}
       >
         <MaterialCommunityIcons name={icon} color={color} size={21} />
@@ -685,26 +698,30 @@ export function RowAction({
   danger?: boolean;
   label?: string;
 }) {
-  const actionColor = danger ? palette.danger : palette.navy;
+  const pal = useAppPalette();
+  const actionColor = danger ? pal.danger : pal.textSecondary || pal.text;
+  const bgColor = danger ? pal.dangerSoft : pal.neutralBg;
+  const borderColor = danger ? `${pal.danger}40` : pal.borderLight;
 
   return (
-    <IconButton
-      icon={icon}
-      size={20}
-      iconColor={actionColor}
-      onPress={onPress}
+    <Pressable
+      accessibilityRole="button"
       accessibilityLabel={label}
-      style={{
-        margin: 0,
-        backgroundColor: palette.card,
-        borderWidth: danger ? 1.5 : 1,
-        borderColor: danger ? palette.danger : palette.border,
+      onPress={onPress}
+      style={({ pressed }) => ({
+        width: 36,
+        height: 36,
         borderRadius: radii.md,
-        width: 44,
-        height: 44,
-        boxShadow: danger ? "0 2px 8px rgba(220, 38, 38, 0.16)" : undefined,
-      }}
-    />
+        backgroundColor: bgColor,
+        borderWidth: 1,
+        borderColor: borderColor,
+        alignItems: "center",
+        justifyContent: "center",
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <MaterialCommunityIcons name={icon} color={actionColor} size={18} />
+    </Pressable>
   );
 }
 
@@ -953,6 +970,9 @@ export function Field({
   placeholder,
   multiline,
   keyboardType,
+  icon,
+  error,
+  helperText,
 }: {
   label: string;
   value: string;
@@ -960,22 +980,122 @@ export function Field({
   placeholder?: string;
   multiline?: boolean;
   keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
+  icon?: IconName;
+  error?: boolean;
+  helperText?: string;
 }) {
   const pal = useAppPalette();
   return (
-    <TextInput
-      mode="outlined"
-      label={label}
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
-      multiline={multiline}
-      keyboardType={keyboardType}
-      style={{ backgroundColor: pal.card, minHeight: multiline ? 90 : 50 }}
-      outlineStyle={{ borderRadius: radii.md, borderWidth: 1.5 }}
-      outlineColor={pal.border}
-      activeOutlineColor={pal.teal}
-    />
+    <View style={{ gap: 4, width: "100%" }}>
+      <TextInput
+        mode="outlined"
+        label={label}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={pal.muted}
+        multiline={multiline}
+        keyboardType={keyboardType}
+        error={error}
+        left={icon ? <TextInput.Icon icon={icon} color={error ? pal.danger : pal.teal} /> : undefined}
+        style={{ backgroundColor: pal.card, minHeight: multiline ? 90 : 52 }}
+        textColor={pal.text}
+        outlineStyle={{ borderRadius: radii.lg, borderWidth: 1.5 }}
+        outlineColor={error ? pal.danger : pal.border}
+        activeOutlineColor={error ? pal.danger : pal.teal}
+      />
+      {helperText ? (
+        <Text style={{ color: error ? pal.danger : pal.muted, fontSize: 12, fontFamily: fontFamily.medium, paddingLeft: 4 }}>
+          {helperText}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+// ─── QuickActionButton ────────────────────────────────────────────────────────
+
+export function QuickActionButton({
+  title,
+  subtitle,
+  icon,
+  tone = "teal",
+  onPress,
+}: {
+  title: string;
+  subtitle: string;
+  icon: IconName;
+  tone?: Tone;
+  onPress: () => void;
+}) {
+  const pal = useAppPalette();
+  const layout = useResponsiveLayout();
+  const color = toneColor(tone, pal);
+  const softBg = toneSoft(tone, pal);
+
+  return (
+    <Card
+      onPress={onPress}
+      style={{ flex: 1, minWidth: 0 }}
+      contentStyle={{
+        paddingHorizontal: layout.isTiny ? 2 : layout.isCompact ? 3 : 6,
+        paddingVertical: layout.isTiny ? 6 : layout.isCompact ? 8 : 10,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <View style={{ gap: layout.isCompact ? 4 : 6, alignItems: "center", width: "100%" }}>
+        <View
+          style={{
+            width: layout.isTiny ? 28 : layout.isCompact ? 32 : 36,
+            height: layout.isTiny ? 28 : layout.isCompact ? 32 : 36,
+            borderRadius: radii.md,
+            backgroundColor: softBg,
+            alignItems: "center",
+            justifyContent: "center",
+            borderWidth: 1,
+            borderColor: `${color}30`,
+          }}
+        >
+          <MaterialCommunityIcons
+            name={icon}
+            color={color}
+            size={layout.isTiny ? 15 : layout.isCompact ? 17 : 19}
+          />
+        </View>
+        <View style={{ gap: 0, alignItems: "center", width: "100%" }}>
+          <Text
+            selectable
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+            style={{
+              color: pal.text,
+              fontSize: layout.isTiny ? 10 : layout.isCompact ? 11 : 12,
+              fontFamily: fontFamily.black,
+              textAlign: "center",
+            }}
+          >
+            {title}
+          </Text>
+          <Text
+            selectable
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+            style={{
+              color: pal.muted,
+              fontSize: layout.isTiny ? 8 : layout.isCompact ? 9 : 10,
+              fontFamily: fontFamily.medium,
+              textAlign: "center",
+              marginTop: 1,
+            }}
+          >
+            {subtitle}
+          </Text>
+        </View>
+      </View>
+    </Card>
   );
 }
 
@@ -1140,46 +1260,71 @@ export function Chip({
   tone?: Tone;
   icon?: IconName;
 }) {
-  const color = toneColor(tone);
+  const pal = useAppPalette();
+  const color = toneColor(tone, pal);
   const visibleIcon = icon ?? (active ? "check-circle" : undefined);
-  const chipIcon = visibleIcon
-    ? ({ size }: { color: string; size: number }) => (
-        <MaterialCommunityIcons
-          name={visibleIcon}
-          color={active ? "#fff" : color}
-          size={size}
-        />
-      )
-    : undefined;
-  return (
-    <PaperChip
-      selected={active}
-      icon={chipIcon}
-      onPress={onPress}
-      mode={active ? "flat" : "outlined"}
-      compact
-      selectedColor={active ? "#fff" : color}
-      showSelectedCheck={false}
-      textStyle={{
-        color: active ? "#fff" : color,
-        fontFamily: fontFamily.bold,
-        fontSize: typeScale.caption,
-        letterSpacing: 0.2,
-      }}
+  const bg = active ? color : pal.card;
+  const border = active ? color : `${color}40`;
+  const textColor = active ? "#FFFFFF" : color;
+
+  const content = (
+    <View
       style={{
-        backgroundColor: active ? color : "#fff",
-        borderColor: active ? color : `${color}40`,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 5,
         borderRadius: radii.pill,
+        backgroundColor: bg,
+        borderWidth: 1,
+        borderColor: border,
+        paddingHorizontal: 11,
+        paddingVertical: 5,
+        minHeight: 28,
+        flexShrink: 0,
       }}
     >
-      {label}
-    </PaperChip>
+      {visibleIcon ? (
+        <MaterialCommunityIcons
+          name={visibleIcon}
+          color={textColor}
+          size={14}
+        />
+      ) : null}
+      <Text
+        selectable={false}
+        style={{
+          color: textColor,
+          fontFamily: fontFamily.bold,
+          fontSize: typeScale.caption,
+          letterSpacing: 0.2,
+          lineHeight: 16,
+        }}
+      >
+        {label}
+      </Text>
+    </View>
   );
+
+  if (onPress) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        onPress={onPress}
+        style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return content;
 }
 
 // ─── PetAvatar ────────────────────────────────────────────────────────────────
 
 export function PetAvatar({ pet, size = 62 }: { pet?: Pet; size?: number }) {
+  const pal = useAppPalette();
   if (pet?.photoUri) {
     return (
       <ExpoImage
@@ -1188,7 +1333,7 @@ export function PetAvatar({ pet, size = 62 }: { pet?: Pet; size?: number }) {
           width: size,
           height: size,
           borderRadius: radii.lg,
-          backgroundColor: palette.softTeal,
+          backgroundColor: pal.softTeal,
         }}
         contentFit="cover"
       />
@@ -1201,8 +1346,8 @@ export function PetAvatar({ pet, size = 62 }: { pet?: Pet; size?: number }) {
     <Avatar.Icon
       size={size}
       icon={icon}
-      color={toneColor(tone)}
-      style={{ backgroundColor: toneSoft(tone), borderRadius: radii.lg }}
+      color={toneColor(tone, pal)}
+      style={{ backgroundColor: toneSoft(tone, pal), borderRadius: radii.lg }}
     />
   );
 }
@@ -1314,7 +1459,8 @@ export function ReminderPill({ reminder }: { reminder: Reminder }) {
 // ─── TimelineRail ─────────────────────────────────────────────────────────────
 
 export function TimelineRail({ tone = "teal" }: { tone?: Tone }) {
-  const color = toneColor(tone);
+  const pal = useAppPalette();
+  const color = toneColor(tone, pal);
   return (
     <View style={{ width: 28, alignItems: "center", alignSelf: "stretch" }}>
       <View
@@ -1330,7 +1476,7 @@ export function TimelineRail({ tone = "teal" }: { tone?: Tone }) {
         style={{
           width: 3,
           flex: 1,
-          backgroundColor: toneSoft(tone),
+          backgroundColor: toneSoft(tone, pal),
           borderRadius: 2,
           marginTop: 4,
         }}
@@ -1438,7 +1584,7 @@ export function StatusRail({ tone = "teal" }: { tone?: Tone }) {
         width: 5,
         alignSelf: "stretch",
         borderRadius: 99,
-        backgroundColor: toneColor(tone),
+        backgroundColor: toneColor(tone, pal),
         marginRight: 4,
       }}
     />

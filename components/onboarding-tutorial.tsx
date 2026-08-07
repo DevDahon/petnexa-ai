@@ -459,7 +459,7 @@ export function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
                             justifyContent: "center",
                           }}
                         >
-                          <MaterialCommunityIcons name="sparkles" color="#FFFFFF" size={16} />
+                          <MaterialCommunityIcons name="creation" color="#FFFFFF" size={16} />
                         </View>
                       </Animated.View>
                     </View>

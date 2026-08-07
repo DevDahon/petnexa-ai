@@ -9,6 +9,7 @@ import {
   HeaderActionButton,
   IconBubble,
   PetAvatar,
+  QuickActionButton,
   ResponsiveScrollView,
   ReminderPill,
   Screen,
@@ -251,6 +252,39 @@ export default function HomeScreen() {
           <StatCard label="Due Today" value={due.length} icon="calendar-alert" tone="warning" />
           <StatCard label="Overdue" value={overdue.length} icon="alert-outline" tone="danger" />
           <StatCard label="Upcoming" value={upcoming.length} icon="calendar-check-outline" tone="teal" />
+        </View>
+
+        {/* ── Quick Actions ── */}
+        <SectionHeader title="Quick Actions" />
+        <View style={{ flexDirection: "row", flexWrap: "nowrap", gap: layout.isTiny ? 4 : layout.isCompact ? 6 : 8, width: "100%" }}>
+          <QuickActionButton
+            title="Triage"
+            subtitle="Check"
+            icon="robot-happy-outline"
+            tone="teal"
+            onPress={() => router.push("/ai-assistant")}
+          />
+          <QuickActionButton
+            title="Records"
+            subtitle="History"
+            icon="clipboard-plus-outline"
+            tone="indigo"
+            onPress={() => router.push("/records")}
+          />
+          <QuickActionButton
+            title="Care"
+            subtitle="Tasks"
+            icon="calendar-clock-outline"
+            tone="peach"
+            onPress={() => router.push("/reminders")}
+          />
+          <QuickActionButton
+            title="Vets"
+            subtitle="Hotline"
+            icon="map-marker-radius-outline"
+            tone="danger"
+            onPress={() => router.push("/map")}
+          />
         </View>
 
         <SectionHeader title="Next Best Action" />

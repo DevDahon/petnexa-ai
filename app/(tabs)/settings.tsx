@@ -30,6 +30,7 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   Linking,
+  Modal,
   Pressable,
   Text,
   View
@@ -176,66 +177,226 @@ function MenuRow({
   );
 }
 
+type ModalOption = {
+  label: string;
+  subtitle?: string;
+  icon?: ComponentProps<typeof MaterialCommunityIcons>["name"];
+  danger?: boolean;
+  onPress: () => void;
+};
+
+type ModalState = {
+  title: string;
+  subtitle?: string;
+  options: ModalOption[];
+};
+
+function ActionModal({
+  visible,
+  onClose,
+  data,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  data: ModalState | null;
+}) {
+  const pal = useAppPalette();
+
+  if (!visible || !data) return null;
+
+  return (
+    <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0, 0, 0, 0.55)",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 20,
+        }}
+      >
+        <View
+          style={{
+            width: "100%",
+            maxWidth: 400,
+            backgroundColor: pal.card,
+            borderRadius: radii.xl,
+            borderWidth: 1.5,
+            borderColor: pal.borderLight,
+            padding: 20,
+            gap: 16,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.25,
+            shadowRadius: 20,
+            elevation: 10,
+          }}
+        >
+          {/* Header */}
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+              <Text style={{ color: pal.text, fontSize: 18, fontFamily: fontFamily.black }}>
+                {data.title}
+              </Text>
+              {data.subtitle ? (
+                <Text style={{ color: pal.muted, fontSize: 13, fontFamily: fontFamily.medium }}>
+                  {data.subtitle}
+                </Text>
+              ) : null}
+            </View>
+            <Pressable
+              onPress={onClose}
+              hitSlop={8}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: pal.neutralBg,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <MaterialCommunityIcons name="close" color={pal.muted} size={18} />
+            </Pressable>
+          </View>
+
+          {/* Option list */}
+          <View style={{ gap: 10 }}>
+            {data.options.map((opt, idx) => (
+              <Pressable
+                key={idx}
+                accessibilityRole="button"
+                onPress={() => {
+                  onClose();
+                  setTimeout(opt.onPress, 50);
+                }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: 12,
+                  borderRadius: radii.lg,
+                  backgroundColor: opt.danger ? pal.softDanger : pal.backgroundAlt,
+                  borderWidth: 1.5,
+                  borderColor: opt.danger ? "#FECACA" : pal.borderLight,
+                }}
+              >
+                {opt.icon ? (
+                  <IconBubble
+                    icon={opt.icon}
+                    tone={opt.danger ? "danger" : "teal"}
+                    size={36}
+                  />
+                ) : null}
+                <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
+                  <Text
+                    style={{
+                      color: opt.danger ? pal.danger : pal.text,
+                      fontSize: 15,
+                      fontFamily: fontFamily.bold,
+                    }}
+                  >
+                    {opt.label}
+                  </Text>
+                  {opt.subtitle ? (
+                    <Text style={{ color: pal.muted, fontSize: 12, fontFamily: fontFamily.medium }}>
+                      {opt.subtitle}
+                    </Text>
+                  ) : null}
+                </View>
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  color={opt.danger ? pal.danger : pal.muted}
+                  size={20}
+                />
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Cancel button */}
+          <CompactButton label="Cancel" onPress={onClose} />
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 function DetailRow({
   icon,
   title,
   subtitle,
   right,
   danger,
+  onPress,
 }: {
   icon: ComponentProps<typeof MaterialCommunityIcons>["name"];
   title: string;
   subtitle?: string;
   right?: ReactNode;
   danger?: boolean;
+  onPress?: () => void;
 }) {
   const pal = useAppPalette();
-  const layout = useResponsiveLayout();
-  const shouldStack = layout.shouldStackRow;
 
-  return (
+  const content = (
     <View
       style={{
-        flexDirection: shouldStack && right ? "column" : "row",
-        alignItems: shouldStack && right ? "flex-start" : "center",
-        gap: 12,
-        paddingVertical: 6,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
+        paddingVertical: 9,
+        paddingHorizontal: 2,
         minWidth: 0,
       }}
     >
-      <IconBubble icon={icon} tone={danger ? "danger" : "teal"} size={42} />
-      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-        <Text
-          selectable
-          style={{
-            color: pal.text,
-            fontSize: 15,
-            fontFamily: fontFamily.bold,
-          }}
-        >
-          {title}
-        </Text>
-        {subtitle ? (
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+        <IconBubble icon={icon} tone={danger ? "danger" : "teal"} size={38} />
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
           <Text
-            selectable
+            selectable={false}
+            numberOfLines={1}
             style={{
-              color: pal.muted,
-              fontSize: 13,
-              lineHeight: 19,
-              fontFamily: fontFamily.medium,
+              color: danger ? pal.danger : pal.text,
+              fontSize: 15,
+              fontFamily: fontFamily.bold,
             }}
           >
-            {subtitle}
+            {title}
           </Text>
-        ) : null}
-      </View>
-      {right ? (
-        <View style={{ alignSelf: shouldStack ? "flex-start" : "auto", flexShrink: 0, flexWrap: "wrap", flexDirection: "row", gap: 6 }}>
-          {right}
+          {subtitle ? (
+            <Text
+              selectable={false}
+              numberOfLines={1}
+              style={{
+                color: pal.muted,
+                fontSize: 13,
+                fontFamily: fontFamily.medium,
+              }}
+            >
+              {subtitle}
+            </Text>
+          ) : null}
         </View>
-      ) : null}
+      </View>
+      {right ? <View style={{ flexShrink: 0, flexDirection: "row", alignItems: "center", gap: 6 }}>{right}</View> : null}
     </View>
   );
+
+  if (onPress) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        onPress={onPress}
+        style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, width: "100%" })}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return content;
 }
 
 
@@ -421,6 +582,72 @@ export default function SettingsScreen() {
     }
   };
 
+  const [modalData, setModalData] = useState<ModalState | null>(null);
+
+  const openBackupModal = () => {
+    setModalData({
+      title: "Backup & Restore",
+      subtitle: "Export or restore JSON pet health data",
+      options: [
+        {
+          label: "Export Backup (JSON)",
+          subtitle: "Save pet health records & reminders to JSON file",
+          icon: "export",
+          onPress: handleExportData,
+        },
+        {
+          label: "Import Backup (JSON)",
+          subtitle: "Restore records from existing JSON backup file",
+          icon: "import",
+          danger: true,
+          onPress: handleImportData,
+        },
+      ],
+    });
+  };
+
+  const openThemeModal = () => {
+    setModalData({
+      title: "App Theme",
+      subtitle: "Choose visual appearance preference",
+      options: [
+        {
+          label: "Light Mode",
+          subtitle: "Crisp slate high-contrast palette",
+          icon: "white-balance-sunny",
+          onPress: () => setThemeMode("light"),
+        },
+        {
+          label: "Dark Mode",
+          subtitle: "Sleek deep midnight palette",
+          icon: "moon-waning-crescent",
+          onPress: () => setThemeMode("dark"),
+        },
+        {
+          label: "System Default",
+          subtitle: "Match device operating system setting",
+          icon: "cellphone-cog",
+          onPress: () => setThemeMode("system"),
+        },
+      ],
+    });
+  };
+
+  const openSummaryTimeModal = () => {
+    setModalData({
+      title: "Daily Summary Time",
+      subtitle: "Select time for daily care summary",
+      options: DAILY_SUMMARY_OPTIONS.map((opt) => ({
+        label: opt.label,
+        subtitle: opt.subtitle,
+        icon: opt.icon,
+        onPress: () => {
+          updateSettings({ ...settings, dailySummaryTime: opt.value });
+        },
+      })),
+    });
+  };
+
   const handleExportData = async () => {
     try {
       await exportData();
@@ -467,24 +694,26 @@ export default function SettingsScreen() {
   };
 
   const handleResetLocalData = () => {
-    Alert.alert(
-      "Delete local data?",
-      "This removes local pets, records, reminders, vets, consultations, and diagnostics from this device. It does not delete a Home account or cloud data.",
-      [
-        { text: "Cancel", style: "cancel" },
+    setModalData({
+      title: "Delete Local Data?",
+      subtitle: "Removes local pets, records, reminders, & consultations from this device",
+      options: [
         {
-          text: "Delete",
-          style: "destructive",
-          onPress: () =>
+          label: "Delete All Local Data",
+          subtitle: "Clear device database (does not delete Home account)",
+          icon: "trash-can-outline",
+          danger: true,
+          onPress: () => {
             resetLocalData().catch(() =>
               Alert.alert(
                 "Delete failed",
                 "Could not clear local data right now.",
               ),
-            ),
+            );
+          },
         },
       ],
-    );
+    });
   };
 
   const handleLogout = async () => {
@@ -653,7 +882,6 @@ export default function SettingsScreen() {
                 }}
               >
                 <Divider />
-                <SectionHeader title="Owner Profile" />
                 <Field
                   label="Full Name"
                   value={ownerForm.fullName}
@@ -709,53 +937,33 @@ export default function SettingsScreen() {
               <View
                 style={{
                   paddingHorizontal: 4,
-                  paddingBottom: 14,
-                  paddingTop: 4,
-                  gap: 10,
+                  paddingBottom: 12,
+                  paddingTop: 2,
+                  gap: 8,
                 }}
               >
                 <Divider />
-                <SectionHeader title="Data Settings" />
-                <StatusNotice
-                  title={syncTitle}
-                  message={syncMessage}
-                  icon={
-                    settings.careMode === "home"
-                      ? "cloud-sync-outline"
-                      : "cellphone-lock"
-                  }
-                  tone={syncTone}
-                />
-
                 <DetailRow
                   icon="backup-restore"
                   title="Backup & Restore"
-                  subtitle="JSON backup file"
-                  right={
-                    <View
-                      style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}
-                    >
-                      <CompactButton
-                        label="Export"
-                        icon="export"
-                        onPress={handleExportData}
-                      />
-                      <CompactButton
-                        label="Import"
-                        icon="import"
-                        danger
-                        onPress={handleImportData}
-                      />
-                    </View>
-                  }
+                  subtitle="Export or import JSON backup"
+                  onPress={openBackupModal}
+                  right={<MaterialCommunityIcons name="chevron-right" color={pal.muted} size={22} />}
                 />
 
                 <Divider />
 
                 <DetailRow
                   icon="cloud-sync-outline"
-                  title="Home Sync"
-                  subtitle={settings.careMode === "home" ? "Auto-sync active" : "Local only"}
+                  title="Cloud Sync"
+                  subtitle={settings.careMode === "home" ? "Household sync" : "Local mode"}
+                  right={
+                    <Chip
+                      label={settings.careMode === "home" ? "Synced" : "Solo"}
+                      tone={settings.careMode === "home" ? "success" : "teal"}
+                      active={settings.careMode === "home"}
+                    />
+                  }
                 />
 
                 {settings.lastSyncError ? (
@@ -763,7 +971,7 @@ export default function SettingsScreen() {
                     <Divider />
                     <DetailRow
                       icon="alert-circle-outline"
-                      title="Sync Issue"
+                      title="Sync Warning"
                       subtitle={settings.lastSyncError}
                       danger
                     />
@@ -774,17 +982,11 @@ export default function SettingsScreen() {
 
                 <DetailRow
                   icon="database-remove-outline"
-                  title="Delete Local Data"
+                  title="Reset Local Data"
                   subtitle="Clear device data"
                   danger
-                  right={
-                    <CompactButton
-                      label="Delete Data"
-                      icon="trash-can-outline"
-                      danger
-                      onPress={handleResetLocalData}
-                    />
-                  }
+                  onPress={handleResetLocalData}
+                  right={<MaterialCommunityIcons name="chevron-right" color={pal.danger} size={22} />}
                 />
               </View>
             ) : null}
@@ -828,17 +1030,6 @@ export default function SettingsScreen() {
                 }}
               >
                 <Divider />
-                <SectionHeader title="Preferences" />
-                <StatusNotice
-                  title={notificationTitle}
-                  message={notificationMessage}
-                  icon={
-                    settings.notificationsEnabled
-                      ? "bell-check-outline"
-                      : "bell-off-outline"
-                  }
-                  tone={settings.notificationsEnabled ? "success" : "warning"}
-                />
                 <DetailRow
                   icon="bell-outline"
                   title="Notifications"
@@ -857,35 +1048,35 @@ export default function SettingsScreen() {
                 <DetailRow
                   icon={settings.themeMode === "dark" ? "moon-waning-crescent" : "white-balance-sunny"}
                   title="App Theme"
-                  subtitle={settings.themeMode === "dark" ? "Dark Mode" : "Light Mode"}
+                  subtitle={settings.themeMode === "dark" ? "Dark Mode" : settings.themeMode === "system" ? "System Default" : "Light Mode"}
+                  onPress={openThemeModal}
                   right={
-                    <View style={{ flexDirection: "row", gap: 6 }}>
-                      <CompactButton
-                        label="Light"
-                        icon="white-balance-sunny"
-                        onPress={() => setThemeMode("light")}
+                    <>
+                      <Chip
+                        label={settings.themeMode === "dark" ? "Dark" : settings.themeMode === "system" ? "System" : "Light"}
+                        active
+                        tone="teal"
                       />
-                      <CompactButton
-                        label="Dark"
-                        icon="moon-waning-crescent"
-                        onPress={() => setThemeMode("dark")}
-                      />
-                    </View>
+                      <MaterialCommunityIcons name="chevron-right" color={pal.muted} size={22} />
+                    </>
                   }
                 />
                 <Divider />
-                <SelectDropdown
-                  label="Summary Time"
-                  value={settings.dailySummaryTime || "08:00"}
-                  options={DAILY_SUMMARY_OPTIONS}
+                <DetailRow
                   icon="clock-outline"
-                  onSelect={(newTime) => {
-                    updateSettings({ ...settings, dailySummaryTime: newTime });
-                    Alert.alert(
-                      "Preference saved",
-                      `Daily summary time set to ${DAILY_SUMMARY_OPTIONS.find((o) => o.value === newTime)?.label || newTime}`,
-                    );
-                  }}
+                  title="Summary Time"
+                  subtitle={DAILY_SUMMARY_OPTIONS.find((o) => o.value === settings.dailySummaryTime)?.label || "08:00 AM"}
+                  onPress={openSummaryTimeModal}
+                  right={
+                    <>
+                      <Chip
+                        label={settings.dailySummaryTime || "08:00"}
+                        active
+                        tone="teal"
+                      />
+                      <MaterialCommunityIcons name="chevron-right" color={pal.muted} size={22} />
+                    </>
+                  }
                 />
               </View>
             ) : null}
@@ -921,58 +1112,37 @@ export default function SettingsScreen() {
               <View
                 style={{
                   paddingHorizontal: 4,
-                  paddingBottom: 14,
-                  paddingTop: 4,
-                  gap: 10,
+                  paddingBottom: 12,
+                  paddingTop: 2,
+                  gap: 8,
                 }}
               >
                 <Divider />
-                <SectionHeader title="Help & Support" />
-                <StatusNotice
-                  title="Emergency symptoms need a veterinarian"
-                  message="Urgent symptoms require immediate veterinary care."
-                  icon="hospital-box-outline"
-                  tone="danger"
-                />
                 <DetailRow
                   icon="email-outline"
                   title="Contact Support"
                   subtitle={SUPPORT_EMAIL}
-                  right={
-                    <CompactButton
-                      label="Email"
-                      icon="email-outline"
-                      onPress={contactSupport}
-                    />
-                  }
+                  onPress={contactSupport}
+                  right={<MaterialCommunityIcons name="chevron-right" color={pal.muted} size={22} />}
                 />
+                <Divider />
                 <DetailRow
                   icon="school-outline"
                   title="Feature Tour"
-                  subtitle="Replay tour"
-                  right={
-                    <CompactButton
-                      label="Replay Tour"
-                      icon="play-circle-outline"
-                      onPress={() => {
-                        updateSettings({ ...settings, hasCompletedTutorial: false });
-                        Alert.alert("Feature Tour", "Replaying the animated feature tutorial now.");
-                      }}
-                    />
-                  }
+                  subtitle="Replay welcome tutorial"
+                  onPress={() => {
+                    updateSettings({ ...settings, hasCompletedTutorial: false });
+                    Alert.alert("Feature Tour", "Replaying the animated feature tutorial now.");
+                  }}
+                  right={<MaterialCommunityIcons name="chevron-right" color={pal.muted} size={22} />}
                 />
                 <Divider />
                 <DetailRow
                   icon="database-search-outline"
                   title="Data Request"
-                  subtitle="Request export"
-                  right={
-                    <CompactButton
-                      label="Request"
-                      icon="email-fast-outline"
-                      onPress={contactDataRequest}
-                    />
-                  }
+                  subtitle="Export & privacy inquiry"
+                  onPress={contactDataRequest}
+                  right={<MaterialCommunityIcons name="chevron-right" color={pal.muted} size={22} />}
                 />
               </View>
             ) : null}
@@ -1077,6 +1247,11 @@ export default function SettingsScreen() {
           </Pressable>
         </Card>
       </ResponsiveScrollView>
+      <ActionModal
+        visible={Boolean(modalData)}
+        data={modalData}
+        onClose={() => setModalData(null)}
+      />
     </Screen>
   );
 }
